@@ -84,7 +84,10 @@
         annotations:
           storageclass.kubernetes.io/is-default-class: "false"
   when: longhorn_encryption_enabled
-  ignore_errors: true
+  register: longhorn_sc_update
+  failed_when:
+    - longhorn_sc_update.failed | default(false)
+    - "'not found' not in (longhorn_sc_update.msg | default(''))"
 
 - name: Display Longhorn encryption key warning
   ansible.builtin.debug:

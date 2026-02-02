@@ -10,6 +10,7 @@
 
   roles:
     - role: platform/authentik
+      tags: [services, authentik, identity, sso]
 
 - name: Phase 5 - Application Services
   hosts: localhost
@@ -21,18 +22,25 @@
   roles:
     # Object Storage (needed by Nextcloud)
     - role: services/seaweedfs
+      tags: [services, seaweedfs, storage, s3]
 
     # Collaboration
     - role: services/mattermost
+      tags: [services, mattermost, collaboration, chat]
     - role: services/nextcloud
+      tags: [services, nextcloud, collaboration, files]
     - role: services/onlyoffice
+      tags: [services, onlyoffice, collaboration, office]
 
     # Research
     - role: services/redcap
+      tags: [services, redcap, research]
     - role: services/ecrin
+      tags: [services, ecrin, research]
 
     # Feature Flags
     - role: services/flipt
+      tags: [services, flipt, feature-flags]
 
   post_tasks:
     - name: Phase 5 complete

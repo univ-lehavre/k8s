@@ -10,7 +10,9 @@
 
   roles:
     - role: platform/postgresql
+      tags: [databases, postgresql, platform]
     - role: platform/redis
+      tags: [databases, redis, platform]
 
   post_tasks:
     - name: Phase 4 complete

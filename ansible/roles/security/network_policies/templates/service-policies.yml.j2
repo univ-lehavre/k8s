@@ -7,7 +7,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: postgresql-ingress
-  namespace: postgresql
+  namespace: {{ namespaces.databases }}
 spec:
   endpointSelector:
     matchLabels:
@@ -39,7 +39,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: redis-ingress
-  namespace: redis
+  namespace: {{ namespaces.databases }}
 spec:
   endpointSelector:
     matchLabels:
@@ -115,16 +115,11 @@ spec:
   egress:
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: postgresql
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
       toPorts:
         - ports:
             - port: "5432"
               protocol: TCP
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: redis
-      toPorts:
-        - ports:
             - port: "6379"
               protocol: TCP
 

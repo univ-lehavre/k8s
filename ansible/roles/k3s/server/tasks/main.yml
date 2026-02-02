@@ -68,12 +68,18 @@
     dest: /usr/local/bin/kubectl
     state: link
 
+- name: Ensure .kube directory exists for root
+  ansible.builtin.file:
+    path: /root/.kube
+    state: directory
+    mode: '0700'
+
 - name: Create kubeconfig symlink for root
   ansible.builtin.file:
     src: /etc/rancher/k3s/k3s.yaml
     dest: /root/.kube/config
     state: link
-  ignore_errors: true
+    force: true
 
 - name: Fetch kubeconfig to controller
   ansible.builtin.fetch:

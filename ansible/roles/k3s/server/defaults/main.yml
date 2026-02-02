@@ -27,8 +27,8 @@ k3s_flannel_backend: "none"
 # Disable default network policy (Cilium handles this)
 k3s_disable_network_policy: true
 
-# Write kubeconfig mode
-k3s_kubeconfig_mode: "0644"
+# Write kubeconfig mode (0600 for security - contains cluster credentials)
+k3s_kubeconfig_mode: "0600"
 
 # API server arguments
 k3s_kube_apiserver_args:

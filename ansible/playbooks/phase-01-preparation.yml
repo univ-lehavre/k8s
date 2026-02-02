@@ -11,6 +11,7 @@
 
   roles:
     - role: common/prerequisites
+      tags: [preparation, prerequisites]
 
 - name: Phase 1 - System Preparation (Local - Docker for K3D)
   hosts: localhost
@@ -21,6 +22,7 @@
 
   roles:
     - role: common/docker
+      tags: [preparation, docker, k3d]
       when: k3s_type == 'k3d'
 
   post_tasks:

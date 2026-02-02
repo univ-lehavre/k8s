@@ -10,6 +10,7 @@
 
   roles:
     - role: security/network_policies
+      tags: [security, network-policies, cilium]
 
   post_tasks:
     - name: Phase 8 complete

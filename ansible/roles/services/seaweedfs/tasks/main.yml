@@ -62,7 +62,7 @@
 
 - name: Store SeaweedFS S3 credentials in Vault
   kubernetes.core.k8s_exec:
-    namespace: vault
+    namespace: "{{ namespaces.vault }}"
     pod: vault-0
     command: |
       vault kv put secret/seaweedfs
@@ -76,4 +76,7 @@
     - secrets.vault.root_token is defined
     - secrets.vault.root_token != ''
   no_log: true
-  ignore_errors: true
+  register: seaweedfs_vault_store
+  failed_when:
+    - seaweedfs_vault_store.rc != 0
+    - "'path is already in use' not in (seaweedfs_vault_store.stderr | default(''))"

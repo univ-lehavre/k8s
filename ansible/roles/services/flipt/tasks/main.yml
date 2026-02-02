@@ -14,7 +14,7 @@
 
 - name: Create Flipt database in PostgreSQL
   kubernetes.core.k8s_exec:
-    namespace: postgresql
+    namespace: "{{ namespaces.databases }}"
     pod: postgresql-0
     command: |
       psql -U postgres -c "CREATE DATABASE {{ flipt_postgresql_database }};" || true
@@ -28,7 +28,10 @@
     - postgresql_superuser_password is defined
     - postgresql_superuser_password != ''
   no_log: true
-  ignore_errors: true
+  register: flipt_db_create
+  failed_when:
+    - flipt_db_create.rc != 0
+    - "'already exists' not in (flipt_db_create.stderr | default(''))"
 
 - name: Create Flipt ConfigMap
   kubernetes.core.k8s:

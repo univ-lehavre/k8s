@@ -61,7 +61,7 @@
 
 - name: Store Redis connection info in Vault
   kubernetes.core.k8s_exec:
-    namespace: vault
+    namespace: "{{ namespaces.vault }}"
     pod: vault-0
     command: |
       vault kv put secret/redis
@@ -75,4 +75,7 @@
     - secrets.vault.root_token is defined
     - secrets.vault.root_token != ''
   no_log: true
-  ignore_errors: true
+  register: redis_vault_store
+  failed_when:
+    - redis_vault_store.rc != 0
+    - "'path is already in use' not in (redis_vault_store.stderr | default(''))"

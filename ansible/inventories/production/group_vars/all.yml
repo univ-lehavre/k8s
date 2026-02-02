@@ -85,8 +85,9 @@ service_urls:
   hubble: "https://hubble.{{ domain }}"
 
 # Firewall allowed IPs (for K3s API access)
+# ADMIN_IP is mandatory in production to prevent exposing K3s API to the internet
 admin_allowed_ips:
-  - "{{ lookup('env', 'ADMIN_IP') | default('0.0.0.0/0', true) }}"
+  - "{{ lookup('env', 'ADMIN_IP') | mandatory('ADMIN_IP environment variable must be set for production') }}"
 
 # Longhorn settings for production
 longhorn_replica_count: 2

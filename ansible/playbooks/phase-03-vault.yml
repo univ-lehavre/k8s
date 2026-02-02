@@ -10,7 +10,9 @@
 
   roles:
     - role: platform/vault
+      tags: [vault, secrets, platform]
     - role: platform/external_secrets
+      tags: [external-secrets, secrets, platform]
 
   post_tasks:
     - name: Phase 3 complete

@@ -17,6 +17,7 @@
 
   roles:
     - role: common/hardening
+      tags: [hardening, security, ssh, firewall, fail2ban, auditd]
       when: hardening_enabled | default(false)
 
   post_tasks:

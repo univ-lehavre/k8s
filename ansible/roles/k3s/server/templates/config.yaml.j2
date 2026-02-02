@@ -8,8 +8,8 @@ token: "{{ k3s_token }}"
 write-kubeconfig-mode: "{{ k3s_kubeconfig_mode }}"
 
 # Disable default components
-{% for component in k3s_disable %}
 disable:
+{% for component in k3s_disable %}
   - {{ component }}
 {% endfor %}
 

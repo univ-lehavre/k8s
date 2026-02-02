@@ -19,7 +19,7 @@
 
 - name: Create Authentik database in PostgreSQL
   kubernetes.core.k8s_exec:
-    namespace: postgresql
+    namespace: "{{ namespaces.databases }}"
     pod: postgresql-0
     command: |
       psql -U postgres -c "CREATE DATABASE {{ authentik_postgresql_database }};" || true
@@ -32,7 +32,10 @@
     - postgresql_superuser_password is defined
     - postgresql_superuser_password != ''
   no_log: true
-  ignore_errors: true
+  register: authentik_db_create
+  failed_when:
+    - authentik_db_create.rc != 0
+    - "'already exists' not in (authentik_db_create.stderr | default(''))"
 
 - name: Create Authentik secrets
   kubernetes.core.k8s:

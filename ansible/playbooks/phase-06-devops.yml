@@ -10,7 +10,9 @@
 
   roles:
     - role: devops/gitea
+      tags: [devops, gitea, git]
     - role: devops/argocd
+      tags: [devops, argocd, gitops, cd]
 
   post_tasks:
     - name: Phase 6 complete

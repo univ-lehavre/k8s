@@ -10,6 +10,7 @@
 
   roles:
     - role: k3s/k3d
+      tags: [k3s, k3d, cluster]
       when: k3s_type == 'k3d'
 
 - name: Phase 2 - K3s Server Deployment (Staging/Production)
@@ -22,6 +23,7 @@
 
   roles:
     - role: k3s/server
+      tags: [k3s, server, cluster]
       when: k3s_type == 'k3s'
 
 - name: Phase 2 - K3s Agent Deployment (Production workers)
@@ -34,6 +36,7 @@
 
   roles:
     - role: k3s/agent
+      tags: [k3s, agent, cluster]
       when: k3s_type == 'k3s'
 
 - name: Phase 2 - Infrastructure Components
@@ -46,16 +49,20 @@
   roles:
     # CNI
     - role: infrastructure/cilium
+      tags: [infrastructure, cilium, cni, network]
 
     # Storage
     - role: infrastructure/longhorn
+      tags: [infrastructure, longhorn, storage]
       when: storage_class == 'longhorn-encrypted'
 
     - role: infrastructure/local_path
+      tags: [infrastructure, local-path, storage]
       when: storage_class == 'local-path'
 
     # TLS
     - role: infrastructure/cert_manager
+      tags: [infrastructure, cert-manager, tls]
 
   post_tasks:
     - name: Phase 2 complete

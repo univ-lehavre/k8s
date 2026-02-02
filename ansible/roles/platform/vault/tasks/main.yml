@@ -49,14 +49,15 @@
     pod: vault-0
     command: vault status -format=json
   register: vault_status_raw
-  ignore_errors: true
+  # Vault returns rc=2 when sealed, which is expected
+  failed_when: vault_status_raw.rc not in [0, 1, 2]
   changed_when: false
 
 - name: Parse Vault status
   ansible.builtin.set_fact:
     vault_initialized: "{{ (vault_status_raw.stdout | from_json).initialized | default(false) }}"
     vault_sealed: "{{ (vault_status_raw.stdout | from_json).sealed | default(true) }}"
-  when: vault_status_raw.rc == 0 or vault_status_raw.rc == 2
+  when: vault_status_raw.rc in [0, 2]
 
 - name: Initialize Vault (first time only)
   when:
