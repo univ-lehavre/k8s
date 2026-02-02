@@ -37,8 +37,24 @@ vault_audit_enabled: true
 # TLS settings
 vault_tls_disable: false
 
-# Auto-unseal (for production, configure external KMS)
-vault_auto_unseal_enabled: false
+# Auto-unseal configuration
+# Supported types: awskms, gcpkms, azurekeyvault, transit
+vault_auto_unseal_enabled: "{{ lookup('env', 'VAULT_AUTO_UNSEAL_ENABLED') | default('false', true) | bool }}"
+vault_auto_unseal_type: "{{ lookup('env', 'VAULT_AUTO_UNSEAL_TYPE') | default('awskms', true) }}"
+
+# AWS KMS settings (if vault_auto_unseal_type == 'awskms')
+vault_awskms_region: "{{ lookup('env', 'AWS_REGION') | default('eu-west-1', true) }}"
+vault_awskms_key_id: "{{ lookup('env', 'VAULT_AWSKMS_KEY_ID') | default(omit) }}"
+
+# GCP KMS settings (if vault_auto_unseal_type == 'gcpkms')
+vault_gcpkms_project: "{{ lookup('env', 'GCP_PROJECT') | default(omit) }}"
+vault_gcpkms_region: "{{ lookup('env', 'GCP_REGION') | default('europe-west1', true) }}"
+vault_gcpkms_key_ring: "{{ lookup('env', 'VAULT_GCPKMS_KEY_RING') | default(omit) }}"
+vault_gcpkms_crypto_key: "{{ lookup('env', 'VAULT_GCPKMS_CRYPTO_KEY') | default(omit) }}"
+
+# Azure Key Vault settings (if vault_auto_unseal_type == 'azurekeyvault')
+vault_azurekv_vault_name: "{{ lookup('env', 'VAULT_AZURE_VAULT_NAME') | default(omit) }}"
+vault_azurekv_key_name: "{{ lookup('env', 'VAULT_AZURE_KEY_NAME') | default(omit) }}"
 
 # Secrets from CI/CD
 vault_root_token: "{{ secrets.vault.root_token | default(omit) }}"

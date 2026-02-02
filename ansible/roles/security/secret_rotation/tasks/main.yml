@@ -1,0 +1,42 @@
+---
+# Secret Rotation via External Secrets Operator + Vault
+
+- name: Skip secret rotation for non-production environments
+  ansible.builtin.debug:
+    msg: "Secret rotation disabled for {{ env }} environment"
+  when: not secret_rotation_enabled
+
+- name: Configure secret rotation
+  when: secret_rotation_enabled
+  block:
+    - name: Create ExternalSecret resources for rotation
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: external-secrets.io/v1beta1
+          kind: ExternalSecret
+          metadata:
+            name: "{{ item.name }}"
+            namespace: "{{ item.namespace }}"
+          spec:
+            refreshInterval: "{{ item.rotation_interval | default(secret_rotation_interval) }}"
+            secretStoreRef:
+              name: vault-backend
+              kind: ClusterSecretStore
+            target:
+              name: "{{ item.name }}"
+              creationPolicy: Owner
+              deletionPolicy: Retain
+            data: "{{ item.keys | map('dict2items') | flatten | selectattr('key', 'defined') | list if item.keys is mapping else item.keys | map('regex_replace', '^(.*)$', '{\"secretKey\": \"\\1\", \"remoteRef\": {\"key\": \"' + item.vault_path + '\", \"property\": \"\\1\"}}') | map('from_json') | list }}"
+      loop: "{{ secret_rotation_secrets }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Create ExternalSecret with proper data mapping
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'external-secret.yml.j2') | from_yaml }}"
+      loop: "{{ secret_rotation_secrets }}"
+      loop_control:
+        loop_var: secret
+        label: "{{ secret.name }}"

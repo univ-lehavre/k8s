@@ -1,7 +1,7 @@
 ---
-# Phase 8: Security (Network Policies)
+# Phase 8: Security (Network Policies, PSS, Rate Limiting, Image Scanning, Backups)
 
-- name: Phase 8 - Network Policies
+- name: Phase 8 - Security
   hosts: localhost
   gather_facts: false
   vars_files:
@@ -15,16 +15,40 @@
     - role: security/pod_security
       tags: [security, pod-security, pss]
 
+    - role: security/rate_limiting
+      tags: [security, rate-limiting, ingress]
+
+    - role: security/secret_rotation
+      tags: [security, secrets, rotation]
+
+    - role: security/image_scanning
+      tags: [security, scanning, trivy]
+
+    - role: security/backup_offsite
+      tags: [security, backup, velero]
+
   post_tasks:
     - name: Phase 8 complete
       ansible.builtin.debug:
         msg: |
           Security configuration complete.
           {% if network_policies_enabled | default(true) %}
-          Network policies applied to all service namespaces.
+          - Network policies applied to all service namespaces.
           {% else %}
-          Network policies disabled for local environment.
+          - Network policies disabled for local environment.
           {% endif %}
           {% if pod_security_enabled | default(true) %}
-          Pod Security Standards applied to application namespaces.
+          - Pod Security Standards applied ({{ pod_security_enforce_level | default('baseline') }} mode).
+          {% endif %}
+          {% if rate_limiting_enabled | default(false) %}
+          - Rate limiting configured for ingress endpoints.
+          {% endif %}
+          {% if secret_rotation_enabled | default(false) %}
+          - Secret rotation enabled via External Secrets Operator.
+          {% endif %}
+          {% if image_scanning_enabled | default(false) %}
+          - Image scanning enabled via Trivy Operator.
+          {% endif %}
+          {% if backup_offsite_enabled | default(false) %}
+          - Off-site encrypted backups configured via Velero.
           {% endif %}

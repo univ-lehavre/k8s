@@ -17,3 +17,15 @@
 - name: Include auditd configuration
   ansible.builtin.include_tasks: auditd.yml
   when: hardening_auditd_enabled
+
+- name: Include kernel hardening
+  ansible.builtin.include_tasks: kernel.yml
+  when: hardening_kernel_enabled | default(true)
+
+- name: Include AIDE file integrity monitoring
+  ansible.builtin.include_tasks: aide.yml
+  when: hardening_aide_enabled | default(true)
+
+- name: Include audit log forwarding
+  ansible.builtin.include_tasks: audit_forward.yml
+  when: hardening_audit_forward_enabled | default(false)

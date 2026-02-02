@@ -1,0 +1,80 @@
+---
+# Secret Rotation defaults via External Secrets Operator
+
+secret_rotation_enabled: "{{ env == 'production' }}"
+
+# Rotation interval (how often ESO refreshes secrets from Vault)
+secret_rotation_interval: 1h
+
+# Secrets to configure for rotation
+secret_rotation_secrets:
+  # Database credentials
+  - name: postgresql-credentials
+    namespace: databases
+    vault_path: secret/data/databases/postgresql
+    rotation_interval: 24h
+    keys:
+      - postgres-password
+      - replication-password
+
+  - name: redis-credentials
+    namespace: databases
+    vault_path: secret/data/databases/redis
+    rotation_interval: 24h
+    keys:
+      - redis-password
+
+  # Service credentials
+  - name: authentik-credentials
+    namespace: authentik
+    vault_path: secret/data/services/authentik
+    rotation_interval: 168h  # 7 days
+    keys:
+      - secret-key
+      - admin-password
+      - admin-token
+
+  - name: mattermost-credentials
+    namespace: mattermost
+    vault_path: secret/data/services/mattermost
+    rotation_interval: 168h
+    keys:
+      - admin-password
+
+  - name: nextcloud-credentials
+    namespace: nextcloud
+    vault_path: secret/data/services/nextcloud
+    rotation_interval: 168h
+    keys:
+      - admin-password
+
+  - name: gitea-credentials
+    namespace: gitea
+    vault_path: secret/data/services/gitea
+    rotation_interval: 168h
+    keys:
+      - admin-password
+
+  - name: argocd-credentials
+    namespace: argocd
+    vault_path: secret/data/services/argocd
+    rotation_interval: 168h
+    keys:
+      - admin-password
+
+  - name: grafana-credentials
+    namespace: monitoring
+    vault_path: secret/data/services/grafana
+    rotation_interval: 168h
+    keys:
+      - admin-password
+
+# Vault policy for secret rotation
+secret_rotation_vault_policy: |
+  # Allow reading secrets for rotation
+  path "secret/data/*" {
+    capabilities = ["read", "list"]
+  }
+  path "secret/metadata/*" {
+    capabilities = ["read", "list"]
+  }

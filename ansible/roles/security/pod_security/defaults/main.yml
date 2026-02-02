@@ -4,9 +4,22 @@
 pod_security_enabled: "{{ env != 'local' }}"
 
 # Security levels: privileged, baseline, restricted
-pod_security_enforce_level: baseline
+# Production uses restricted for maximum security
+pod_security_enforce_level: "{{ 'restricted' if env == 'production' else 'baseline' }}"
 pod_security_audit_level: restricted
 pod_security_warn_level: restricted
+
+# Exemptions for pods that need elevated privileges
+pod_security_exemptions:
+  usernames: []
+  runtimeClasses: []
+  namespaces:
+    - kube-system
+    - cilium
+    - longhorn-system
+    - cert-manager
+    - vault
+    - monitoring
 
 # Namespaces to apply PSS (exclude system namespaces)
 pod_security_namespaces:

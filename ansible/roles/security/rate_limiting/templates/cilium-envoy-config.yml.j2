@@ -1,0 +1,50 @@
+# Cilium Envoy Config for Rate Limiting
+apiVersion: cilium.io/v2
+kind: CiliumEnvoyConfig
+metadata:
+  name: rate-limiting-config
+  namespace: kube-system
+spec:
+  services:
+    - name: cilium-ingress
+      namespace: kube-system
+  resources:
+    - "@type": type.googleapis.com/envoy.config.listener.v3.Listener
+      name: rate_limit_listener
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+                http_filters:
+                  - name: envoy.filters.http.local_ratelimit
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                      stat_prefix: http_local_rate_limiter
+                      token_bucket:
+                        max_tokens: {{ rate_limiting_default_burst }}
+                        tokens_per_fill: {{ rate_limiting_default_rps }}
+                        fill_interval: 1s
+                      filter_enabled:
+                        runtime_key: local_rate_limit_enabled
+                        default_value:
+                          numerator: 100
+                          denominator: HUNDRED
+                      filter_enforced:
+                        runtime_key: local_rate_limit_enforced
+                        default_value:
+                          numerator: 100
+                          denominator: HUNDRED
+                      response_headers_to_add:
+                        - append: false
+                          header:
+                            key: x-rate-limit-limit
+                            value: "{{ rate_limiting_default_rps }}"
+                        - append: false
+                          header:
+                            key: x-rate-limit-remaining
+                            value: "%DYNAMIC_METADATA(envoy.http.local_ratelimit:tokens_remaining)%"
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

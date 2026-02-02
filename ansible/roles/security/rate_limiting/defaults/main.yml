@@ -1,0 +1,68 @@
+---
+# Rate Limiting defaults
+
+rate_limiting_enabled: "{{ env != 'local' }}"
+
+# Global rate limiting configuration
+rate_limiting_default_rps: 100
+rate_limiting_default_burst: 200
+
+# Per-service rate limiting overrides
+rate_limiting_services:
+  authentik:
+    enabled: true
+    rps: 50
+    burst: 100
+    paths:
+      - path: "/api/"
+        rps: 20
+        burst: 40
+      - path: "/application/o/"
+        rps: 30
+        burst: 60
+
+  vault:
+    enabled: true
+    rps: 30
+    burst: 60
+
+  gitea:
+    enabled: true
+    rps: 100
+    burst: 200
+    paths:
+      - path: "/api/"
+        rps: 50
+        burst: 100
+
+  argocd:
+    enabled: true
+    rps: 50
+    burst: 100
+
+  grafana:
+    enabled: true
+    rps: 100
+    burst: 200
+
+  mattermost:
+    enabled: true
+    rps: 200
+    burst: 400
+
+  nextcloud:
+    enabled: true
+    rps: 100
+    burst: 200
+    paths:
+      - path: "/remote.php/dav/"
+        rps: 50
+        burst: 100
+
+# Connection limits
+rate_limiting_max_connections: 100
+rate_limiting_max_connections_per_ip: 20
+
+# Slow loris protection
+rate_limiting_client_header_timeout: 60s
+rate_limiting_client_body_timeout: 60s

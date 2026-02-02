@@ -43,3 +43,20 @@ hardening_auditd_enabled: true
 # K3s cluster network CIDR (for internal port restrictions)
 # MUST be set per environment in production
 k3s_cluster_cidr: "10.0.0.0/8"
+
+# Kernel hardening
+hardening_kernel_enabled: true
+hardening_disable_ipv6: false
+
+# AIDE file integrity monitoring
+hardening_aide_enabled: "{{ env != 'local' }}"
+hardening_aide_cron_enabled: true
+hardening_aide_cron_hour: "5"
+hardening_aide_cron_minute: "0"
+
+# Audit log forwarding (to SIEM)
+hardening_audit_forward_enabled: false
+hardening_audit_forward_host: ""
+hardening_audit_forward_port: "514"
+hardening_audit_forward_tls_enabled: true
+hardening_audit_forward_ca_cert: "/etc/ssl/certs/ca-certificates.crt"

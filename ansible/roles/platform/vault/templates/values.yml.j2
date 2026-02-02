@@ -49,6 +49,26 @@ server:
 {% endfor %}
         }
         service_registration "kubernetes" {}
+{% if vault_auto_unseal_enabled %}
+{% if vault_auto_unseal_type == 'awskms' %}
+        seal "awskms" {
+          region     = "{{ vault_awskms_region }}"
+          kms_key_id = "{{ vault_awskms_key_id }}"
+        }
+{% elif vault_auto_unseal_type == 'gcpkms' %}
+        seal "gcpckms" {
+          project     = "{{ vault_gcpkms_project }}"
+          region      = "{{ vault_gcpkms_region }}"
+          key_ring    = "{{ vault_gcpkms_key_ring }}"
+          crypto_key  = "{{ vault_gcpkms_crypto_key }}"
+        }
+{% elif vault_auto_unseal_type == 'azurekeyvault' %}
+        seal "azurekeyvault" {
+          vault_name = "{{ vault_azurekv_vault_name }}"
+          key_name   = "{{ vault_azurekv_key_name }}"
+        }
+{% endif %}
+{% endif %}
 {% else %}
   standalone:
     enabled: true
@@ -62,6 +82,26 @@ server:
       storage "file" {
         path = "/vault/data"
       }
+{% if vault_auto_unseal_enabled %}
+{% if vault_auto_unseal_type == 'awskms' %}
+      seal "awskms" {
+        region     = "{{ vault_awskms_region }}"
+        kms_key_id = "{{ vault_awskms_key_id }}"
+      }
+{% elif vault_auto_unseal_type == 'gcpkms' %}
+      seal "gcpckms" {
+        project     = "{{ vault_gcpkms_project }}"
+        region      = "{{ vault_gcpkms_region }}"
+        key_ring    = "{{ vault_gcpkms_key_ring }}"
+        crypto_key  = "{{ vault_gcpkms_crypto_key }}"
+      }
+{% elif vault_auto_unseal_type == 'azurekeyvault' %}
+      seal "azurekeyvault" {
+        vault_name = "{{ vault_azurekv_vault_name }}"
+        key_name   = "{{ vault_azurekv_key_name }}"
+      }
+{% endif %}
+{% endif %}
 {% endif %}
 
   dataStorage:

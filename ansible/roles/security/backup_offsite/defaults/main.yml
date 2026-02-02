@@ -1,0 +1,76 @@
+---
+# Off-site Encrypted Backup defaults
+
+backup_offsite_enabled: "{{ env == 'production' }}"
+
+# S3-compatible storage configuration
+backup_s3_endpoint: "{{ lookup('env', 'BACKUP_S3_ENDPOINT') | default('s3.amazonaws.com', true) }}"
+backup_s3_bucket: "{{ lookup('env', 'BACKUP_S3_BUCKET') | default('atlas-backups', true) }}"
+backup_s3_region: "{{ lookup('env', 'BACKUP_S3_REGION') | default('eu-west-1', true) }}"
+backup_s3_access_key: "{{ lookup('env', 'BACKUP_S3_ACCESS_KEY') | default(omit) }}"
+backup_s3_secret_key: "{{ lookup('env', 'BACKUP_S3_SECRET_KEY') | default(omit) }}"
+
+# Encryption settings
+backup_encryption_enabled: true
+backup_encryption_key: "{{ lookup('env', 'BACKUP_ENCRYPTION_KEY') | default(omit) }}"
+
+# Backup schedule (cron format)
+backup_schedule: "0 3 * * *"  # Daily at 3 AM
+
+# Retention policy
+backup_retention_days: 30
+backup_retention_weeks: 12
+backup_retention_months: 12
+
+# What to backup
+backup_targets:
+  # PostgreSQL databases
+  postgresql:
+    enabled: true
+    namespace: databases
+    schedule: "0 2 * * *"
+    retention: 30d
+
+  # Vault data
+  vault:
+    enabled: true
+    namespace: vault
+    schedule: "0 2 * * *"
+    retention: 90d
+
+  # Longhorn volumes (via Longhorn backup)
+  longhorn:
+    enabled: true
+    schedule: "0 4 * * *"
+    retention: 30d
+
+  # etcd (K3s snapshots)
+  etcd:
+    enabled: true
+    schedule: "0 1 * * *"
+    retention: 14d
+
+  # Kubernetes resources (manifests)
+  kubernetes:
+    enabled: true
+    namespaces:
+      - authentik
+      - mattermost
+      - nextcloud
+      - gitea
+      - argocd
+    schedule: "0 5 * * *"
+    retention: 30d
+
+# Velero settings
+velero_version: "1.13.0"
+velero_namespace: velero
+
+# Resource limits
+backup_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
