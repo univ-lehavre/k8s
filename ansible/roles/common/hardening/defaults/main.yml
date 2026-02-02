@@ -60,3 +60,24 @@ hardening_audit_forward_host: ""
 hardening_audit_forward_port: "514"
 hardening_audit_forward_tls_enabled: true
 hardening_audit_forward_ca_cert: "/etc/ssl/certs/ca-certificates.crt"
+
+# AppArmor configuration (Debian-based systems)
+hardening_apparmor_enabled: "{{ env != 'local' }}"
+hardening_apparmor_enforce_profiles:
+  - /usr/sbin/sshd
+  - /usr/sbin/ntpd
+hardening_apparmor_k3s_profile_enabled: false
+
+# Password policy
+hardening_password_policy_enabled: "{{ env != 'local' }}"
+hardening_password_max_days: 90
+hardening_password_min_days: 7
+hardening_password_warn_age: 14
+hardening_password_min_length: 14
+hardening_password_min_class: 3
+hardening_password_max_repeat: 3
+hardening_password_max_class_repeat: 4
+hardening_password_difok: 5
+hardening_password_lockout_enabled: true
+hardening_password_lockout_attempts: 5
+hardening_password_lockout_time: 900

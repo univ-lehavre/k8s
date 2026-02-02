@@ -29,3 +29,11 @@
 - name: Include audit log forwarding
   ansible.builtin.include_tasks: audit_forward.yml
   when: hardening_audit_forward_enabled | default(false)
+
+- name: Include AppArmor configuration
+  ansible.builtin.include_tasks: apparmor.yml
+  when: hardening_apparmor_enabled | default(true)
+
+- name: Include password policy configuration
+  ansible.builtin.include_tasks: password_policy.yml
+  when: hardening_password_policy_enabled | default(true)

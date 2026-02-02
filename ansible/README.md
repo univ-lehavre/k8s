@@ -222,6 +222,33 @@ cilium status
 - Storage is encrypted with Longhorn in production
 - WireGuard encryption enabled for inter-node traffic
 
+### Security Hardening Features
+
+| Feature | Local | Staging | Production |
+|---------|-------|---------|------------|
+| SSH Hardening (key-only, no root) | - | Yes | Yes |
+| UFW Firewall | - | Yes | Yes |
+| Fail2ban | - | Yes | Yes |
+| Auditd | - | Yes | Yes |
+| Kernel Hardening (ASLR, sysctl) | - | Yes | Yes |
+| AIDE File Integrity | - | Yes | Yes |
+| AppArmor | - | Yes | Yes |
+| Password Policies (PAM) | - | Yes | Yes |
+| Network Policies (Cilium) | - | Yes | Yes |
+| Pod Security Standards | Privileged | Baseline | Restricted |
+| WireGuard Inter-node Encryption | - | Optional | Yes |
+| Longhorn Encryption | - | Yes | Yes |
+| Secret Rotation | - | - | Yes |
+| Image Scanning (Trivy) | - | Yes | Yes |
+| Off-site Encrypted Backups | - | - | Yes |
+
+### Ansible Best Practices Applied
+
+- **no_log: true** on all tasks handling secrets (K3s token, Vault tokens, database passwords)
+- **SSH pipelining** enabled for secure module execution
+- **Vault IDs** support for multi-environment secret separation
+- Secrets sourced exclusively from environment variables
+
 ## License
 
 This project is proprietary. All rights reserved.

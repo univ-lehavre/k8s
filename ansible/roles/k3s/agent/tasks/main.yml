@@ -31,6 +31,7 @@
     K3S_URL: "https://{{ k3s_master_ip }}:6443"
     INSTALL_K3S_SKIP_START: "false"
   when: not k3s_binary.stat.exists
+  no_log: true
 
 - name: Wait for K3s agent to be ready
   ansible.builtin.systemd:

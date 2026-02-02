@@ -30,6 +30,7 @@
     K3S_TOKEN: "{{ k3s_token }}"
     INSTALL_K3S_SKIP_START: "false"
   when: not k3s_binary.stat.exists
+  no_log: true
 
 - name: Wait for K3s to be ready
   ansible.builtin.command: k3s kubectl get nodes

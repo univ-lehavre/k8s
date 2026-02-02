@@ -140,6 +140,7 @@
       register: kv_enable
       failed_when: kv_enable.rc not in [0, 2]  # 0=success, 2=already enabled
       changed_when: kv_enable.rc == 0
+      no_log: true
 
     - name: Enable Kubernetes auth
       kubernetes.core.k8s_exec:
@@ -152,6 +153,7 @@
       register: k8s_auth_enable
       failed_when: k8s_auth_enable.rc not in [0, 2]  # 0=success, 2=already enabled
       changed_when: k8s_auth_enable.rc == 0
+      no_log: true
 
     - name: Configure Kubernetes auth
       kubernetes.core.k8s_exec:
@@ -164,3 +166,4 @@
           - name: VAULT_TOKEN
             value: "{{ vault_root_token }}"
       when: k8s_auth_enable.changed or k8s_auth_enable.rc == 0
+      no_log: true

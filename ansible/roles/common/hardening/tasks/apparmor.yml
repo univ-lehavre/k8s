@@ -1,0 +1,60 @@
+---
+# AppArmor hardening for Debian-based systems
+
+- name: Check if AppArmor is available
+  ansible.builtin.stat:
+    path: /sys/kernel/security/apparmor
+  register: apparmor_available
+
+- name: Install AppArmor packages
+  ansible.builtin.apt:
+    name:
+      - apparmor
+      - apparmor-utils
+      - apparmor-profiles
+      - apparmor-profiles-extra
+    state: present
+    update_cache: true
+  when: apparmor_available.stat.exists
+
+- name: Enable AppArmor service
+  ansible.builtin.systemd:
+    name: apparmor
+    state: started
+    enabled: true
+  when: apparmor_available.stat.exists
+
+- name: Get AppArmor status
+  ansible.builtin.command: aa-status --json
+  register: apparmor_status
+  changed_when: false
+  failed_when: false
+  when: apparmor_available.stat.exists
+
+- name: Set common profiles to enforce mode
+  ansible.builtin.command: aa-enforce {{ item }}
+  loop: "{{ hardening_apparmor_enforce_profiles }}"
+  when:
+    - apparmor_available.stat.exists
+    - hardening_apparmor_enforce_profiles | length > 0
+  register: apparmor_enforce
+  changed_when: "'already in enforce mode' not in apparmor_enforce.stderr"
+  failed_when: false
+
+- name: Create custom K3s AppArmor profile
+  ansible.builtin.template:
+    src: apparmor-k3s.j2
+    dest: /etc/apparmor.d/k3s-containerd
+    mode: '0644'
+  notify: Reload AppArmor
+  when:
+    - apparmor_available.stat.exists
+    - hardening_apparmor_k3s_profile_enabled | default(false)
+
+- name: Display AppArmor status
+  ansible.builtin.debug:
+    msg: |
+      AppArmor Status:
+      - Available: {{ apparmor_available.stat.exists }}
+      - Profiles loaded: {{ (apparmor_status.stdout | from_json).profiles | length | default(0) }}
+  when: apparmor_available.stat.exists and apparmor_status.rc == 0
