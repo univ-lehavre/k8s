@@ -17,6 +17,13 @@ helm_versions:
 
   # Identity
   authentik: "2024.2.0"
+  authelia: "0.9.0"
+
+  # Gateway API
+  envoy_gateway: "1.2.0"
+
+  # Policy Engine
+  kyverno: "3.3.0"
 
   # Services
   mattermost: "7.0.0"
@@ -87,3 +94,11 @@ helm_repositories:
   grafana:
     name: grafana
     url: https://grafana.github.io/helm-charts
+
+  authelia:
+    name: authelia
+    url: https://charts.authelia.com
+
+  kyverno:
+    name: kyverno
+    url: https://kyverno.github.io/kyverno/

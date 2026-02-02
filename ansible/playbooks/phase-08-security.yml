@@ -9,6 +9,10 @@
     - ../vars/secrets_mapping.yml
 
   roles:
+    # Admission Control / Policy Engine
+    - role: security/kyverno
+      tags: [security, kyverno, admission, policy]
+
     - role: security/network_policies
       tags: [security, network-policies, cilium]
 
@@ -32,6 +36,9 @@
       ansible.builtin.debug:
         msg: |
           Security configuration complete.
+          {% if kyverno_policies_enabled | default(true) %}
+          - Kyverno policies deployed ({{ kyverno_validation_failure_action | default('Audit') }} mode).
+          {% endif %}
           {% if network_policies_enabled | default(true) %}
           - Network policies applied to all service namespaces.
           {% else %}

@@ -13,6 +13,7 @@ network_policies_namespaces:
   - postgresql
   - redis
   - authentik
+  - authelia
   - mattermost
   - nextcloud
   - onlyoffice
@@ -32,4 +33,8 @@ network_policies_allow_monitoring: true
 monitoring_namespace: monitoring
 
 # Ingress controller namespace
-ingress_namespace: kube-system
+# Changed from kube-system (Cilium Ingress) to envoy-gateway-system (Envoy Gateway)
+ingress_namespace: envoy-gateway-system
+
+# Authelia namespace (for forward auth policies)
+authelia_namespace: authelia

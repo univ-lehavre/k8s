@@ -1,0 +1,39 @@
+---
+# Envoy Gateway Helm values
+# https://gateway.envoyproxy.io/docs/install/install-helm/
+
+config:
+  envoyGateway:
+    logging:
+      level:
+        default: {{ envoy_gateway_log_level }}
+
+deployment:
+  envoyGateway:
+    replicas: {{ envoy_gateway_replicas }}
+    resources:
+      requests:
+        cpu: {{ envoy_gateway_resources.requests.cpu }}
+        memory: {{ envoy_gateway_resources.requests.memory }}
+      limits:
+        cpu: {{ envoy_gateway_resources.limits.cpu }}
+        memory: {{ envoy_gateway_resources.limits.memory }}
+
+  ports:
+    - name: grpc
+      port: 18000
+      targetPort: 18000
+    - name: ratelimit
+      port: 18001
+      targetPort: 18001
+{% if envoy_gateway_metrics_enabled %}
+    - name: metrics
+      port: {{ envoy_gateway_metrics_port }}
+      targetPort: {{ envoy_gateway_metrics_port }}
+{% endif %}
+
+# Create default GatewayClass
+createNamespace: false
+
+# Kubernetes settings
+kubernetesClusterDomain: cluster.local

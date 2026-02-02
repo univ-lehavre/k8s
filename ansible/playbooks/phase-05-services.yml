@@ -1,7 +1,18 @@
 ---
 # Phase 5: Application Services
 
-- name: Phase 5 - Authentik (IAM/SSO)
+- name: Phase 5 - Authelia (Forward Auth)
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: platform/authelia
+      tags: [services, authelia, auth, forward-auth]
+
+- name: Phase 5 - Authentik (IAM/SSO/OIDC)
   hosts: localhost
   gather_facts: false
   vars_files:
@@ -10,7 +21,7 @@
 
   roles:
     - role: platform/authentik
-      tags: [services, authentik, identity, sso]
+      tags: [services, authentik, identity, sso, oidc]
 
 - name: Phase 5 - Application Services
   hosts: localhost
@@ -47,7 +58,8 @@
       ansible.builtin.debug:
         msg: |
           Application services deployed:
-          - Authentik: https://auth.{{ domain }}
+          - Authelia (Forward Auth): https://login.{{ domain }}
+          - Authentik (OIDC): https://auth.{{ domain }}
           - Mattermost: https://chat.{{ domain }}
           - Nextcloud: https://cloud.{{ domain }}
           - OnlyOffice: https://office.{{ domain }}

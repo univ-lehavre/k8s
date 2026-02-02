@@ -1,0 +1,56 @@
+---
+# Main Gateway resource for ATLAS platform
+# All HTTPRoutes should reference this gateway
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ gateway_name }}
+  namespace: {{ envoy_gateway_namespace }}
+  labels:
+    app.kubernetes.io/name: {{ gateway_name }}
+    app.kubernetes.io/component: gateway
+spec:
+  gatewayClassName: eg
+  listeners:
+    # HTTP listener (redirects to HTTPS)
+    - name: http
+      port: {{ gateway_http_port }}
+      protocol: HTTP
+      hostname: "*.{{ domain }}"
+      allowedRoutes:
+        namespaces:
+          from: All
+
+{% if gateway_tls_enabled %}
+    # HTTPS listener with wildcard certificate
+    - name: https
+      port: {{ gateway_https_port }}
+      protocol: HTTPS
+      hostname: "*.{{ domain }}"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: {{ gateway_wildcard_secret_name }}
+            namespace: {{ envoy_gateway_namespace }}
+      allowedRoutes:
+        namespaces:
+          from: All
+{% endif %}
+
+---
+# HTTP to HTTPS redirect policy
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: http-to-https-redirect
+  namespace: {{ envoy_gateway_namespace }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ gateway_name }}
+      sectionName: http
+  redirect:
+    scheme: https
+    statusCode: 301

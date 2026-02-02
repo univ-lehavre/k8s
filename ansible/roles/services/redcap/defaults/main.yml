@@ -30,13 +30,9 @@ redcap_postgresql_user: "{{ database_config.redcap.user }}"
 # Secrets from CI/CD
 redcap_salt: "{{ secrets.redcap.salt | default(omit) }}"
 
-# Ingress settings
+# Ingress settings (Gateway API)
 redcap_ingress_enabled: true
 redcap_ingress_host: "redcap.{{ domain }}"
-redcap_ingress_class: cilium
-redcap_ingress_tls_secret: redcap-tls
-redcap_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Authentik)
+# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
 redcap_forward_auth_enabled: true
-redcap_forward_auth_address: "http://authentik-server.authentik.svc.cluster.local/outpost.goauthentik.io/auth/nginx"

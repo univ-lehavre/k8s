@@ -49,6 +49,8 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: authentik
         - matchLabels:
+            k8s:io.kubernetes.pod.namespace: authelia
+        - matchLabels:
             k8s:io.kubernetes.pod.namespace: nextcloud
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: gitea
@@ -370,5 +372,48 @@ spec:
             k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
       toPorts:
         - ports:
+            - port: "5432"
+              protocol: TCP
+
+---
+# Authelia: Allow from ingress (for login portal) and all namespaces (for ext-authz)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: authelia-ingress
+  namespace: {{ authelia_namespace | default('authelia') }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: authelia
+  ingress:
+    # Allow from Envoy Gateway (for login portal and ext-authz verification)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ ingress_namespace }}
+      toPorts:
+        - ports:
+            - port: "9091"
+              protocol: TCP
+
+---
+# Authelia egress to Redis (session storage)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: authelia-egress
+  namespace: {{ authelia_namespace | default('authelia') }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: authelia
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
             - port: "5432"
               protocol: TCP

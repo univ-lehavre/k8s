@@ -47,9 +47,13 @@
     - ../vars/secrets_mapping.yml
 
   roles:
-    # CNI
+    # CNI (Network only - Ingress disabled, using Envoy Gateway instead)
     - role: infrastructure/cilium
       tags: [infrastructure, cilium, cni, network]
+
+    # Gateway API (Envoy Gateway)
+    - role: infrastructure/envoy_gateway
+      tags: [infrastructure, envoy-gateway, gateway-api, ingress]
 
     # Storage
     - role: infrastructure/longhorn

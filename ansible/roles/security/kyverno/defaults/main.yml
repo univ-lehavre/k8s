@@ -1,0 +1,94 @@
+---
+# Kyverno configuration
+# Kubernetes-native policy engine for ATLAS platform
+
+# Namespace
+kyverno_namespace: kyverno
+
+# Version (from centralized helm_versions.yml)
+kyverno_version: "{{ helm_versions.kyverno }}"
+
+# Replicas (HA mode uses 3 replicas)
+kyverno_replicas: "{{ 3 if ha_enabled | default(false) else 1 }}"
+
+# Resource limits
+kyverno_resources:
+  admission_controller:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  background_controller:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  cleanup_controller:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  reports_controller:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Validation failure action
+# - Audit: Log violations but allow
+# - Enforce: Block violations
+kyverno_validation_failure_action: "{{ 'Enforce' if env | default('local') == 'production' else 'Audit' }}"
+
+# Enable background scanning
+kyverno_background_scan: true
+
+# Webhook timeout
+kyverno_webhook_timeout: 10
+
+# Exclude namespaces from policies
+kyverno_excluded_namespaces:
+  - kube-system
+  - kube-public
+  - kube-node-lease
+  - kyverno
+
+# Policies to deploy
+kyverno_policies_enabled: true
+
+# Policy categories
+kyverno_policy_require_labels: true
+kyverno_policy_disallow_privileged: true
+kyverno_policy_require_resource_limits: true
+kyverno_policy_restrict_registries: true
+kyverno_policy_disallow_host_namespaces: true
+kyverno_policy_disallow_host_path: true
+kyverno_policy_require_probes: "{{ env | default('local') != 'local' }}"
+kyverno_policy_disallow_latest_tag: true
+
+# Allowed container registries
+kyverno_allowed_registries:
+  - docker.io
+  - ghcr.io
+  - gcr.io
+  - quay.io
+  - registry.k8s.io
+  - public.ecr.aws
+
+# Required labels
+kyverno_required_labels:
+  - app.kubernetes.io/name
+  - app.kubernetes.io/component
+
+# Metrics
+kyverno_metrics_enabled: true
+
+# Logging
+kyverno_log_level: "2"  # 0=info, 1=debug, 2=trace

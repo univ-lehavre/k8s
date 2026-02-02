@@ -1,0 +1,71 @@
+---
+# Kyverno Helm values
+# https://kyverno.io/docs/installation/methods/#install-kyverno-using-helm
+
+# Admission controller
+admissionController:
+  replicas: {{ kyverno_replicas }}
+  resources:
+    requests:
+      cpu: {{ kyverno_resources.admission_controller.requests.cpu }}
+      memory: {{ kyverno_resources.admission_controller.requests.memory }}
+    limits:
+      cpu: {{ kyverno_resources.admission_controller.limits.cpu }}
+      memory: {{ kyverno_resources.admission_controller.limits.memory }}
+
+# Background controller
+backgroundController:
+  enabled: {{ kyverno_background_scan | lower }}
+  replicas: {{ kyverno_replicas }}
+  resources:
+    requests:
+      cpu: {{ kyverno_resources.background_controller.requests.cpu }}
+      memory: {{ kyverno_resources.background_controller.requests.memory }}
+    limits:
+      cpu: {{ kyverno_resources.background_controller.limits.cpu }}
+      memory: {{ kyverno_resources.background_controller.limits.memory }}
+
+# Cleanup controller
+cleanupController:
+  replicas: {{ kyverno_replicas }}
+  resources:
+    requests:
+      cpu: {{ kyverno_resources.cleanup_controller.requests.cpu }}
+      memory: {{ kyverno_resources.cleanup_controller.requests.memory }}
+    limits:
+      cpu: {{ kyverno_resources.cleanup_controller.limits.cpu }}
+      memory: {{ kyverno_resources.cleanup_controller.limits.memory }}
+
+# Reports controller
+reportsController:
+  replicas: {{ kyverno_replicas }}
+  resources:
+    requests:
+      cpu: {{ kyverno_resources.reports_controller.requests.cpu }}
+      memory: {{ kyverno_resources.reports_controller.requests.memory }}
+    limits:
+      cpu: {{ kyverno_resources.reports_controller.limits.cpu }}
+      memory: {{ kyverno_resources.reports_controller.limits.memory }}
+
+# Webhook configuration
+config:
+  webhooks:
+    - namespaceSelector:
+        matchExpressions:
+          - key: kubernetes.io/metadata.name
+            operator: NotIn
+            values:
+{% for ns in kyverno_excluded_namespaces %}
+              - {{ ns }}
+{% endfor %}
+
+# Logging
+logging:
+  verbosity: {{ kyverno_log_level }}
+
+# Metrics
+metricsConfig:
+  metricsRefreshInterval: 15s
+  namespaces:
+    include: []
+    exclude: []

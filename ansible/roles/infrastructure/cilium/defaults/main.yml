@@ -16,8 +16,10 @@ cilium_hubble_relay_enabled: true
 cilium_hubble_ui_enabled: true
 
 # Ingress controller
-cilium_ingress_enabled: true
-cilium_ingress_default: true
+# DISABLED: Using Envoy Gateway for Gateway API instead
+# Cilium remains as CNI + Network Policies + L7 filtering
+cilium_ingress_enabled: false
+cilium_ingress_default: false
 cilium_ingress_loadbalancer_mode: shared
 
 # kube-proxy replacement

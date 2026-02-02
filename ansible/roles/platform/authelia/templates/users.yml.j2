@@ -1,0 +1,35 @@
+---
+# Authelia users database ConfigMap (development only)
+# In production, use LDAP or external user management
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authelia-users
+  namespace: {{ authelia_namespace }}
+  labels:
+    app.kubernetes.io/name: authelia
+    app.kubernetes.io/component: users-database
+data:
+  users_database.yml: |
+    ---
+    # Authelia Users Database
+    # https://www.authelia.com/reference/guides/passwords/
+    #
+    # Password hashes can be generated with:
+    #   docker run --rm authelia/authelia:latest authelia crypto hash generate argon2 --password 'yourpassword'
+    #
+    # Default password for all users below: "changeme123!"
+    # Hash: $argon2id$v=19$m=65536,t=3,p=4$BpLnfgDsc2WD8F2q$o/EFYv3FMPGrz+gBi4K+xuMnfZvxeKR9kxlLqEYsToQ
+
+    users:
+{% for user in authelia_default_users %}
+      {{ user.username }}:
+        displayname: "{{ user.displayname }}"
+        # Default password: changeme123! - CHANGE IN PRODUCTION
+        password: "$argon2id$v=19$m=65536,t=3,p=4$BpLnfgDsc2WD8F2q$o/EFYv3FMPGrz+gBi4K+xuMnfZvxeKR9kxlLqEYsToQ"
+        email: "{{ user.email }}"
+        groups:
+{% for group in user.groups %}
+          - {{ group }}
+{% endfor %}
+{% endfor %}

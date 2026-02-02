@@ -25,6 +25,6 @@ spec:
 {% else %}
       - http01:
           ingress:
-            class: cilium
+            class: {{ cert_manager_http01_ingress_class }}
 {% endif %}
 {% endif %}

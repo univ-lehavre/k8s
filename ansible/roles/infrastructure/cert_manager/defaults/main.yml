@@ -52,3 +52,7 @@ cert_manager_webhook_timeout_seconds: 30
 
 # DNS01 solver (if needed for wildcard certs)
 cert_manager_dns01_enabled: false
+
+# HTTP01 solver ingress class
+# Changed from cilium to envoy for Envoy Gateway
+cert_manager_http01_ingress_class: envoy

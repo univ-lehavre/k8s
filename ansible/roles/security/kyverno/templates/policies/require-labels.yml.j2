@@ -1,0 +1,38 @@
+---
+# Require standard Kubernetes labels on all pods
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+  annotations:
+    policies.kyverno.io/title: Require Labels
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Requires pods to have standard Kubernetes labels for identification
+      and management purposes.
+spec:
+  validationFailureAction: {{ kyverno_validation_failure_action }}
+  background: {{ kyverno_background_scan | lower }}
+  rules:
+    - name: check-required-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+{% for ns in kyverno_excluded_namespaces %}
+                - {{ ns }}
+{% endfor %}
+      validate:
+        message: "The label '{{ '{{' }}request.object.metadata.labels | keys(@) | to_string(@){{ '}}' }}' is missing required labels: {{ kyverno_required_labels | join(', ') }}"
+        pattern:
+          metadata:
+            labels:
+{% for label in kyverno_required_labels %}
+              {{ label }}: "?*"
+{% endfor %}
