@@ -1,0 +1,56 @@
+---
+# SeaweedFS defaults
+
+# Namespace
+seaweedfs_namespace: seaweedfs
+
+# Helm chart settings
+seaweedfs_chart_repo: https://seaweedfs.github.io/seaweedfs/helm
+seaweedfs_chart_repo_name: seaweedfs
+
+# Master settings
+seaweedfs_master_replicas: "{{ 3 if ha_enabled else 1 }}"
+
+# Volume settings
+seaweedfs_volume_replicas: "{{ 3 if ha_enabled else 1 }}"
+
+# Filer settings
+seaweedfs_filer_replicas: "{{ 2 if ha_enabled else 1 }}"
+
+# Storage
+seaweedfs_storage_class: "{{ storage_class }}"
+seaweedfs_master_storage_size: 5Gi
+seaweedfs_volume_storage_size: 50Gi
+
+# Resources
+seaweedfs_master_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+seaweedfs_volume_resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+seaweedfs_filer_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# S3 API settings
+seaweedfs_s3_enabled: true
+seaweedfs_s3_access_key: "{{ secrets.seaweedfs.s3_access_key | default(omit) }}"
+seaweedfs_s3_secret_key: "{{ secrets.seaweedfs.s3_secret_key | default(omit) }}"
+
+# Replication
+seaweedfs_replication: "{{ '001' if ha_enabled else '000' }}"

@@ -1,0 +1,64 @@
+---
+# ArgoCD tasks
+
+- name: Create ArgoCD namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ argocd_namespace }}"
+        labels:
+          app.kubernetes.io/name: argocd
+
+- name: Add ArgoCD Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ argocd_chart_repo_name }}"
+    repo_url: "{{ argocd_chart_repo }}"
+
+- name: Generate bcrypt hash for admin password
+  ansible.builtin.shell: |
+    htpasswd -nbBC 10 "" "{{ argocd_admin_password }}" | tr -d ':\n' | sed 's/$2y/$2a/'
+  register: argocd_admin_password_hash
+  when:
+    - argocd_admin_password is defined
+    - argocd_admin_password != ''
+  no_log: true
+  changed_when: false
+
+- name: Deploy ArgoCD via Helm
+  kubernetes.core.helm:
+    name: argocd
+    chart_ref: "{{ argocd_chart_repo_name }}/argo-cd"
+    chart_version: "{{ helm_versions.argocd }}"
+    release_namespace: "{{ argocd_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+
+- name: Wait for ArgoCD server to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: argocd-server
+    namespace: "{{ argocd_namespace }}"
+  register: argocd_server
+  until:
+    - argocd_server.resources | length > 0
+    - argocd_server.resources[0].status.readyReplicas is defined
+    - argocd_server.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create ArgoCD Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+  when: argocd_ingress_enabled
+
+- name: Configure RBAC
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'rbac-configmap.yml.j2') | from_yaml }}"

@@ -1,0 +1,21 @@
+---
+collections:
+  # Kubernetes core functionality
+  - name: kubernetes.core
+    version: ">=3.0.0"
+
+  # General utilities
+  - name: ansible.posix
+    version: ">=1.5.0"
+
+  # Community general modules
+  - name: community.general
+    version: ">=8.0.0"
+
+  # Crypto for certificate handling
+  - name: community.crypto
+    version: ">=2.0.0"
+
+  # Docker for K3D (local)
+  - name: community.docker
+    version: ">=3.0.0"

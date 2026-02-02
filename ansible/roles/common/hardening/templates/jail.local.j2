@@ -1,0 +1,24 @@
+# Fail2ban local configuration
+# Managed by Ansible - DO NOT EDIT MANUALLY
+
+[DEFAULT]
+# Ban duration
+bantime = {{ hardening_fail2ban_bantime }}
+
+# Time window for counting failures
+findtime = {{ hardening_fail2ban_findtime }}
+
+# Max failures before ban
+maxretry = {{ hardening_fail2ban_maxretry }}
+
+# Action: ban IP via UFW
+banaction = ufw
+
+# Ignore localhost
+ignoreip = 127.0.0.1/8 ::1
+
+[sshd]
+enabled = true
+port = ssh
+backend = systemd
+maxretry = {{ hardening_fail2ban_maxretry }}

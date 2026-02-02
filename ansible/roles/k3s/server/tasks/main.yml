@@ -1,0 +1,91 @@
+---
+- name: Check if K3s is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_binary
+
+- name: Create K3s config directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    mode: '0755'
+
+- name: Configure etcd encryption
+  ansible.builtin.include_tasks: etcd_encryption.yml
+  when: k3s_etcd_encryption
+
+- name: Create K3s configuration file
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    mode: '0600'
+  notify: Restart K3s
+
+- name: Download and install K3s
+  ansible.builtin.shell: |
+    curl -sfL {{ k3s_install_script_url }} | INSTALL_K3S_VERSION={{ k3s_version }} sh -s - server
+  args:
+    creates: /usr/local/bin/k3s
+  environment:
+    K3S_TOKEN: "{{ k3s_token }}"
+    INSTALL_K3S_SKIP_START: "false"
+  when: not k3s_binary.stat.exists
+
+- name: Wait for K3s to be ready
+  ansible.builtin.command: k3s kubectl get nodes
+  register: k3s_nodes
+  until: k3s_nodes.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+
+- name: Wait for node to be Ready
+  ansible.builtin.shell: |
+    k3s kubectl get node {{ ansible_hostname }} -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+  register: node_ready
+  until: node_ready.stdout == "True"
+  retries: 30
+  delay: 10
+  changed_when: false
+
+- name: Apply node labels
+  ansible.builtin.command: >
+    k3s kubectl label node {{ ansible_hostname }} {{ item }} --overwrite
+  loop: "{{ k3s_node_labels }}"
+  when: k3s_node_labels | length > 0
+  changed_when: false
+
+- name: Apply node taints
+  ansible.builtin.command: >
+    k3s kubectl taint node {{ ansible_hostname }} {{ item }} --overwrite
+  loop: "{{ k3s_node_taints }}"
+  when: k3s_node_taints | length > 0
+  changed_when: false
+
+- name: Ensure kubectl is accessible
+  ansible.builtin.file:
+    src: /usr/local/bin/k3s
+    dest: /usr/local/bin/kubectl
+    state: link
+
+- name: Create kubeconfig symlink for root
+  ansible.builtin.file:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: /root/.kube/config
+    state: link
+  ignore_errors: true
+
+- name: Fetch kubeconfig to controller
+  ansible.builtin.fetch:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "{{ playbook_dir }}/../kubeconfig-{{ env }}.yaml"
+    flat: true
+  when: k3s_server_init
+
+- name: Display K3s server info
+  ansible.builtin.debug:
+    msg: |
+      K3s Server installed successfully!
+      Version: {{ k3s_version }}
+      Node: {{ ansible_hostname }}
+      API: https://{{ ansible_host }}:6443

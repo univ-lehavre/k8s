@@ -1,0 +1,11 @@
+# K3s Agent Configuration
+# Managed by Ansible - DO NOT EDIT MANUALLY
+
+# Cluster token
+token: "{{ k3s_token }}"
+
+# Server URL to join
+server: "https://{{ hostvars[groups['k3s_masters'][0]]['ansible_host'] }}:6443"
+
+# Data directory
+data-dir: "{{ k3s_data_dir }}"

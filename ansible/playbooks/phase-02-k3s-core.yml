@@ -1,0 +1,63 @@
+---
+# Phase 2: K3s Core & Infrastructure
+
+- name: Phase 2 - K3D Deployment (Local)
+  hosts: localhost
+  gather_facts: true
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: k3s/k3d
+      when: k3s_type == 'k3d'
+
+- name: Phase 2 - K3s Server Deployment (Staging/Production)
+  hosts: k3s_masters
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: k3s/server
+      when: k3s_type == 'k3s'
+
+- name: Phase 2 - K3s Agent Deployment (Production workers)
+  hosts: k3s_workers
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: k3s/agent
+      when: k3s_type == 'k3s'
+
+- name: Phase 2 - Infrastructure Components
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    # CNI
+    - role: infrastructure/cilium
+
+    # Storage
+    - role: infrastructure/longhorn
+      when: storage_class == 'longhorn-encrypted'
+
+    - role: infrastructure/local_path
+      when: storage_class == 'local-path'
+
+    # TLS
+    - role: infrastructure/cert_manager
+
+  post_tasks:
+    - name: Phase 2 complete
+      ansible.builtin.debug:
+        msg: "K3s core and infrastructure deployed"

@@ -1,0 +1,77 @@
+---
+# Kube-Prometheus Stack defaults
+
+# Namespace
+prometheus_namespace: monitoring
+
+# Helm chart settings
+prometheus_chart_repo: https://prometheus-community.github.io/helm-charts
+prometheus_chart_repo_name: prometheus-community
+
+# Storage
+prometheus_storage_class: "{{ storage_class }}"
+prometheus_storage_size: 50Gi
+alertmanager_storage_size: 10Gi
+
+# Retention
+prometheus_retention: 15d
+prometheus_retention_size: 45GB
+
+# Resources
+prometheus_resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+
+alertmanager_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+grafana_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Secrets from CI/CD
+grafana_admin_password: "{{ secrets.grafana.admin_password | default(omit) }}"
+
+# Grafana settings
+grafana_admin_user: admin
+
+# Ingress settings
+grafana_ingress_enabled: true
+grafana_ingress_host: "grafana.{{ domain }}"
+grafana_ingress_class: cilium
+grafana_ingress_tls_secret: grafana-tls
+grafana_ingress_issuer: "{{ tls_issuer }}"
+
+prometheus_ingress_enabled: false
+prometheus_ingress_host: "prometheus.{{ domain }}"
+
+alertmanager_ingress_enabled: false
+alertmanager_ingress_host: "alertmanager.{{ domain }}"
+
+# OIDC settings (Authentik) for Grafana
+grafana_oidc_enabled: true
+grafana_oidc_name: Authentik
+grafana_oidc_auth_url: "https://auth.{{ domain }}/application/o/authorize/"
+grafana_oidc_token_url: "https://auth.{{ domain }}/application/o/token/"
+grafana_oidc_api_url: "https://auth.{{ domain }}/application/o/userinfo/"
+grafana_oidc_client_id: grafana
+
+# Alertmanager settings
+alertmanager_enabled: true
+alertmanager_replicas: 1
+
+# Additional scrape configs
+prometheus_additional_scrape_configs: []

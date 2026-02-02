@@ -1,0 +1,29 @@
+---
+- name: Get latest Cilium CLI version
+  ansible.builtin.uri:
+    url: https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt
+    return_content: true
+  register: cilium_cli_version
+
+- name: Download Cilium CLI
+  ansible.builtin.get_url:
+    url: "https://github.com/cilium/cilium-cli/releases/download/{{ cilium_cli_version.content | trim }}/cilium-linux-amd64.tar.gz"
+    dest: /tmp/cilium-linux-amd64.tar.gz
+    mode: '0644'
+
+- name: Extract Cilium CLI
+  ansible.builtin.unarchive:
+    src: /tmp/cilium-linux-amd64.tar.gz
+    dest: /usr/local/bin
+    remote_src: true
+    mode: '0755'
+
+- name: Clean up downloaded archive
+  ansible.builtin.file:
+    path: /tmp/cilium-linux-amd64.tar.gz
+    state: absent
+
+- name: Verify Cilium CLI installation
+  ansible.builtin.command: cilium version --client
+  register: cilium_cli_check
+  changed_when: false

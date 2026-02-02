@@ -1,0 +1,90 @@
+---
+# REDCap tasks
+
+- name: Create REDCap namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ redcap_namespace }}"
+        labels:
+          app.kubernetes.io/name: redcap
+
+- name: Create REDCap database in PostgreSQL
+  kubernetes.core.k8s_exec:
+    namespace: postgresql
+    pod: postgresql-0
+    command: |
+      psql -U postgres -c "CREATE DATABASE {{ redcap_postgresql_database }};" || true
+      psql -U postgres -c "CREATE USER {{ redcap_postgresql_user }} WITH PASSWORD '{{ postgresql_superuser_password }}';" || true
+      psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE {{ redcap_postgresql_database }} TO {{ redcap_postgresql_user }};"
+    env:
+      - name: PGPASSWORD
+        value: "{{ postgresql_superuser_password }}"
+  when:
+    - postgresql_superuser_password is defined
+    - postgresql_superuser_password != ''
+  no_log: true
+  ignore_errors: true
+
+- name: Create REDCap secrets
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: redcap-credentials
+        namespace: "{{ redcap_namespace }}"
+      type: Opaque
+      stringData:
+        salt: "{{ redcap_salt }}"
+        db-password: "{{ postgresql_superuser_password }}"
+  when:
+    - redcap_salt is defined
+    - redcap_salt != ''
+  no_log: true
+
+- name: Deploy REDCap
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'deployment.yml.j2') | from_yaml_all | list }}"
+
+- name: Create REDCap Service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: redcap
+        namespace: "{{ redcap_namespace }}"
+      spec:
+        selector:
+          app: redcap
+        ports:
+          - port: 80
+            targetPort: 80
+            protocol: TCP
+
+- name: Wait for REDCap to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: redcap
+    namespace: "{{ redcap_namespace }}"
+  register: redcap_deployment
+  until:
+    - redcap_deployment.resources | length > 0
+    - redcap_deployment.resources[0].status.readyReplicas is defined
+    - redcap_deployment.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create REDCap Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+  when: redcap_ingress_enabled

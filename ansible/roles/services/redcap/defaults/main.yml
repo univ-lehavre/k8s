@@ -1,0 +1,42 @@
+---
+# REDCap defaults
+
+# Namespace
+redcap_namespace: redcap
+
+# Image settings
+redcap_image: redcap/redcap
+redcap_image_tag: latest
+
+# Resources
+redcap_resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# Storage
+redcap_storage_class: "{{ storage_class }}"
+redcap_storage_size: 20Gi
+
+# Database settings
+redcap_postgresql_host: "postgresql.postgresql.svc.cluster.local"
+redcap_postgresql_port: 5432
+redcap_postgresql_database: "{{ database_config.redcap.database }}"
+redcap_postgresql_user: "{{ database_config.redcap.user }}"
+
+# Secrets from CI/CD
+redcap_salt: "{{ secrets.redcap.salt | default(omit) }}"
+
+# Ingress settings
+redcap_ingress_enabled: true
+redcap_ingress_host: "redcap.{{ domain }}"
+redcap_ingress_class: cilium
+redcap_ingress_tls_secret: redcap-tls
+redcap_ingress_issuer: "{{ tls_issuer }}"
+
+# Forward Auth (Authentik)
+redcap_forward_auth_enabled: true
+redcap_forward_auth_address: "http://authentik-server.authentik.svc.cluster.local/outpost.goauthentik.io/auth/nginx"

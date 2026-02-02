@@ -1,0 +1,56 @@
+---
+# HashiCorp Vault defaults
+
+# Namespace
+vault_namespace: vault
+
+# Helm chart settings
+vault_chart_repo: https://helm.releases.hashicorp.com
+vault_chart_repo_name: hashicorp
+
+# Server settings
+vault_replicas: "{{ 3 if ha_enabled else 1 }}"
+vault_ha_enabled: "{{ ha_enabled | default(false) }}"
+
+# Storage backend
+vault_storage_class: "{{ storage_class }}"
+vault_storage_size: 10Gi
+
+# Resources
+vault_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Injector settings
+vault_injector_enabled: true
+
+# UI settings
+vault_ui_enabled: true
+
+# Audit logging
+vault_audit_enabled: true
+
+# TLS settings
+vault_tls_disable: false
+
+# Auto-unseal (for production, configure external KMS)
+vault_auto_unseal_enabled: false
+
+# Secrets from CI/CD
+vault_root_token: "{{ secrets.vault.root_token | default(omit) }}"
+vault_unseal_keys: "{{ secrets.vault.unseal_keys | default([]) }}"
+
+# Ingress settings
+vault_ingress_enabled: true
+vault_ingress_host: "vault.{{ domain }}"
+vault_ingress_class: cilium
+vault_ingress_tls_secret: vault-tls
+vault_ingress_issuer: "{{ tls_issuer }}"
+
+# Init settings (first deployment)
+vault_init_key_shares: 5
+vault_init_key_threshold: 3

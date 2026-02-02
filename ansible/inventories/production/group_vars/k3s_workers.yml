@@ -1,0 +1,10 @@
+---
+# K3s worker-specific configuration
+k3s_role: agent
+
+# Node labels
+k3s_node_labels:
+  - "node-role.kubernetes.io/worker=true"
+
+# Node taints (none by default - workers accept all workloads)
+k3s_node_taints: []

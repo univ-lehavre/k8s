@@ -1,0 +1,87 @@
+---
+# Authentik tasks
+
+- name: Create Authentik namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ authentik_namespace }}"
+        labels:
+          app.kubernetes.io/name: authentik
+
+- name: Add Authentik Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ authentik_chart_repo_name }}"
+    repo_url: "{{ authentik_chart_repo }}"
+
+- name: Create Authentik database in PostgreSQL
+  kubernetes.core.k8s_exec:
+    namespace: postgresql
+    pod: postgresql-0
+    command: |
+      psql -U postgres -c "CREATE DATABASE {{ authentik_postgresql_database }};" || true
+      psql -U postgres -c "CREATE USER {{ authentik_postgresql_user }} WITH PASSWORD '{{ postgresql_superuser_password }}';" || true
+      psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE {{ authentik_postgresql_database }} TO {{ authentik_postgresql_user }};"
+    env:
+      - name: PGPASSWORD
+        value: "{{ postgresql_superuser_password }}"
+  when:
+    - postgresql_superuser_password is defined
+    - postgresql_superuser_password != ''
+  no_log: true
+  ignore_errors: true
+
+- name: Create Authentik secrets
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: authentik-credentials
+        namespace: "{{ authentik_namespace }}"
+      type: Opaque
+      stringData:
+        secret-key: "{{ authentik_secret_key }}"
+        bootstrap-password: "{{ authentik_admin_password }}"
+        bootstrap-token: "{{ authentik_admin_token }}"
+        postgresql-password: "{{ postgresql_superuser_password }}"
+        redis-password: "{{ redis_password }}"
+  when:
+    - authentik_secret_key is defined
+    - authentik_secret_key != ''
+  no_log: true
+
+- name: Deploy Authentik via Helm
+  kubernetes.core.helm:
+    name: authentik
+    chart_ref: "{{ authentik_chart_repo_name }}/authentik"
+    chart_version: "{{ helm_versions.authentik }}"
+    release_namespace: "{{ authentik_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+
+- name: Wait for Authentik server to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: authentik-server
+    namespace: "{{ authentik_namespace }}"
+  register: authentik_server
+  until:
+    - authentik_server.resources | length > 0
+    - authentik_server.resources[0].status.readyReplicas is defined
+    - authentik_server.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create Authentik Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+  when: authentik_ingress_enabled

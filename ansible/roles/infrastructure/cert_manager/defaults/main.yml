@@ -1,0 +1,54 @@
+---
+# Cert-Manager defaults
+
+# Namespace
+cert_manager_namespace: cert-manager
+
+# Helm chart settings
+cert_manager_chart_repo: https://charts.jetstack.io
+cert_manager_chart_repo_name: jetstack
+
+# Install CRDs
+cert_manager_install_crds: true
+
+# Resources
+cert_manager_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# Let's Encrypt settings
+letsencrypt_email: "{{ secrets.letsencrypt.email | default('admin@example.com') }}"
+
+# ClusterIssuers to create
+cert_manager_cluster_issuers:
+  # Self-signed issuer (for local development)
+  - name: selfsigned-issuer
+    type: selfsigned
+    enabled: true
+
+  # Let's Encrypt staging (for testing)
+  - name: letsencrypt-staging
+    type: acme
+    enabled: "{{ env != 'local' }}"
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: "{{ letsencrypt_email }}"
+
+  # Let's Encrypt production
+  - name: letsencrypt-prod
+    type: acme
+    enabled: "{{ env == 'production' }}"
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: "{{ letsencrypt_email }}"
+
+# Default issuer based on environment
+cert_manager_default_issuer: "{{ tls_issuer | default('selfsigned-issuer') }}"
+
+# Webhook settings
+cert_manager_webhook_timeout_seconds: 30
+
+# DNS01 solver (if needed for wildcard certs)
+cert_manager_dns01_enabled: false

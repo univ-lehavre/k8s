@@ -1,0 +1,76 @@
+---
+# ATLAS Platform - Master Playbook
+# Deploys the complete platform in the correct order
+
+- name: Display deployment information
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Show deployment info
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          ATLAS Platform Deployment
+          ============================================
+          Environment: {{ env }}
+          Domain: {{ domain }}
+          K3s Type: {{ k3s_type }}
+          HA Enabled: {{ ha_enabled | default(false) }}
+          ============================================
+
+# Phase 0: System Hardening (staging/production only)
+- name: Phase 0 - System Hardening
+  ansible.builtin.import_playbook: phase-00-hardening.yml
+  when: hardening_enabled | default(false)
+
+# Phase 1: System Preparation
+- name: Phase 1 - System Preparation
+  ansible.builtin.import_playbook: phase-01-preparation.yml
+
+# Phase 2: K3s Core & Infrastructure
+- name: Phase 2 - K3s Core
+  ansible.builtin.import_playbook: phase-02-k3s-core.yml
+
+# Phase 3: Vault & Secrets Management
+- name: Phase 3 - Vault
+  ansible.builtin.import_playbook: phase-03-vault.yml
+
+# Phase 4: Databases
+- name: Phase 4 - Databases
+  ansible.builtin.import_playbook: phase-04-databases.yml
+
+# Phase 5: Services
+- name: Phase 5 - Services
+  ansible.builtin.import_playbook: phase-05-services.yml
+
+# Phase 6: DevOps
+- name: Phase 6 - DevOps
+  ansible.builtin.import_playbook: phase-06-devops.yml
+
+# Phase 7: Monitoring
+- name: Phase 7 - Monitoring
+  ansible.builtin.import_playbook: phase-07-monitoring.yml
+
+# Phase 8: Security
+- name: Phase 8 - Security
+  ansible.builtin.import_playbook: phase-08-security.yml
+
+- name: Deployment Complete
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Show completion message
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          ATLAS Platform Deployment Complete!
+          ============================================
+          Access your services at:
+          - Auth: https://auth.{{ domain }}
+          - Chat: https://chat.{{ domain }}
+          - Cloud: https://cloud.{{ domain }}
+          - Git: https://git.{{ domain }}
+          - ArgoCD: https://argocd.{{ domain }}
+          - Grafana: https://grafana.{{ domain }}
+          - Vault: https://vault.{{ domain }}
+          ============================================

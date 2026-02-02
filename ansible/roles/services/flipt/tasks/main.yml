@@ -1,0 +1,100 @@
+---
+# Flipt tasks
+
+- name: Create Flipt namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ flipt_namespace }}"
+        labels:
+          app.kubernetes.io/name: flipt
+
+- name: Create Flipt database in PostgreSQL
+  kubernetes.core.k8s_exec:
+    namespace: postgresql
+    pod: postgresql-0
+    command: |
+      psql -U postgres -c "CREATE DATABASE {{ flipt_postgresql_database }};" || true
+      psql -U postgres -c "CREATE USER {{ flipt_postgresql_user }} WITH PASSWORD '{{ postgresql_superuser_password }}';" || true
+      psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE {{ flipt_postgresql_database }} TO {{ flipt_postgresql_user }};"
+    env:
+      - name: PGPASSWORD
+        value: "{{ postgresql_superuser_password }}"
+  when:
+    - flipt_database_enabled
+    - postgresql_superuser_password is defined
+    - postgresql_superuser_password != ''
+  no_log: true
+  ignore_errors: true
+
+- name: Create Flipt ConfigMap
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'configmap.yml.j2') | from_yaml }}"
+
+- name: Create Flipt secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: flipt-credentials
+        namespace: "{{ flipt_namespace }}"
+      type: Opaque
+      stringData:
+        database-url: "postgres://{{ flipt_postgresql_user }}:{{ postgresql_superuser_password }}@{{ flipt_postgresql_host }}:{{ flipt_postgresql_port }}/{{ flipt_postgresql_database }}?sslmode=disable"
+  when:
+    - flipt_database_enabled
+    - postgresql_superuser_password is defined
+  no_log: true
+
+- name: Deploy Flipt
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'deployment.yml.j2') | from_yaml }}"
+
+- name: Create Flipt Service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: flipt
+        namespace: "{{ flipt_namespace }}"
+        labels:
+          app: flipt
+      spec:
+        selector:
+          app: flipt
+        ports:
+          - name: http
+            port: 8080
+            targetPort: 8080
+          - name: grpc
+            port: 9000
+            targetPort: 9000
+
+- name: Wait for Flipt to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: flipt
+    namespace: "{{ flipt_namespace }}"
+  register: flipt_deployment
+  until:
+    - flipt_deployment.resources | length > 0
+    - flipt_deployment.resources[0].status.readyReplicas is defined
+    - flipt_deployment.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create Flipt Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+  when: flipt_ingress_enabled

@@ -1,0 +1,21 @@
+---
+# Phase 4: Databases
+
+- name: Phase 4 - Database Deployment
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: platform/postgresql
+    - role: platform/redis
+
+  post_tasks:
+    - name: Phase 4 complete
+      ansible.builtin.debug:
+        msg: |
+          Databases deployed:
+          - PostgreSQL: postgresql.postgresql.svc.cluster.local:5432
+          - Redis: redis-master.redis.svc.cluster.local:6379

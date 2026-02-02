@@ -1,0 +1,43 @@
+---
+# Flipt Feature Flags defaults
+
+# Namespace
+flipt_namespace: flipt
+
+# Image settings
+flipt_image: flipt/flipt
+flipt_image_tag: latest
+
+# Resources
+flipt_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# Storage (for file-based backend)
+flipt_storage_class: "{{ storage_class }}"
+flipt_storage_size: 1Gi
+
+# Database settings (PostgreSQL backend)
+flipt_database_enabled: true
+flipt_postgresql_host: "postgresql.postgresql.svc.cluster.local"
+flipt_postgresql_port: 5432
+flipt_postgresql_database: "{{ database_config.flipt.database }}"
+flipt_postgresql_user: "{{ database_config.flipt.user }}"
+
+# Ingress settings
+flipt_ingress_enabled: true
+flipt_ingress_host: "flags.{{ domain }}"
+flipt_ingress_class: cilium
+flipt_ingress_tls_secret: flipt-tls
+flipt_ingress_issuer: "{{ tls_issuer }}"
+
+# Authentication
+flipt_auth_enabled: true
+flipt_auth_required: true
+
+# Metrics
+flipt_metrics_enabled: "{{ monitoring_enabled | default(true) }}"

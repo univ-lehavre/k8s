@@ -1,0 +1,46 @@
+---
+# PostgreSQL HA defaults
+
+# Namespace
+postgresql_namespace: postgresql
+
+# Helm chart settings
+postgresql_chart_repo: https://charts.bitnami.com/bitnami
+postgresql_chart_repo_name: bitnami
+
+# Cluster settings
+postgresql_replicas: "{{ 3 if ha_enabled else 1 }}"
+postgresql_ha_enabled: "{{ ha_enabled | default(false) }}"
+
+# Storage
+postgresql_storage_class: "{{ storage_class }}"
+postgresql_storage_size: 20Gi
+
+# Resources
+postgresql_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# PostgreSQL settings
+postgresql_version: "16"
+postgresql_database: postgres
+postgresql_username: postgres
+
+# Secrets from CI/CD
+postgresql_superuser_password: "{{ secrets.postgresql.superuser_password | default(omit) }}"
+postgresql_replication_password: "{{ secrets.postgresql.replication_password | default(omit) }}"
+
+# Pgpool settings (for HA)
+postgresql_pgpool_enabled: "{{ postgresql_ha_enabled }}"
+postgresql_pgpool_replicas: 2
+
+# Metrics
+postgresql_metrics_enabled: "{{ monitoring_enabled | default(true) }}"
+
+# Backup settings
+postgresql_backup_enabled: false
+postgresql_backup_schedule: "0 2 * * *"

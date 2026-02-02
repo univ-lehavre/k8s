@@ -1,0 +1,35 @@
+---
+# K3D role defaults
+
+# Cluster configuration
+k3d_cluster_name: atlas-local
+k3d_api_port: 6550
+k3d_http_port: 80
+k3d_https_port: 443
+
+# Node configuration
+k3d_servers: 1
+k3d_agents: 0
+
+# K3s arguments (passed to K3s inside K3D)
+k3d_k3s_server_args:
+  - "--disable=traefik"
+  - "--disable=servicelb"
+  - "--disable=local-storage"
+  - "--flannel-backend=none"
+  - "--disable-network-policy"
+
+# K3D image (K3s version)
+k3d_image: "rancher/k3s:v1.29.2-k3s1"
+
+# Registry configuration (optional local registry)
+k3d_registry_enabled: false
+k3d_registry_name: "registry.localhost"
+k3d_registry_port: 5000
+
+# Kubeconfig
+k3d_kubeconfig_path: "~/.kube/config"
+k3d_kubeconfig_merge: true
+
+# Wait for cluster ready
+k3d_wait_timeout: 120

@@ -1,0 +1,46 @@
+# K3s Server Configuration
+# Managed by Ansible - DO NOT EDIT MANUALLY
+
+# Cluster token
+token: "{{ k3s_token }}"
+
+# Write kubeconfig with specific permissions
+write-kubeconfig-mode: "{{ k3s_kubeconfig_mode }}"
+
+# Disable default components
+{% for component in k3s_disable %}
+disable:
+  - {{ component }}
+{% endfor %}
+
+# Flannel backend (none = external CNI like Cilium)
+flannel-backend: {{ k3s_flannel_backend }}
+
+{% if k3s_disable_network_policy %}
+# Disable built-in network policy controller
+disable-network-policy: true
+{% endif %}
+
+{% if k3s_etcd_encryption %}
+# etcd encryption configuration
+kube-apiserver-arg:
+  - "encryption-provider-config=/etc/rancher/k3s/encryption-config.yaml"
+{% for arg in k3s_kube_apiserver_args %}
+  - "{{ arg }}"
+{% endfor %}
+{% else %}
+{% if k3s_kube_apiserver_args | length > 0 %}
+kube-apiserver-arg:
+{% for arg in k3s_kube_apiserver_args %}
+  - "{{ arg }}"
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if k3s_server_url %}
+# Join existing cluster
+server: "{{ k3s_server_url }}"
+{% endif %}
+
+# Data directory
+data-dir: "{{ k3s_data_dir }}"

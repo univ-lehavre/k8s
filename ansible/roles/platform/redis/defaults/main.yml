@@ -1,0 +1,44 @@
+---
+# Redis defaults
+
+# Namespace
+redis_namespace: redis
+
+# Helm chart settings
+redis_chart_repo: https://charts.bitnami.com/bitnami
+redis_chart_repo_name: bitnami
+
+# Cluster settings
+redis_replicas: "{{ 3 if ha_enabled else 1 }}"
+redis_sentinel_enabled: "{{ redis_sentinel_enabled | default(ha_enabled | default(false)) }}"
+
+# Storage
+redis_storage_class: "{{ storage_class }}"
+redis_storage_size: 8Gi
+
+# Resources
+redis_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# Sentinel resources
+redis_sentinel_resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+# Secrets from CI/CD
+redis_password: "{{ secrets.redis.password | default(omit) }}"
+
+# Metrics
+redis_metrics_enabled: "{{ monitoring_enabled | default(true) }}"
+
+# Architecture
+redis_architecture: "{{ 'replication' if redis_sentinel_enabled else 'standalone' }}"

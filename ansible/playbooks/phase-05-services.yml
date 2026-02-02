@@ -1,0 +1,48 @@
+---
+# Phase 5: Application Services
+
+- name: Phase 5 - Authentik (IAM/SSO)
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: platform/authentik
+
+- name: Phase 5 - Application Services
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    # Object Storage (needed by Nextcloud)
+    - role: services/seaweedfs
+
+    # Collaboration
+    - role: services/mattermost
+    - role: services/nextcloud
+    - role: services/onlyoffice
+
+    # Research
+    - role: services/redcap
+    - role: services/ecrin
+
+    # Feature Flags
+    - role: services/flipt
+
+  post_tasks:
+    - name: Phase 5 complete
+      ansible.builtin.debug:
+        msg: |
+          Application services deployed:
+          - Authentik: https://auth.{{ domain }}
+          - Mattermost: https://chat.{{ domain }}
+          - Nextcloud: https://cloud.{{ domain }}
+          - OnlyOffice: https://office.{{ domain }}
+          - REDCap: https://redcap.{{ domain }}
+          - ECRIN: https://ecrin.{{ domain }}
+          - Flipt: https://flags.{{ domain }}

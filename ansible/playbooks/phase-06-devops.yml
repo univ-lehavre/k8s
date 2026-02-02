@@ -1,0 +1,23 @@
+---
+# Phase 6: DevOps Tools
+
+- name: Phase 6 - DevOps Tools
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: devops/gitea
+    - role: devops/argocd
+
+  post_tasks:
+    - name: Phase 6 complete
+      ansible.builtin.debug:
+        msg: |
+          DevOps tools deployed:
+          - Gitea: https://git.{{ domain }}
+          - ArgoCD: https://argocd.{{ domain }}
+
+          SSH access for Gitea: git@{{ domain }}:{{ gitea_ssh_nodeport | default(30022) }}

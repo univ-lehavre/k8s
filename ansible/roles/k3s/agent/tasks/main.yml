@@ -1,0 +1,74 @@
+---
+- name: Check if K3s agent is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_binary
+
+- name: Create K3s config directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    mode: '0755'
+
+- name: Create K3s agent configuration file
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    mode: '0600'
+  notify: Restart K3s agent
+
+- name: Get master server IP
+  ansible.builtin.set_fact:
+    k3s_master_ip: "{{ hostvars[groups['k3s_masters'][0]]['ansible_host'] }}"
+
+- name: Download and install K3s agent
+  ansible.builtin.shell: |
+    curl -sfL {{ k3s_install_script_url }} | INSTALL_K3S_VERSION={{ k3s_version }} sh -s - agent
+  args:
+    creates: /usr/local/bin/k3s
+  environment:
+    K3S_TOKEN: "{{ k3s_token }}"
+    K3S_URL: "https://{{ k3s_master_ip }}:6443"
+    INSTALL_K3S_SKIP_START: "false"
+  when: not k3s_binary.stat.exists
+
+- name: Wait for K3s agent to be ready
+  ansible.builtin.systemd:
+    name: k3s-agent
+    state: started
+    enabled: true
+  register: k3s_agent_service
+
+- name: Wait for node to appear in cluster
+  ansible.builtin.command: >
+    kubectl get node {{ ansible_hostname }} -o jsonpath='{.metadata.name}'
+  delegate_to: "{{ groups['k3s_masters'][0] }}"
+  register: node_exists
+  until: node_exists.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+
+- name: Apply node labels
+  ansible.builtin.command: >
+    kubectl label node {{ ansible_hostname }} {{ item }} --overwrite
+  delegate_to: "{{ groups['k3s_masters'][0] }}"
+  loop: "{{ k3s_node_labels }}"
+  when: k3s_node_labels | length > 0
+  changed_when: false
+
+- name: Apply node taints
+  ansible.builtin.command: >
+    kubectl taint node {{ ansible_hostname }} {{ item }} --overwrite
+  delegate_to: "{{ groups['k3s_masters'][0] }}"
+  loop: "{{ k3s_node_taints }}"
+  when: k3s_node_taints | length > 0
+  changed_when: false
+
+- name: Display K3s agent info
+  ansible.builtin.debug:
+    msg: |
+      K3s Agent installed successfully!
+      Version: {{ k3s_version }}
+      Node: {{ ansible_hostname }}
+      Joined cluster at: {{ k3s_master_ip }}:6443

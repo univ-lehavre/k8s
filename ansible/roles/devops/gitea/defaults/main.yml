@@ -1,0 +1,60 @@
+---
+# Gitea defaults
+
+# Namespace
+gitea_namespace: gitea
+
+# Helm chart settings
+gitea_chart_repo: https://dl.gitea.com/charts/
+gitea_chart_repo_name: gitea-charts
+
+# Resources
+gitea_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Storage
+gitea_storage_class: "{{ storage_class }}"
+gitea_storage_size: 20Gi
+
+# Database settings
+gitea_postgresql_host: "postgresql.postgresql.svc.cluster.local"
+gitea_postgresql_port: 5432
+gitea_postgresql_database: "{{ database_config.gitea.database }}"
+gitea_postgresql_user: "{{ database_config.gitea.user }}"
+
+# Redis settings
+gitea_redis_host: "redis-master.redis.svc.cluster.local"
+gitea_redis_port: 6379
+
+# Secrets from CI/CD
+gitea_admin_password: "{{ secrets.gitea.admin_password | default(omit) }}"
+
+# Admin user
+gitea_admin_user: gitea_admin
+gitea_admin_email: "gitea@{{ domain }}"
+
+# Ingress settings
+gitea_ingress_enabled: true
+gitea_ingress_host: "git.{{ domain }}"
+gitea_ingress_class: cilium
+gitea_ingress_tls_secret: gitea-tls
+gitea_ingress_issuer: "{{ tls_issuer }}"
+
+# SSH settings
+gitea_ssh_enabled: true
+gitea_ssh_port: 22
+gitea_ssh_nodeport: 30022
+
+# OIDC settings (Authentik)
+gitea_oidc_enabled: true
+gitea_oidc_name: authentik
+gitea_oidc_auto_discover_url: "https://auth.{{ domain }}/application/o/gitea/.well-known/openid-configuration"
+gitea_oidc_client_id: gitea
+
+# LFS
+gitea_lfs_enabled: true

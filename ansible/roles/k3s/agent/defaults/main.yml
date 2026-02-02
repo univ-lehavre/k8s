@@ -1,0 +1,24 @@
+---
+# K3s Agent role defaults
+
+# K3s version (should match server)
+k3s_version: "v1.29.2+k3s1"
+
+# K3s token (required to join cluster)
+k3s_token: "{{ lookup('env', 'K3S_TOKEN') }}"
+
+# Server URL to join
+k3s_server_url: "https://{{ groups['k3s_masters'][0] }}:6443"
+
+# Node labels
+k3s_node_labels:
+  - "node-role.kubernetes.io/worker=true"
+
+# Node taints
+k3s_node_taints: []
+
+# Data directory
+k3s_data_dir: "/var/lib/rancher/k3s"
+
+# Installation method
+k3s_install_script_url: "https://get.k3s.io"

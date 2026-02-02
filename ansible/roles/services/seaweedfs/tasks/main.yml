@@ -1,0 +1,79 @@
+---
+# SeaweedFS tasks
+
+- name: Create SeaweedFS namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ seaweedfs_namespace }}"
+        labels:
+          app.kubernetes.io/name: seaweedfs
+
+- name: Add SeaweedFS Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ seaweedfs_chart_repo_name }}"
+    repo_url: "{{ seaweedfs_chart_repo }}"
+
+- name: Create S3 credentials secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: seaweedfs-s3-credentials
+        namespace: "{{ seaweedfs_namespace }}"
+      type: Opaque
+      stringData:
+        admin_access_key_id: "{{ seaweedfs_s3_access_key }}"
+        admin_secret_access_key: "{{ seaweedfs_s3_secret_key }}"
+  when:
+    - seaweedfs_s3_access_key is defined
+    - seaweedfs_s3_access_key != ''
+  no_log: true
+
+- name: Deploy SeaweedFS via Helm
+  kubernetes.core.helm:
+    name: seaweedfs
+    chart_ref: "{{ seaweedfs_chart_repo_name }}/seaweedfs"
+    chart_version: "{{ helm_versions.seaweedfs }}"
+    release_namespace: "{{ seaweedfs_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+
+- name: Wait for SeaweedFS master to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: StatefulSet
+    name: seaweedfs-master
+    namespace: "{{ seaweedfs_namespace }}"
+  register: seaweedfs_master
+  until:
+    - seaweedfs_master.resources | length > 0
+    - seaweedfs_master.resources[0].status.readyReplicas is defined
+    - seaweedfs_master.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Store SeaweedFS S3 credentials in Vault
+  kubernetes.core.k8s_exec:
+    namespace: vault
+    pod: vault-0
+    command: |
+      vault kv put secret/seaweedfs
+        s3_endpoint=seaweedfs-s3.{{ seaweedfs_namespace }}.svc.cluster.local:8333
+        access_key={{ seaweedfs_s3_access_key }}
+        secret_key={{ seaweedfs_s3_secret_key }}
+    env:
+      - name: VAULT_TOKEN
+        value: "{{ secrets.vault.root_token }}"
+  when:
+    - secrets.vault.root_token is defined
+    - secrets.vault.root_token != ''
+  no_log: true
+  ignore_errors: true

@@ -1,0 +1,78 @@
+---
+# Redis tasks
+
+- name: Create Redis namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ redis_namespace }}"
+        labels:
+          app.kubernetes.io/name: redis
+
+- name: Add Bitnami Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ redis_chart_repo_name }}"
+    repo_url: "{{ redis_chart_repo }}"
+
+- name: Create Redis secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: redis-credentials
+        namespace: "{{ redis_namespace }}"
+      type: Opaque
+      stringData:
+        redis-password: "{{ redis_password }}"
+  when:
+    - redis_password is defined
+    - redis_password != ''
+  no_log: true
+
+- name: Deploy Redis via Helm
+  kubernetes.core.helm:
+    name: redis
+    chart_ref: "{{ redis_chart_repo_name }}/redis"
+    chart_version: "{{ helm_versions.redis }}"
+    release_namespace: "{{ redis_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+
+- name: Wait for Redis to be ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ redis_namespace }}"
+    label_selectors:
+      - app.kubernetes.io/name=redis
+  register: redis_pods
+  until:
+    - redis_pods.resources | length > 0
+    - redis_pods.resources | selectattr('status.phase', 'equalto', 'Running') | list | length >= 1
+  retries: 30
+  delay: 10
+
+- name: Store Redis connection info in Vault
+  kubernetes.core.k8s_exec:
+    namespace: vault
+    pod: vault-0
+    command: |
+      vault kv put secret/redis
+        host=redis-master.{{ redis_namespace }}.svc.cluster.local
+        port=6379
+        password={{ redis_password }}
+    env:
+      - name: VAULT_TOKEN
+        value: "{{ secrets.vault.root_token }}"
+  when:
+    - secrets.vault.root_token is defined
+    - secrets.vault.root_token != ''
+  no_log: true
+  ignore_errors: true

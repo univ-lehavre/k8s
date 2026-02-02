@@ -1,0 +1,66 @@
+---
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: Set UFW default incoming policy
+  community.general.ufw:
+    default: "{{ hardening_ufw_default_incoming }}"
+    direction: incoming
+
+- name: Set UFW default outgoing policy
+  community.general.ufw:
+    default: "{{ hardening_ufw_default_outgoing }}"
+    direction: outgoing
+
+- name: Configure UFW rules
+  community.general.ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    from_ip: "{{ item.from | default('any') }}"
+    comment: "{{ item.comment | default('') }}"
+  loop: "{{ hardening_ufw_rules }}"
+
+- name: Allow K3s API from admin IPs
+  community.general.ufw:
+    rule: allow
+    port: 6443
+    proto: tcp
+    from_ip: "{{ item }}"
+    comment: "K3s API - Admin access"
+  loop: "{{ admin_allowed_ips | default([]) }}"
+  when: admin_allowed_ips is defined and admin_allowed_ips | length > 0
+
+- name: Allow K3s internal communication (Flannel VXLAN)
+  community.general.ufw:
+    rule: allow
+    port: 8472
+    proto: udp
+    comment: "K3s Flannel VXLAN"
+  when: "'k3s_cluster' in group_names"
+
+- name: Allow K3s metrics server
+  community.general.ufw:
+    rule: allow
+    port: 10250
+    proto: tcp
+    comment: "K3s kubelet metrics"
+  when: "'k3s_cluster' in group_names"
+
+- name: Allow Cilium ports
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment }}"
+  loop:
+    - { port: 4240, proto: tcp, comment: "Cilium health check" }
+    - { port: 4244, proto: tcp, comment: "Cilium Hubble" }
+    - { port: 51871, proto: udp, comment: "Cilium WireGuard" }
+  when: "'k3s_cluster' in group_names"
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled

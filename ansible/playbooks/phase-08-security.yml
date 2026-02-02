@@ -1,0 +1,23 @@
+---
+# Phase 8: Security (Network Policies)
+
+- name: Phase 8 - Network Policies
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: security/network_policies
+
+  post_tasks:
+    - name: Phase 8 complete
+      ansible.builtin.debug:
+        msg: |
+          Security configuration complete.
+          {% if network_policies_enabled | default(true) %}
+          Network policies applied to all service namespaces.
+          {% else %}
+          Network policies disabled for local environment.
+          {% endif %}

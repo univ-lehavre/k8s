@@ -1,0 +1,36 @@
+---
+# External Secrets Operator defaults
+
+# Namespace
+external_secrets_namespace: external-secrets
+
+# Helm chart settings
+external_secrets_chart_repo: https://charts.external-secrets.io
+external_secrets_chart_repo_name: external-secrets
+
+# Install CRDs
+external_secrets_install_crds: true
+
+# Resources
+external_secrets_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# Webhook settings
+external_secrets_webhook_enabled: true
+
+# Cert controller settings
+external_secrets_cert_controller_enabled: true
+
+# ClusterSecretStore configuration
+external_secrets_cluster_store_enabled: true
+external_secrets_cluster_store_name: vault-backend
+
+# Vault backend settings
+external_secrets_vault_server: "http://vault.vault.svc.cluster.local:8200"
+external_secrets_vault_path: secret
+external_secrets_vault_version: v2

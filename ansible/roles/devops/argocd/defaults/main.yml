@@ -1,0 +1,68 @@
+---
+# ArgoCD defaults
+
+# Namespace
+argocd_namespace: argocd
+
+# Helm chart settings
+argocd_chart_repo: https://argoproj.github.io/argo-helm
+argocd_chart_repo_name: argo
+
+# HA settings
+argocd_ha_enabled: "{{ ha_enabled | default(false) }}"
+
+# Resources
+argocd_server_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+argocd_repo_server_resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+argocd_controller_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Secrets from CI/CD
+argocd_admin_password: "{{ secrets.argocd.admin_password | default(omit) }}"
+
+# Ingress settings
+argocd_ingress_enabled: true
+argocd_ingress_host: "argocd.{{ domain }}"
+argocd_ingress_class: cilium
+argocd_ingress_tls_secret: argocd-tls
+argocd_ingress_issuer: "{{ tls_issuer }}"
+
+# OIDC settings (Authentik)
+argocd_oidc_enabled: true
+argocd_oidc_name: Authentik
+argocd_oidc_issuer: "https://auth.{{ domain }}/application/o/argocd/"
+argocd_oidc_client_id: argocd
+argocd_oidc_requested_scopes:
+  - openid
+  - profile
+  - email
+  - groups
+
+# RBAC settings
+argocd_rbac_default_policy: role:readonly
+argocd_rbac_scopes: "[groups]"
+
+# Repository credentials (from Vault/ESO)
+argocd_repositories: []
+
+# Projects
+argocd_default_project_enabled: true

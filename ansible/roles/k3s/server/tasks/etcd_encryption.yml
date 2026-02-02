@@ -1,0 +1,21 @@
+---
+- name: Generate etcd encryption key if not provided
+  ansible.builtin.set_fact:
+    k3s_etcd_encryption_key: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') | b64encode }}"
+  when: k3s_etcd_encryption_key is not defined or k3s_etcd_encryption_key == ''
+  no_log: true
+
+- name: Create etcd encryption configuration
+  ansible.builtin.template:
+    src: encryption-config.yaml.j2
+    dest: /etc/rancher/k3s/encryption-config.yaml
+    mode: '0600'
+  no_log: true
+
+- name: Display encryption key warning
+  ansible.builtin.debug:
+    msg: |
+      WARNING: etcd encryption key has been generated/configured.
+      SAVE THIS KEY SECURELY - it is required for disaster recovery!
+      You can find it in /etc/rancher/k3s/encryption-config.yaml
+      Store it offline in a secure location.

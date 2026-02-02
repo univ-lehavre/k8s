@@ -1,0 +1,89 @@
+---
+- name: Check if K3D is installed
+  ansible.builtin.command: k3d version
+  register: k3d_check
+  changed_when: false
+  failed_when: false
+
+- name: Install K3D
+  ansible.builtin.shell: |
+    curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+  args:
+    creates: /usr/local/bin/k3d
+  when: k3d_check.rc != 0
+
+- name: Check if cluster exists
+  ansible.builtin.command: k3d cluster list -o json
+  register: k3d_clusters
+  changed_when: false
+
+- name: Set cluster exists fact
+  ansible.builtin.set_fact:
+    k3d_cluster_exists: "{{ k3d_cluster_name in (k3d_clusters.stdout | from_json | map(attribute='name') | list) }}"
+
+- name: Create K3D cluster
+  ansible.builtin.command: >
+    k3d cluster create {{ k3d_cluster_name }}
+    --image {{ k3d_image }}
+    --api-port {{ k3d_api_port }}
+    --servers {{ k3d_servers }}
+    --agents {{ k3d_agents }}
+    -p "{{ k3d_http_port }}:80@loadbalancer"
+    -p "{{ k3d_https_port }}:443@loadbalancer"
+    {% for arg in k3d_k3s_server_args %}
+    --k3s-arg "{{ arg }}@server:*"
+    {% endfor %}
+    --wait
+    --timeout {{ k3d_wait_timeout }}s
+  when: not k3d_cluster_exists
+  register: k3d_create
+
+- name: Wait for cluster to be ready
+  ansible.builtin.command: kubectl cluster-info
+  environment:
+    KUBECONFIG: ""
+  register: cluster_info
+  until: cluster_info.rc == 0
+  retries: 30
+  delay: 5
+  changed_when: false
+  when: k3d_create.changed | default(false)
+
+- name: Get kubeconfig
+  ansible.builtin.command: k3d kubeconfig get {{ k3d_cluster_name }}
+  register: k3d_kubeconfig
+  changed_when: false
+
+- name: Ensure .kube directory exists
+  ansible.builtin.file:
+    path: "{{ k3d_kubeconfig_path | dirname }}"
+    state: directory
+    mode: '0700'
+
+- name: Merge kubeconfig
+  ansible.builtin.command: k3d kubeconfig merge {{ k3d_cluster_name }} --kubeconfig-merge-default
+  when: k3d_kubeconfig_merge
+  changed_when: false
+
+- name: Set kubeconfig fact for subsequent tasks
+  ansible.builtin.set_fact:
+    kubeconfig_content: "{{ k3d_kubeconfig.stdout }}"
+    kubeconfig_path: "{{ k3d_kubeconfig_path }}"
+
+- name: Verify cluster is accessible
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+  register: k3d_nodes
+  until: k3d_nodes.resources | length > 0
+  retries: 30
+  delay: 5
+
+- name: Display cluster info
+  ansible.builtin.debug:
+    msg: |
+      K3D Cluster '{{ k3d_cluster_name }}' is ready!
+      Nodes: {{ k3d_nodes.resources | map(attribute='metadata.name') | list | join(', ') }}
+      API: https://localhost:{{ k3d_api_port }}
+      HTTP: http://localhost:{{ k3d_http_port }}
+      HTTPS: https://localhost:{{ k3d_https_port }}

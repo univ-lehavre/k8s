@@ -1,0 +1,66 @@
+---
+# Mattermost tasks
+
+- name: Create Mattermost namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ mattermost_namespace }}"
+        labels:
+          app.kubernetes.io/name: mattermost
+
+- name: Add Mattermost Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ mattermost_chart_repo_name }}"
+    repo_url: "{{ mattermost_chart_repo }}"
+
+- name: Create Mattermost database in PostgreSQL
+  kubernetes.core.k8s_exec:
+    namespace: postgresql
+    pod: postgresql-0
+    command: |
+      psql -U postgres -c "CREATE DATABASE {{ mattermost_postgresql_database }};" || true
+      psql -U postgres -c "CREATE USER {{ mattermost_postgresql_user }} WITH PASSWORD '{{ postgresql_superuser_password }}';" || true
+      psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE {{ mattermost_postgresql_database }} TO {{ mattermost_postgresql_user }};"
+    env:
+      - name: PGPASSWORD
+        value: "{{ postgresql_superuser_password }}"
+  when:
+    - postgresql_superuser_password is defined
+    - postgresql_superuser_password != ''
+  no_log: true
+  ignore_errors: true
+
+- name: Deploy Mattermost via Helm
+  kubernetes.core.helm:
+    name: mattermost
+    chart_ref: "{{ mattermost_chart_repo_name }}/mattermost-team-edition"
+    chart_version: "{{ helm_versions.mattermost }}"
+    release_namespace: "{{ mattermost_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+
+- name: Wait for Mattermost to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: mattermost-team-edition
+    namespace: "{{ mattermost_namespace }}"
+  register: mattermost_deployment
+  until:
+    - mattermost_deployment.resources | length > 0
+    - mattermost_deployment.resources[0].status.readyReplicas is defined
+    - mattermost_deployment.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create Mattermost Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+  when: mattermost_ingress_enabled

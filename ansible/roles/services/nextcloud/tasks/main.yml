@@ -1,0 +1,77 @@
+---
+# Nextcloud tasks
+
+- name: Create Nextcloud namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ nextcloud_namespace }}"
+        labels:
+          app.kubernetes.io/name: nextcloud
+
+- name: Add Nextcloud Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ nextcloud_chart_repo_name }}"
+    repo_url: "{{ nextcloud_chart_repo }}"
+
+- name: Create Nextcloud database in PostgreSQL
+  kubernetes.core.k8s_exec:
+    namespace: postgresql
+    pod: postgresql-0
+    command: |
+      psql -U postgres -c "CREATE DATABASE {{ nextcloud_postgresql_database }};" || true
+      psql -U postgres -c "CREATE USER {{ nextcloud_postgresql_user }} WITH PASSWORD '{{ postgresql_superuser_password }}';" || true
+      psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE {{ nextcloud_postgresql_database }} TO {{ nextcloud_postgresql_user }};"
+    env:
+      - name: PGPASSWORD
+        value: "{{ postgresql_superuser_password }}"
+  when:
+    - postgresql_superuser_password is defined
+    - postgresql_superuser_password != ''
+  no_log: true
+  ignore_errors: true
+
+- name: Create S3 bucket for Nextcloud in SeaweedFS
+  kubernetes.core.k8s_exec:
+    namespace: seaweedfs
+    pod: seaweedfs-filer-0
+    command: |
+      /usr/bin/weed shell -master seaweedfs-master:9333 \
+        -filer seaweedfs-filer:8888 \
+        "s3.bucket.create -name {{ nextcloud_s3_bucket }}"
+  ignore_errors: true
+  when: nextcloud_s3_enabled
+
+- name: Deploy Nextcloud via Helm
+  kubernetes.core.helm:
+    name: nextcloud
+    chart_ref: "{{ nextcloud_chart_repo_name }}/nextcloud"
+    chart_version: "{{ helm_versions.nextcloud }}"
+    release_namespace: "{{ nextcloud_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 900s
+
+- name: Wait for Nextcloud to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: nextcloud
+    namespace: "{{ nextcloud_namespace }}"
+  register: nextcloud_deployment
+  until:
+    - nextcloud_deployment.resources | length > 0
+    - nextcloud_deployment.resources[0].status.readyReplicas is defined
+    - nextcloud_deployment.resources[0].status.readyReplicas >= 1
+  retries: 60
+  delay: 15
+
+- name: Create Nextcloud Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+  when: nextcloud_ingress_enabled

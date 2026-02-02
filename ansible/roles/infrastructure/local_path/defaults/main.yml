@@ -1,0 +1,21 @@
+---
+# Local Path Provisioner defaults
+
+# Namespace
+local_path_namespace: local-path-storage
+
+# Helm chart settings
+local_path_chart_repo: https://charts.containeroo.ch
+local_path_chart_repo_name: containeroo
+
+# Storage path on nodes
+local_path_storage_path: /var/lib/rancher/k3s/storage
+
+# Default storage class settings
+local_path_default_storage_class: true
+local_path_reclaim_policy: Delete
+local_path_volume_binding_mode: WaitForFirstConsumer
+
+# For K3D, local-path is already installed by default
+# This role ensures it's properly configured
+local_path_already_installed: "{{ k3s_type == 'k3d' }}"

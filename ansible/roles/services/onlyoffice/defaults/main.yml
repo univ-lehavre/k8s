@@ -1,0 +1,39 @@
+---
+# OnlyOffice defaults
+
+# Namespace
+onlyoffice_namespace: onlyoffice
+
+# Image settings
+onlyoffice_image: onlyoffice/documentserver
+onlyoffice_image_tag: latest
+
+# Resources
+onlyoffice_resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+
+# Storage
+onlyoffice_storage_class: "{{ storage_class }}"
+onlyoffice_storage_size: 10Gi
+
+# Secrets from CI/CD
+onlyoffice_jwt_secret: "{{ secrets.onlyoffice.jwt_secret | default(omit) }}"
+
+# JWT settings
+onlyoffice_jwt_enabled: true
+onlyoffice_jwt_header: Authorization
+
+# Ingress settings
+onlyoffice_ingress_enabled: true
+onlyoffice_ingress_host: "office.{{ domain }}"
+onlyoffice_ingress_class: cilium
+onlyoffice_ingress_tls_secret: onlyoffice-tls
+onlyoffice_ingress_issuer: "{{ tls_issuer }}"
+
+# WOPI settings for Nextcloud integration
+onlyoffice_wopi_enabled: true

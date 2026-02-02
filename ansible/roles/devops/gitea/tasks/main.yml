@@ -1,0 +1,86 @@
+---
+# Gitea tasks
+
+- name: Create Gitea namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ gitea_namespace }}"
+        labels:
+          app.kubernetes.io/name: gitea
+
+- name: Add Gitea Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ gitea_chart_repo_name }}"
+    repo_url: "{{ gitea_chart_repo }}"
+
+- name: Create Gitea database in PostgreSQL
+  kubernetes.core.k8s_exec:
+    namespace: postgresql
+    pod: postgresql-0
+    command: |
+      psql -U postgres -c "CREATE DATABASE {{ gitea_postgresql_database }};" || true
+      psql -U postgres -c "CREATE USER {{ gitea_postgresql_user }} WITH PASSWORD '{{ postgresql_superuser_password }}';" || true
+      psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE {{ gitea_postgresql_database }} TO {{ gitea_postgresql_user }};"
+    env:
+      - name: PGPASSWORD
+        value: "{{ postgresql_superuser_password }}"
+  when:
+    - postgresql_superuser_password is defined
+    - postgresql_superuser_password != ''
+  no_log: true
+  ignore_errors: true
+
+- name: Deploy Gitea via Helm
+  kubernetes.core.helm:
+    name: gitea
+    chart_ref: "{{ gitea_chart_repo_name }}/gitea"
+    chart_version: "{{ helm_versions.gitea }}"
+    release_namespace: "{{ gitea_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+
+- name: Wait for Gitea to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: StatefulSet
+    name: gitea
+    namespace: "{{ gitea_namespace }}"
+  register: gitea_sts
+  until:
+    - gitea_sts.resources | length > 0
+    - gitea_sts.resources[0].status.readyReplicas is defined
+    - gitea_sts.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create Gitea Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+  when: gitea_ingress_enabled
+
+- name: Create SSH NodePort Service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: gitea-ssh-nodeport
+        namespace: "{{ gitea_namespace }}"
+      spec:
+        type: NodePort
+        selector:
+          app.kubernetes.io/name: gitea
+        ports:
+          - name: ssh
+            port: 22
+            targetPort: 22
+            nodePort: "{{ gitea_ssh_nodeport }}"
+  when: gitea_ssh_enabled

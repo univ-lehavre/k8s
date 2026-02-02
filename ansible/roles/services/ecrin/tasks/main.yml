@@ -1,0 +1,69 @@
+---
+# ECRIN tasks
+
+- name: Create ECRIN namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ ecrin_namespace }}"
+        labels:
+          app.kubernetes.io/name: ecrin
+
+- name: Create ECRIN ConfigMap
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: ecrin-config
+        namespace: "{{ ecrin_namespace }}"
+      data:
+        OIDC_ENABLED: "{{ ecrin_oidc_enabled | lower }}"
+        OIDC_AUTHORITY: "{{ ecrin_oidc_authority }}"
+        OIDC_CLIENT_ID: "{{ ecrin_oidc_client_id }}"
+
+- name: Deploy ECRIN
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'deployment.yml.j2') | from_yaml }}"
+
+- name: Create ECRIN Service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: ecrin
+        namespace: "{{ ecrin_namespace }}"
+      spec:
+        selector:
+          app: ecrin
+        ports:
+          - port: 80
+            targetPort: 80
+            protocol: TCP
+
+- name: Wait for ECRIN to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: ecrin
+    namespace: "{{ ecrin_namespace }}"
+  register: ecrin_deployment
+  until:
+    - ecrin_deployment.resources | length > 0
+    - ecrin_deployment.resources[0].status.readyReplicas is defined
+    - ecrin_deployment.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create ECRIN Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+  when: ecrin_ingress_enabled

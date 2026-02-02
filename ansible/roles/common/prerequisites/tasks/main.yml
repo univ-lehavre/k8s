@@ -1,0 +1,74 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: Install prerequisite packages
+  ansible.builtin.package:
+    name: "{{ prerequisites_packages }}"
+    state: present
+
+- name: Install Longhorn prerequisites
+  ansible.builtin.package:
+    name: "{{ prerequisites_longhorn_packages }}"
+    state: present
+  when: longhorn_enabled | default(false)
+
+- name: Load kernel modules
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ prerequisites_kernel_modules }}"
+
+- name: Ensure kernel modules load on boot
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      {% for module in prerequisites_kernel_modules %}
+      {{ module }}
+      {% endfor %}
+    mode: '0644'
+
+- name: Configure sysctl parameters
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/99-kubernetes.conf
+  loop: "{{ prerequisites_sysctl | dict2items }}"
+
+- name: Disable swap immediately
+  ansible.builtin.command: swapoff -a
+  changed_when: false
+  when: prerequisites_disable_swap
+
+- name: Remove swap from fstab
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '\sswap\s'
+    state: absent
+  when: prerequisites_disable_swap
+
+- name: Create required directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ prerequisites_directories }}"
+
+- name: Enable and start iscsid (for Longhorn)
+  ansible.builtin.systemd:
+    name: iscsid
+    enabled: true
+    state: started
+  when: longhorn_enabled | default(false)
+
+- name: Install yq (YAML processor)
+  ansible.builtin.get_url:
+    url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+    dest: /usr/local/bin/yq
+    mode: '0755'
+  when: ansible_system == "Linux"

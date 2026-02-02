@@ -1,0 +1,35 @@
+---
+# Network Policies defaults
+
+# Enable network policies
+network_policies_enabled: "{{ env != 'local' }}"
+
+# Default deny all ingress/egress for namespaces
+network_policies_default_deny: true
+
+# Namespaces to apply policies to
+network_policies_namespaces:
+  - vault
+  - postgresql
+  - redis
+  - authentik
+  - mattermost
+  - nextcloud
+  - onlyoffice
+  - seaweedfs
+  - redcap
+  - ecrin
+  - flipt
+  - gitea
+  - argocd
+  - monitoring
+
+# Allow DNS for all pods
+network_policies_allow_dns: true
+
+# Allow monitoring scraping
+network_policies_allow_monitoring: true
+monitoring_namespace: monitoring
+
+# Ingress controller namespace
+ingress_namespace: kube-system

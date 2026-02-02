@@ -1,0 +1,19 @@
+---
+- name: Include SSH hardening
+  ansible.builtin.include_tasks: ssh.yml
+
+- name: Include firewall configuration
+  ansible.builtin.include_tasks: firewall.yml
+  when: hardening_ufw_enabled
+
+- name: Include fail2ban configuration
+  ansible.builtin.include_tasks: fail2ban.yml
+  when: hardening_fail2ban_enabled
+
+- name: Include unattended upgrades
+  ansible.builtin.include_tasks: unattended_upgrades.yml
+  when: hardening_unattended_upgrades_enabled
+
+- name: Include auditd configuration
+  ansible.builtin.include_tasks: auditd.yml
+  when: hardening_auditd_enabled
