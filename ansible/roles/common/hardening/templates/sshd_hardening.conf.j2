@@ -30,8 +30,9 @@ ClientAliveCountMax {{ hardening_ssh_client_alive_count_max }}
 # Disable X11 forwarding
 X11Forwarding no
 
-# Disable TCP forwarding (uncomment if not needed)
-# AllowTcpForwarding no
+# Disable TCP and Agent forwarding
+AllowTcpForwarding {{ hardening_ssh_allow_tcp_forwarding }}
+AllowAgentForwarding {{ hardening_ssh_allow_agent_forwarding }}
 
 # Use strong ciphers and MACs
 Ciphers aes256-gcm@openssh.com,chacha20-poly1305@openssh.com,aes256-ctr

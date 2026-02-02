@@ -79,14 +79,31 @@
       ansible.builtin.set_fact:
         vault_init_data: "{{ vault_init_output.stdout | from_json }}"
 
-    - name: Display Vault init credentials (SAVE THESE!)
+    - name: Save Vault credentials to secure file
+      ansible.builtin.copy:
+        content: |
+          # Vault Init Credentials - Generated {{ ansible_date_time.iso8601 }}
+          # SAVE THESE SECURELY AND DELETE THIS FILE
+          root_token: {{ vault_init_data.root_token }}
+          unseal_keys:
+          {% for key in vault_init_data.unseal_keys_b64 %}
+            - {{ key }}
+          {% endfor %}
+        dest: "/root/.vault-init-{{ ansible_date_time.epoch }}.yml"
+        mode: '0400'
+        owner: root
+        group: root
+      no_log: true
+      delegate_to: localhost
+      when: vault_init_data is defined
+
+    - name: Notify about Vault credentials location
       ansible.builtin.debug:
         msg: |
           =====================================================
-          VAULT INITIALIZED - SAVE THESE CREDENTIALS SECURELY!
-          =====================================================
-          Root Token: {{ vault_init_data.root_token }}
-          Unseal Keys: {{ vault_init_data.unseal_keys_b64 | join(', ') }}
+          VAULT INITIALIZED SUCCESSFULLY
+          Credentials saved to: /root/.vault-init-{{ ansible_date_time.epoch }}.yml
+          IMPORTANT: Save these credentials securely and delete the file!
           =====================================================
       when: vault_init_data is defined
 
@@ -121,7 +138,7 @@
           - name: VAULT_TOKEN
             value: "{{ vault_root_token }}"
       register: kv_enable
-      failed_when: false
+      failed_when: kv_enable.rc not in [0, 2]  # 0=success, 2=already enabled
       changed_when: kv_enable.rc == 0
 
     - name: Enable Kubernetes auth
@@ -133,7 +150,7 @@
           - name: VAULT_TOKEN
             value: "{{ vault_root_token }}"
       register: k8s_auth_enable
-      failed_when: false
+      failed_when: k8s_auth_enable.rc not in [0, 2]  # 0=success, 2=already enabled
       changed_when: k8s_auth_enable.rc == 0
 
     - name: Configure Kubernetes auth

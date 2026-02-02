@@ -34,8 +34,8 @@ gitea_redis_port: 6379
 # Secrets from CI/CD
 gitea_admin_password: "{{ secrets.gitea.admin_password | default(omit) }}"
 
-# Admin user
-gitea_admin_user: gitea_admin
+# Admin user - use environment variable or generate a less predictable name
+gitea_admin_user: "{{ lookup('env', 'GITEA_ADMIN_USER') | default('gitea_admin', true) }}"
 gitea_admin_email: "gitea@{{ domain }}"
 
 # Ingress settings

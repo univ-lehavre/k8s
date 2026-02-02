@@ -9,7 +9,11 @@ hardening_ssh_max_auth_tries: 3
 hardening_ssh_login_grace_time: "30s"
 hardening_ssh_client_alive_interval: 300
 hardening_ssh_client_alive_count_max: 3
-hardening_ssh_allowed_users: []  # Should be set per environment
+hardening_ssh_allowed_users: []  # MUST be set per environment in production
+
+# SSH forwarding settings
+hardening_ssh_allow_tcp_forwarding: "no"
+hardening_ssh_allow_agent_forwarding: "no"
 
 # Firewall (UFW)
 hardening_ufw_enabled: true
@@ -35,3 +39,7 @@ hardening_unattended_upgrades_reboot_time: "04:00"
 
 # Auditd
 hardening_auditd_enabled: true
+
+# K3s cluster network CIDR (for internal port restrictions)
+# MUST be set per environment in production
+k3s_cluster_cidr: "10.0.0.0/8"

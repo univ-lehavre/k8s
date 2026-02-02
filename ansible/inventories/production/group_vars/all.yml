@@ -92,3 +92,10 @@ admin_allowed_ips:
 # Longhorn settings for production
 longhorn_replica_count: 2
 longhorn_data_locality: best-effort
+
+# K3s cluster network CIDR (for firewall port restrictions)
+k3s_cluster_cidr: "10.0.2.0/24"
+
+# SSH allowed users (mandatory in production)
+hardening_ssh_allowed_users:
+  - debian

@@ -1,0 +1,19 @@
+---
+# Pod Security Standards defaults
+
+pod_security_enabled: "{{ env != 'local' }}"
+
+# Security levels: privileged, baseline, restricted
+pod_security_enforce_level: baseline
+pod_security_audit_level: restricted
+pod_security_warn_level: restricted
+
+# Namespaces to apply PSS (exclude system namespaces)
+pod_security_namespaces:
+  - mattermost
+  - nextcloud
+  - gitea
+  - redcap
+  - ecrin
+  - flipt
+  - seaweedfs

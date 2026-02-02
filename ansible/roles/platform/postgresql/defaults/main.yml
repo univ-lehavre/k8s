@@ -41,6 +41,8 @@ postgresql_pgpool_replicas: 2
 # Metrics
 postgresql_metrics_enabled: "{{ monitoring_enabled | default(true) }}"
 
-# Backup settings
-postgresql_backup_enabled: false
+# Backup settings - enabled by default in staging/production
+postgresql_backup_enabled: "{{ env != 'local' }}"
 postgresql_backup_schedule: "0 2 * * *"
+postgresql_backup_retention_days: 7
+postgresql_backup_storage_class: "{{ storage_class }}"

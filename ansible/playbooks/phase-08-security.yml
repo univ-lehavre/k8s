@@ -12,6 +12,9 @@
     - role: security/network_policies
       tags: [security, network-policies, cilium]
 
+    - role: security/pod_security
+      tags: [security, pod-security, pss]
+
   post_tasks:
     - name: Phase 8 complete
       ansible.builtin.debug:
@@ -21,4 +24,7 @@
           Network policies applied to all service namespaces.
           {% else %}
           Network policies disabled for local environment.
+          {% endif %}
+          {% if pod_security_enabled | default(true) %}
+          Pod Security Standards applied to application namespaces.
           {% endif %}

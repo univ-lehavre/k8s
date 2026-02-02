@@ -49,7 +49,7 @@ nextcloud_s3_enabled: true
 nextcloud_s3_bucket: nextcloud
 nextcloud_s3_host: seaweedfs-s3.seaweedfs.svc.cluster.local
 nextcloud_s3_port: 8333
-nextcloud_s3_use_ssl: false
+nextcloud_s3_use_ssl: "{{ env == 'production' }}"
 nextcloud_s3_use_path_style: true
 
 # OIDC settings (Authentik)
