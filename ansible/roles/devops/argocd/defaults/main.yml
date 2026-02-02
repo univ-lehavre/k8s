@@ -61,6 +61,23 @@ argocd_oidc_requested_scopes:
 argocd_rbac_default_policy: role:readonly
 argocd_rbac_scopes: "[groups]"
 
+# Role mapping from Authelia/Authentik groups to ArgoCD roles
+# admins → admin (full access)
+# devops → sync (can sync apps)
+# developers → readonly (view only)
+argocd_rbac_policy: |
+  # Admin group gets full access
+  g, admins, role:admin
+  # DevOps can manage applications
+  g, devops, role:admin
+  # Developers can view and sync
+  p, role:developer, applications, get, *, allow
+  p, role:developer, applications, sync, *, allow
+  p, role:developer, logs, get, *, allow
+  g, developers, role:developer
+  # Researchers can only view
+  g, researchers, role:readonly
+
 # Repository credentials (from Vault/ESO)
 argocd_repositories: []
 

@@ -61,8 +61,29 @@ prometheus_ingress_host: "prometheus.{{ domain }}"
 alertmanager_ingress_enabled: false
 alertmanager_ingress_host: "alertmanager.{{ domain }}"
 
-# OIDC settings (Authentik) for Grafana
-grafana_oidc_enabled: true
+# Authentication mode: 'oidc' (Authentik) or 'proxy' (Authelia headers)
+grafana_auth_mode: proxy
+
+# Proxy auth settings (Authelia headers)
+# Maps Authelia groups to Grafana roles
+grafana_proxy_auth_enabled: "{{ grafana_auth_mode == 'proxy' }}"
+grafana_proxy_header_name: Remote-User
+grafana_proxy_header_email: Remote-Email
+grafana_proxy_header_groups: Remote-Groups
+grafana_proxy_auto_sign_up: true
+
+# Role mapping from Authelia groups
+# admins → Admin, devops → Editor, others → Viewer
+grafana_role_mapping:
+  admin_groups:
+    - admins
+  editor_groups:
+    - devops
+    - developers
+  # All other authenticated users get Viewer role
+
+# OIDC settings (Authentik) - alternative to proxy auth
+grafana_oidc_enabled: "{{ grafana_auth_mode == 'oidc' }}"
 grafana_oidc_name: Authentik
 grafana_oidc_auth_url: "https://auth.{{ domain }}/application/o/authorize/"
 grafana_oidc_token_url: "https://auth.{{ domain }}/application/o/token/"

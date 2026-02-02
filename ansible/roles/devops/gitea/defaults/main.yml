@@ -50,8 +50,23 @@ gitea_ssh_enabled: true
 gitea_ssh_port: 22
 gitea_ssh_nodeport: 30022
 
-# OIDC settings (Authentik)
-gitea_oidc_enabled: true
+# Authentication mode: 'oidc' (Authentik) or 'proxy' (Authelia headers)
+gitea_auth_mode: proxy
+
+# Proxy auth settings (Authelia headers via reverse proxy)
+gitea_proxy_auth_enabled: "{{ gitea_auth_mode == 'proxy' }}"
+gitea_proxy_header_name: Remote-User
+gitea_proxy_header_email: Remote-Email
+gitea_proxy_header_groups: Remote-Groups
+gitea_proxy_auto_register: true
+
+# Role mapping from Authelia groups
+# admins → site admin, devops → can create orgs, users → regular
+gitea_admin_groups:
+  - admins
+
+# OIDC settings (Authentik) - alternative to proxy auth
+gitea_oidc_enabled: "{{ gitea_auth_mode == 'oidc' }}"
 gitea_oidc_name: authentik
 gitea_oidc_auto_discover_url: "https://auth.{{ domain }}/application/o/gitea/.well-known/openid-configuration"
 gitea_oidc_client_id: gitea

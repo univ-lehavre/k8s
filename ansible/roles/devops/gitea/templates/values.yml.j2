@@ -64,9 +64,22 @@ gitea:
       REQUIRE_SIGNIN_VIEW: false
       DEFAULT_ALLOW_CREATE_ORGANIZATION: false
 
-{% if gitea_oidc_enabled %}
+{% if gitea_proxy_auth_enabled | default(false) %}
+    # Reverse proxy authentication via Authelia headers
+    service:
+      ENABLE_REVERSE_PROXY_AUTHENTICATION: true
+      ENABLE_REVERSE_PROXY_AUTO_REGISTRATION: {{ gitea_proxy_auto_register | lower }}
+      ENABLE_REVERSE_PROXY_EMAIL: true
+      ENABLE_REVERSE_PROXY_FULL_NAME: true
+
+    security:
+      REVERSE_PROXY_AUTHENTICATION_USER: {{ gitea_proxy_header_name }}
+      REVERSE_PROXY_AUTHENTICATION_EMAIL: {{ gitea_proxy_header_email }}
+      REVERSE_PROXY_AUTHENTICATION_FULL_NAME: Remote-Name
+      REVERSE_PROXY_TRUSTED_PROXIES: "*"
+{% elif gitea_oidc_enabled | default(false) %}
     oauth2_client:
-      OPENID_CONNECT_SCOPES: openid profile email
+      OPENID_CONNECT_SCOPES: openid profile email groups
       ENABLE_AUTO_REGISTRATION: true
       USERNAME: nickname
 {% endif %}

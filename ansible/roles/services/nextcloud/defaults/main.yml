@@ -52,10 +52,27 @@ nextcloud_s3_port: 8333
 nextcloud_s3_use_ssl: "{{ env == 'production' }}"
 nextcloud_s3_use_path_style: true
 
+# Authentication mode: 'oidc' (Authentik) or 'saml' (for SAML-based SSO)
+nextcloud_auth_mode: oidc
+
 # OIDC settings (Authentik)
-nextcloud_oidc_enabled: true
+nextcloud_oidc_enabled: "{{ nextcloud_auth_mode == 'oidc' }}"
 nextcloud_oidc_provider_url: "https://auth.{{ domain }}/application/o/nextcloud/"
 nextcloud_oidc_client_id: nextcloud
+
+# Group mapping from Authentik/Authelia to Nextcloud groups
+# Groups are synced automatically via OIDC claims
+nextcloud_group_mapping:
+  # Authentik group → Nextcloud group
+  admins: admin
+  researchers: researchers
+  users: users
+
+# Default quota per group (in bytes, 0 = unlimited)
+nextcloud_group_quotas:
+  admin: 0
+  researchers: 107374182400  # 100 GB
+  users: 10737418240         # 10 GB
 
 # OnlyOffice integration
 nextcloud_onlyoffice_enabled: true
