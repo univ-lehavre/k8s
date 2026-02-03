@@ -107,6 +107,7 @@ LEFTHOOK_EXCLUDE=ansible-lint git commit -m "message"
 ## 📋 Règles Communes
 
 ### Variables dans les rôles
+
 ```yaml
 # ❌ Mauvais
 register: gitea_db
@@ -116,6 +117,7 @@ register: devops_gitea_db
 ```
 
 ### Longueur de ligne
+
 ```yaml
 # ❌ Trop long (> 120 chars)
 - name: Une description beaucoup trop longue qui dépasse la limite...
@@ -125,6 +127,7 @@ register: devops_gitea_db
 ```
 
 ### Noms de tasks
+
 ```yaml
 # ❌ Mauvais
 - name: install package
@@ -143,6 +146,7 @@ register: devops_gitea_db
 ## 📚 Documentation Complète
 
 Voir [LINTING.md](LINTING.md) pour :
+
 - Détails de configuration
 - Intégration CI/CD
 - Troubleshooting

@@ -66,19 +66,23 @@ ansible-lint -T var-naming
 Les hooks sont **automatiquement exécutés** lors de :
 
 #### Pre-commit
+
 - `ansible-lint` sur les fichiers modifiés
 - `yamllint` sur les fichiers YAML (si installé)
 - Vérification des trailing whitespaces
 - Vérification des marqueurs de merge conflicts
 
 #### Pre-push
+
 - Lint complet du projet
 - Protection contre les push accidentels sur main/master
 
 #### Post-checkout
+
 - Rappel pour installer les dépendances si nécessaire
 
 #### Post-merge
+
 - Notification si `requirements.yml` a changé
 
 ### Bypasser les hooks temporairement
@@ -99,6 +103,7 @@ git push --no-verify
 ### .ansible-lint
 
 Fichier de configuration principal pour ansible-lint :
+
 - Profil : `production` (le plus strict)
 - Exclusions : `.cache/`, `.github/`, `molecule/`, `venv/`
 - Rules personnalisables via `skip_list`
@@ -106,6 +111,7 @@ Fichier de configuration principal pour ansible-lint :
 ### .yamllint
 
 Configuration pour yamllint :
+
 - Longueur de ligne max : 120 caractères
 - Indentation : 2 espaces
 - Support des templates Jinja2
@@ -113,6 +119,7 @@ Configuration pour yamllint :
 ### lefthook.yml
 
 Configuration des git hooks :
+
 - Exécution parallèle pour la vitesse
 - Hooks configurables par phase (pre-commit, pre-push, etc.)
 - Support de l'auto-fix avec `stage_fixed: true`
@@ -122,6 +129,7 @@ Configuration des git hooks :
 ### Violations fréquentes
 
 1. **var-naming[no-role-prefix]** : Les variables dans les rôles doivent avoir un préfixe
+
    ```yaml
    # ❌ Mauvais
    register: gitea_db_create
@@ -131,6 +139,7 @@ Configuration des git hooks :
    ```
 
 2. **yaml[line-length]** : Ligne trop longue (> 120 caractères)
+
    ```yaml
    # ❌ Mauvais
    - name: Une très longue description qui dépasse la limite de 120 caractères et devrait être raccourcie
@@ -140,6 +149,7 @@ Configuration des git hooks :
    ```
 
 3. **name[casing]** : Casse incorrecte dans les noms de tasks
+
    ```yaml
    # ❌ Mauvais
    - name: install gitea
@@ -149,6 +159,7 @@ Configuration des git hooks :
    ```
 
 4. **risky-file-permissions** : Permissions de fichiers risquées
+
    ```yaml
    # ❌ Mauvais
    mode: '0777'
@@ -245,6 +256,7 @@ skip_list:
 ### "No module named 'ansible_collections.kubernetes'"
 
 C'est un warning, pas une erreur. Installez les collections :
+
 ```bash
 ansible-galaxy collection install kubernetes.core
 ```

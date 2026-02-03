@@ -23,7 +23,7 @@ tasks:
     desc: Installer toutes les dépendances
     cmds:
       - echo "📦 Installation des dépendances..."
-      - echo "ℹ️  ansible-lint et yamllint doivent être installés via brew install ansible-lint yamllint"
+      - echo "ℹ️  Outils requis: brew install ansible-lint yamllint markdownlint-cli2"
       - ansible-galaxy install -r {{.ANSIBLE_DIR}}/requirements.yml
       - task: install-hooks
       - echo "✅ Dépendances installées"
@@ -85,6 +85,19 @@ tasks:
       - echo "📝 Validation YAML..."
       - yamllint -c .yamllint --strict .
 
+  # Validation Markdown
+  md-lint:
+    desc: Valider la syntaxe Markdown
+    cmds:
+      - echo "📝 Validation Markdown..."
+      - markdownlint-cli2 "**/*.md" "#node_modules" "#venv" "#.cache"
+
+  md-lint-fix:
+    desc: Corriger automatiquement les fichiers Markdown
+    cmds:
+      - echo "🔧 Correction Markdown..."
+      - markdownlint-cli2 --fix "**/*.md" "#node_modules" "#venv" "#.cache"
+
   yaml-fix:
     desc: Formater les fichiers YAML avec yamlfmt (si installé)
     cmds:
@@ -114,10 +127,11 @@ tasks:
 
   # Checks combinés
   check:
-    desc: Lancer tous les checks (lint + yamllint)
+    desc: Lancer tous les checks (lint + yamllint + mdlint)
     deps:
       - lint
       - yaml-lint
+      - md-lint
 
   check-quick:
     desc: Check rapide (lint seulement)
@@ -177,6 +191,7 @@ tasks:
       - echo "📋 Informations environnement-"
       - echo "  ansible-lint → $(ansible-lint --version | head -1)"
       - echo "  yamllint → $(yamllint --version 2>&1 || echo 'non installé')"
+      - echo "  markdownlint-cli2 → $(markdownlint-cli2 --version 2>&1 || echo 'non installé')"
       - echo "  lefthook → $(lefthook version)"
       - echo "  ansible → $(ansible --version | head -1)"
       - echo "  task → $(task --version)"

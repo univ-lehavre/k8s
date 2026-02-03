@@ -8,7 +8,9 @@
 
 ## Résumé Exécutif
 
-Ce projet est une **plateforme d'infrastructure Kubernetes de qualité production** déployée via Ansible. L'architecture est solide, bien structurée et suit les meilleures pratiques. Le linting passe avec le profil `production` (le plus strict).
+Ce projet est une **plateforme d'infrastructure Kubernetes de qualité production** déployée via Ansible.
+L'architecture est solide, bien structurée et suit les meilleures pratiques.
+Le linting passe avec le profil `production` (le plus strict).
 
 ---
 
