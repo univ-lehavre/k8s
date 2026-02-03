@@ -30,16 +30,16 @@
         name: authelia-secrets
         namespace: "{{ authelia_namespace }}"
       type: Opaque
-      stringData:
-        JWT_TOKEN: "{{ authelia_jwt_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')) }}"
-        SESSION_SECRET: "{{ authelia_session_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')) }}"
-        STORAGE_ENCRYPTION_KEY: "{{ authelia_storage_key | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')) }}"
-{% if authelia_redis_enabled %}
-        REDIS_PASSWORD: "{{ redis_password | default('') }}"
-{% endif %}
-{% if authelia_storage_backend == 'postgres' %}
-        STORAGE_POSTGRES_PASSWORD: "{{ authelia_postgresql_password | default('') }}"
-{% endif %}
+      stringData: >-
+        {{
+          {
+            'JWT_TOKEN': authelia_jwt_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')),
+            'SESSION_SECRET': authelia_session_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')),
+            'STORAGE_ENCRYPTION_KEY': authelia_storage_key | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits'))
+          }
+          | combine({'REDIS_PASSWORD': redis_password | default('')} if authelia_redis_enabled else {})
+          | combine({'STORAGE_POSTGRES_PASSWORD': authelia_postgresql_password | default('')} if authelia_storage_backend == 'postgres' else {})
+        }}
 
 - name: Create Authelia configuration ConfigMap
   kubernetes.core.k8s:

@@ -58,4 +58,3 @@ ignore: |
   .github/
   venv/
   molecule/
-  ansible/roles/platform/authelia/tasks/main.yml

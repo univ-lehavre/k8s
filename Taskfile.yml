@@ -8,7 +8,7 @@ version: "3"
 
 vars:
   ANSIBLE_DIR: ansible
-  PROFILE: safety
+  PROFILE: production
   REPORT_FILE: ansible-lint-report.json
 
 tasks:
