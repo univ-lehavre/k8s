@@ -45,7 +45,7 @@
   ansible.builtin.template:
     src: apparmor-k3s.j2
     dest: /etc/apparmor.d/k3s-containerd
-    mode: '0644'
+    mode: "0644"
   notify: Reload AppArmor
   when:
     - apparmor_available.stat.exists

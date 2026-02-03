@@ -29,7 +29,7 @@
       {% for module in prerequisites_kernel_modules %}
       {{ module }}
       {% endfor %}
-    mode: '0644'
+    mode: "0644"
 
 - name: Configure sysctl parameters
   ansible.posix.sysctl:
@@ -48,7 +48,7 @@
 - name: Remove swap from fstab
   ansible.builtin.lineinfile:
     path: /etc/fstab
-    regexp: '\sswap\s'
+    regexp: "\\sswap\\s"
     state: absent
   when: prerequisites_disable_swap
 
@@ -56,7 +56,7 @@
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    mode: '0755'
+    mode: "0755"
   loop: "{{ prerequisites_directories }}"
 
 - name: Enable and start iscsid (for Longhorn)
@@ -70,5 +70,5 @@
   ansible.builtin.get_url:
     url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     dest: /usr/local/bin/yq
-    mode: '0755'
+    mode: "0755"
   when: ansible_system == "Linux"

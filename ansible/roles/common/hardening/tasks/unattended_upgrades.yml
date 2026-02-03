@@ -13,10 +13,10 @@
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
       APT::Periodic::AutocleanInterval "7";
-    mode: '0644'
+    mode: "0644"
 
 - name: Configure unattended-upgrades
   ansible.builtin.template:
     src: 50unattended-upgrades.j2
     dest: /etc/apt/apt.conf.d/50unattended-upgrades
-    mode: '0644'
+    mode: "0644"

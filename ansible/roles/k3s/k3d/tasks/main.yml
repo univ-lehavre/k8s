@@ -7,9 +7,11 @@
 
 - name: Install K3D
   ansible.builtin.shell: |
+    set -o pipefail
     curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
   args:
     creates: /usr/local/bin/k3d
+    executable: /bin/bash
   when: k3d_check.rc != 0
 
 - name: Check if cluster exists
@@ -37,6 +39,7 @@
     --timeout {{ k3d_wait_timeout }}s
   when: not k3d_cluster_exists
   register: k3d_create
+  changed_when: k3d_create.rc == 0
 
 - name: Wait for cluster to be ready
   ansible.builtin.command: kubectl cluster-info
@@ -47,7 +50,7 @@
   retries: 30
   delay: 5
   changed_when: false
-  when: k3d_create.changed | default(false)
+  when: not k3d_cluster_exists
 
 - name: Get kubeconfig
   ansible.builtin.command: k3d kubeconfig get {{ k3d_cluster_name }}
@@ -58,7 +61,7 @@
   ansible.builtin.file:
     path: "{{ k3d_kubeconfig_path | dirname }}"
     state: directory
-    mode: '0700'
+    mode: "0700"
 
 - name: Merge kubeconfig
   ansible.builtin.command: k3d kubeconfig merge {{ k3d_cluster_name }} --kubeconfig-merge-default

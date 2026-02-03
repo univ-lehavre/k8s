@@ -90,7 +90,8 @@
                       severity: critical
                     annotations:
                       summary: "Critical vulnerability found in image"
-                      description: "Image {{ '{{' }} $labels.image_repository {{ '}}' }}:{{ '{{' }} $labels.image_tag {{ '}}' }} has {{ '{{' }} $value {{ '}}' }} critical vulnerabilities"
+                      description: "Image {{ '{{' }} $labels.image_repository {{ '}}' }}:{{ '{{' }} $labels.image_tag {{ '}}' }} has {{ '{{' }} $value {{ '}}' }}
+                        critical vulnerabilities"
 
                   - alert: HighVulnerabilityFound
                     expr: trivy_image_vulnerabilities{severity="High"} > 5
@@ -99,5 +100,6 @@
                       severity: warning
                     annotations:
                       summary: "Multiple high vulnerabilities found"
-                      description: "Image {{ '{{' }} $labels.image_repository {{ '}}' }}:{{ '{{' }} $labels.image_tag {{ '}}' }} has {{ '{{' }} $value {{ '}}' }} high vulnerabilities"
+                      description: "Image {{ '{{' }} $labels.image_repository {{ '}}' }}:{{ '{{' }} $labels.image_tag {{ '}}' }} has {{ '{{' }} $value {{ '}}' }}
+                        high vulnerabilities"
       when: monitoring_enabled | default(true)

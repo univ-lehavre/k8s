@@ -8,13 +8,13 @@
   ansible.builtin.file:
     path: /etc/rancher/k3s
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Create K3s agent configuration file
   ansible.builtin.template:
     src: config.yaml.j2
     dest: /etc/rancher/k3s/config.yaml
-    mode: '0600'
+    mode: "0600"
   notify: Restart K3s agent
 
 - name: Get master server IP
@@ -23,9 +23,11 @@
 
 - name: Download and install K3s agent
   ansible.builtin.shell: |
+    set -o pipefail
     curl -sfL {{ k3s_install_script_url }} | INSTALL_K3S_VERSION={{ k3s_version }} sh -s - agent
   args:
     creates: /usr/local/bin/k3s
+    executable: /bin/bash
   environment:
     K3S_TOKEN: "{{ k3s_token }}"
     K3S_URL: "https://{{ k3s_master_ip }}:6443"

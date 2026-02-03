@@ -16,7 +16,6 @@ k3s_node_labels:
 
 # Node taints
 k3s_node_taints: []
-
 # Data directory
 k3s_data_dir: "/var/lib/rancher/k3s"
 

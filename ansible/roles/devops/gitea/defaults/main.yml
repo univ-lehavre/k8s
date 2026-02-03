@@ -62,8 +62,15 @@ gitea_proxy_auto_register: true
 
 # Role mapping from Authelia groups
 # admins → site admin, devops → can create orgs, users → regular
-gitea_admin_groups:
-  - admins
+gitea_role_mapping:
+  admin_groups:
+    - admins
+  org_creator_groups:
+    - devops
+    - admins
+  restricted_groups: []
+# Legacy alias for backward compatibility
+gitea_admin_groups: "{{ gitea_role_mapping.admin_groups }}"
 
 # OIDC settings (Authentik) - alternative to proxy auth
 gitea_oidc_enabled: "{{ gitea_auth_mode == 'oidc' }}"

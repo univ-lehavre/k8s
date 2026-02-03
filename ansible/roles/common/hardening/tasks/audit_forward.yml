@@ -13,15 +13,15 @@
   ansible.builtin.template:
     src: rsyslog-audit-forward.conf.j2
     dest: /etc/rsyslog.d/60-audit-forward.conf
-    mode: '0644'
+    mode: "0644"
   notify: Restart rsyslog
   when: hardening_audit_forward_enabled | default(false)
 
 - name: Configure auditd to forward to syslog
   ansible.builtin.lineinfile:
     path: /etc/audit/auditd.conf
-    regexp: '^log_format'
-    line: 'log_format = ENRICHED'
+    regexp: "^log_format"
+    line: "log_format = ENRICHED"
     state: present
   notify: Restart auditd
   when: hardening_audit_forward_enabled | default(false)
@@ -30,7 +30,7 @@
   ansible.builtin.template:
     src: audit-syslog.conf.j2
     dest: /etc/audit/plugins.d/syslog.conf
-    mode: '0640'
+    mode: "0640"
   notify: Restart auditd
   when: hardening_audit_forward_enabled | default(false)
 
@@ -38,7 +38,7 @@
   ansible.builtin.file:
     path: /var/log/audit
     state: directory
-    mode: '0700'
+    mode: "0700"
     owner: root
     group: root
 
@@ -57,4 +57,4 @@
           endscript
       }
     dest: /etc/logrotate.d/audit
-    mode: '0644'
+    mode: "0644"

@@ -35,6 +35,44 @@
     - postgresql_superuser_password != ''
   no_log: true
 
+- name: Create PostgreSQL TLS certificate
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: "{{ postgresql_ssl_cert_secret }}"
+        namespace: "{{ postgresql_namespace }}"
+      spec:
+        secretName: "{{ postgresql_ssl_cert_secret }}"
+        duration: 8760h # 1 year
+        renewBefore: 720h # 30 days
+        commonName: "{{ postgresql_ssl_common_name }}"
+        dnsNames: "{{ postgresql_ssl_alt_names }}"
+        privateKey:
+          algorithm: RSA
+          size: 2048
+        issuerRef:
+          name: "{{ postgresql_ssl_cert_issuer }}"
+          kind: ClusterIssuer
+  when: postgresql_ssl_enabled | default(false)
+
+- name: Wait for PostgreSQL TLS certificate to be ready
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: Certificate
+    namespace: "{{ postgresql_namespace }}"
+    name: "{{ postgresql_ssl_cert_secret }}"
+  register: pg_cert
+  until:
+    - pg_cert.resources | length > 0
+    - pg_cert.resources[0].status.conditions is defined
+    - pg_cert.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+  retries: 30
+  delay: 10
+  when: postgresql_ssl_enabled | default(false)
+
 - name: Deploy PostgreSQL HA via Helm
   kubernetes.core.helm:
     name: postgresql

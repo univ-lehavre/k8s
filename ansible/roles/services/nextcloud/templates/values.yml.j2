@@ -60,15 +60,19 @@ nextcloud:
 internalDatabase:
   enabled: false
 
-# External PostgreSQL
+# External PostgreSQL - uses service-specific password
 externalDatabase:
   enabled: true
   type: postgresql
+{% if postgresql_ssl_enabled | default(false) %}
+  host: "{{ nextcloud_postgresql_host }}?sslmode=require"
+{% else %}
   host: {{ nextcloud_postgresql_host }}
+{% endif %}
   port: {{ nextcloud_postgresql_port }}
   database: {{ nextcloud_postgresql_database }}
   user: {{ nextcloud_postgresql_user }}
-  password: "{{ postgresql_superuser_password }}"
+  password: "{{ database_passwords.nextcloud }}"
 
 # Redis for session and caching
 redis:

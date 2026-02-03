@@ -90,7 +90,7 @@
             - {{ key }}
           {% endfor %}
         dest: "/root/.vault-init-{{ ansible_date_time.epoch }}.yml"
-        mode: '0400'
+        mode: "0400"
         owner: root
         group: root
       no_log: true
@@ -118,10 +118,10 @@
     - vault_unseal_keys | length >= vault_init_key_threshold
   no_log: true
 
-- name: Create Vault Ingress
+- name: Create Vault HTTPRoute
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: vault_ingress_enabled
 
 - name: Configure Vault (post-init)
@@ -138,7 +138,7 @@
           - name: VAULT_TOKEN
             value: "{{ vault_root_token }}"
       register: kv_enable
-      failed_when: kv_enable.rc not in [0, 2]  # 0=success, 2=already enabled
+      failed_when: kv_enable.rc not in [0, 2] # 0=success, 2=already enabled
       changed_when: kv_enable.rc == 0
       no_log: true
 
@@ -151,7 +151,7 @@
           - name: VAULT_TOKEN
             value: "{{ vault_root_token }}"
       register: k8s_auth_enable
-      failed_when: k8s_auth_enable.rc not in [0, 2]  # 0=success, 2=already enabled
+      failed_when: k8s_auth_enable.rc not in [0, 2] # 0=success, 2=already enabled
       changed_when: k8s_auth_enable.rc == 0
       no_log: true
 

@@ -31,7 +31,7 @@ backup_enabled: true
 replicas:
   default: 2
   postgresql: 3
-  redis: 2  # + sentinel
+  redis: 2 # + sentinel
   authentik_server: 2
   authentik_worker: 2
 

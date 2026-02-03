@@ -8,7 +8,7 @@
   ansible.builtin.file:
     path: /etc/rancher/k3s
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Configure etcd encryption
   ansible.builtin.include_tasks: etcd_encryption.yml
@@ -18,14 +18,16 @@
   ansible.builtin.template:
     src: config.yaml.j2
     dest: /etc/rancher/k3s/config.yaml
-    mode: '0600'
+    mode: "0600"
   notify: Restart K3s
 
 - name: Download and install K3s
   ansible.builtin.shell: |
+    set -o pipefail
     curl -sfL {{ k3s_install_script_url }} | INSTALL_K3S_VERSION={{ k3s_version }} sh -s - server
   args:
     creates: /usr/local/bin/k3s
+    executable: /bin/bash
   environment:
     K3S_TOKEN: "{{ k3s_token }}"
     INSTALL_K3S_SKIP_START: "false"
@@ -73,7 +75,7 @@
   ansible.builtin.file:
     path: /root/.kube
     state: directory
-    mode: '0700'
+    mode: "0700"
 
 - name: Create kubeconfig symlink for root
   ansible.builtin.file:

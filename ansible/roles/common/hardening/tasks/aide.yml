@@ -11,7 +11,7 @@
   ansible.builtin.template:
     src: aide.conf.j2
     dest: /etc/aide/aide.conf
-    mode: '0600'
+    mode: "0600"
     owner: root
     group: root
 
@@ -31,7 +31,7 @@
     src: /var/lib/aide/aide.db.new
     dest: /var/lib/aide/aide.db
     remote_src: true
-    mode: '0600'
+    mode: "0600"
   when: not aide_db.stat.exists
 
 - name: Create AIDE cron job for daily checks
@@ -52,6 +52,6 @@
       /usr/bin/aide --update --config=/etc/aide/aide.conf
       mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
     dest: /usr/local/bin/aide-update
-    mode: '0700'
+    mode: "0700"
     owner: root
     group: root

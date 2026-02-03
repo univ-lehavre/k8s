@@ -19,6 +19,5 @@ docker_daemon_config:
 
 # Docker users (users to add to docker group)
 docker_users: []
-
 # Whether this is macOS (Docker Desktop)
 docker_is_macos: "{{ ansible_os_family == 'Darwin' }}"

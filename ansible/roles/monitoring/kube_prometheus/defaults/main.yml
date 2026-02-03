@@ -80,7 +80,11 @@ grafana_role_mapping:
   editor_groups:
     - devops
     - developers
-  # All other authenticated users get Viewer role
+  viewer_groups:
+    - researchers
+    - users
+  # Default role for authenticated users not in any specific group
+  default_role: Viewer
 
 # OIDC settings (Authentik) - alternative to proxy auth
 grafana_oidc_enabled: "{{ grafana_auth_mode == 'oidc' }}"

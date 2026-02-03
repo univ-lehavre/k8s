@@ -147,7 +147,7 @@ authelia_default_users:
     email: researcher@{{ domain }}
 
 # Notification backend
-authelia_notification_backend: filesystem  # filesystem, smtp
+authelia_notification_backend: filesystem # filesystem, smtp
 authelia_smtp_host: ""
 authelia_smtp_port: 587
 authelia_smtp_sender: "authelia@{{ domain }}"

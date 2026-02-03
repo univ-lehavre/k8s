@@ -40,3 +40,9 @@
       kubernetes.core.k8s:
         state: present
         definition: "{{ lookup('template', 'service-policies.yml.j2') | from_yaml_all | list }}"
+
+    - name: Apply database isolation policies (L7)
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'database-isolation.yml.j2') | from_yaml_all | list }}"
+      when: network_policy_l7_enabled | default(false)

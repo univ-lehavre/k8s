@@ -27,7 +27,8 @@
               name: "{{ item.name }}"
               creationPolicy: Owner
               deletionPolicy: Retain
-            data: "{{ item.keys | map('dict2items') | flatten | selectattr('key', 'defined') | list if item.keys is mapping else item.keys | map('regex_replace', '^(.*)$', '{\"secretKey\": \"\\1\", \"remoteRef\": {\"key\": \"' + item.vault_path + '\", \"property\": \"\\1\"}}') | map('from_json') | list }}"
+            data: "{{ item.keys | map('dict2items') | flatten | selectattr('key', 'defined') | list if item.keys is mapping else item.keys | map('regex_replace',
+              '^(.*)$', '{\"secretKey\": \"\\1\", \"remoteRef\": {\"key\": \"' + item.vault_path + '\", \"property\": \"\\1\"}}') | map('from_json') | list }}"
       loop: "{{ secret_rotation_secrets }}"
       loop_control:
         label: "{{ item.name }}"

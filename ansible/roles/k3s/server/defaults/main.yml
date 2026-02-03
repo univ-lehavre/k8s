@@ -8,8 +8,8 @@ k3s_version: "v1.29.2+k3s1"
 k3s_token: "{{ lookup('env', 'K3S_TOKEN') }}"
 
 # Server configuration
-k3s_server_init: true  # First server initializes the cluster
-k3s_server_url: ""     # Set for additional servers joining existing cluster
+k3s_server_init: true # First server initializes the cluster
+k3s_server_url: "" # Set for additional servers joining existing cluster
 
 # etcd encryption
 k3s_etcd_encryption: true
@@ -39,10 +39,8 @@ k3s_kube_apiserver_args:
 
 # Node labels
 k3s_node_labels: []
-
 # Node taints
 k3s_node_taints: []
-
 # Data directory
 k3s_data_dir: "/var/lib/rancher/k3s"
 

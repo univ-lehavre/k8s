@@ -9,7 +9,7 @@ hardening_ssh_max_auth_tries: 3
 hardening_ssh_login_grace_time: "30s"
 hardening_ssh_client_alive_interval: 300
 hardening_ssh_client_alive_count_max: 3
-hardening_ssh_allowed_users: []  # MUST be set per environment in production
+hardening_ssh_allowed_users: [] # MUST be set per environment in production
 
 # SSH forwarding settings
 hardening_ssh_allow_tcp_forwarding: "no"
@@ -20,9 +20,9 @@ hardening_ufw_enabled: true
 hardening_ufw_default_incoming: deny
 hardening_ufw_default_outgoing: allow
 hardening_ufw_rules:
-  - { rule: allow, port: 22, proto: tcp, comment: 'SSH' }
-  - { rule: allow, port: 80, proto: tcp, comment: 'HTTP' }
-  - { rule: allow, port: 443, proto: tcp, comment: 'HTTPS' }
+  - { rule: allow, port: 22, proto: tcp, comment: "SSH" }
+  - { rule: allow, port: 80, proto: tcp, comment: "HTTP" }
+  - { rule: allow, port: 443, proto: tcp, comment: "HTTPS" }
   # K3s API port - restricted to admin IPs
   # - { rule: allow, port: 6443, proto: tcp, from: "{{ admin_allowed_ips }}", comment: 'K3s API' }
 

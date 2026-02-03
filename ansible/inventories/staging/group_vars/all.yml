@@ -31,7 +31,7 @@ backup_enabled: true
 replicas:
   default: 1
   postgresql: 1
-  redis: 0  # Standalone mode
+  redis: 0 # Standalone mode
   authentik_server: 1
   authentik_worker: 1
 

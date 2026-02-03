@@ -46,3 +46,17 @@ postgresql_backup_enabled: "{{ env != 'local' }}"
 postgresql_backup_schedule: "0 2 * * *"
 postgresql_backup_retention_days: 7
 postgresql_backup_storage_class: "{{ storage_class }}"
+
+# SSL/TLS Configuration
+# Enabled by default for non-local environments
+postgresql_ssl_enabled: "{{ env != 'local' }}"
+postgresql_ssl_cert_secret: postgresql-tls
+postgresql_ssl_cert_issuer: "{{ tls_issuer }}"
+
+# Certificate settings
+postgresql_ssl_common_name: "postgresql.{{ postgresql_namespace }}.svc.cluster.local"
+postgresql_ssl_alt_names:
+  - "postgresql.{{ postgresql_namespace }}.svc"
+  - "postgresql.{{ postgresql_namespace }}"
+  - "postgresql"
+  - "*.postgresql-hl.{{ postgresql_namespace }}.svc.cluster.local"

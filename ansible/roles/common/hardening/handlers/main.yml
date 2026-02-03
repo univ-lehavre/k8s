@@ -22,3 +22,8 @@
   ansible.builtin.systemd:
     name: rsyslog
     state: restarted
+
+- name: Reload AppArmor
+  ansible.builtin.systemd:
+    name: apparmor
+    state: reloaded

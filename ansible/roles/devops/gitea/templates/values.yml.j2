@@ -40,7 +40,10 @@ gitea:
       HOST: {{ gitea_postgresql_host }}:{{ gitea_postgresql_port }}
       NAME: {{ gitea_postgresql_database }}
       USER: {{ gitea_postgresql_user }}
-      PASSWD: "{{ postgresql_superuser_password }}"
+      PASSWD: "{{ database_passwords.gitea }}"
+{% if postgresql_ssl_enabled | default(false) %}
+      SSL_MODE: require
+{% endif %}
 
     cache:
       ENABLED: true
@@ -82,6 +85,12 @@ gitea:
       OPENID_CONNECT_SCOPES: openid profile email groups
       ENABLE_AUTO_REGISTRATION: true
       USERNAME: nickname
+      # Map groups claim from OIDC to Gitea roles
+      GROUP_CLAIM_NAME: groups
+      ADMIN_GROUP: {{ gitea_role_mapping.admin_groups | default(['admins']) | join(',') }}
+{% if gitea_role_mapping.restricted_groups | default([]) | length > 0 %}
+      RESTRICTED_GROUP: {{ gitea_role_mapping.restricted_groups | join(',') }}
+{% endif %}
 {% endif %}
 
 # Disable built-in PostgreSQL and Redis

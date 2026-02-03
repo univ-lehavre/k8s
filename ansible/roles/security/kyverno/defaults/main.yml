@@ -91,4 +91,4 @@ kyverno_required_labels:
 kyverno_metrics_enabled: true
 
 # Logging
-kyverno_log_level: "2"  # 0=info, 1=debug, 2=trace
+kyverno_log_level: "2" # 0=info, 1=debug, 2=trace

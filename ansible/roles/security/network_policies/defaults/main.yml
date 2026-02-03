@@ -38,3 +38,43 @@ ingress_namespace: envoy-gateway-system
 
 # Authelia namespace (for forward auth policies)
 authelia_namespace: authelia
+
+# L7 Network Policy settings
+# Enable L7 filtering for database access control
+network_policy_l7_enabled: "{{ env != 'local' }}"
+
+# PostgreSQL L7 filtering - restrict by database name and user
+# Each service can only access its designated database
+postgresql_l7_policies:
+  - service: vault
+    namespace: vault
+    database: vault
+    user: vault_user
+  - service: authentik
+    namespace: authentik
+    database: authentik
+    user: authentik_user
+  - service: mattermost
+    namespace: mattermost
+    database: mattermost
+    user: mattermost_user
+  - service: nextcloud
+    namespace: nextcloud
+    database: nextcloud
+    user: nextcloud_user
+  - service: gitea
+    namespace: gitea
+    database: gitea
+    user: gitea_user
+  - service: redcap
+    namespace: redcap
+    database: redcap
+    user: redcap_user
+  - service: flipt
+    namespace: flipt
+    database: flipt
+    user: flipt_user
+  - service: authelia
+    namespace: authelia
+    database: authelia
+    user: authelia_user

@@ -28,7 +28,7 @@ secret_rotation_secrets:
   - name: authentik-credentials
     namespace: authentik
     vault_path: secret/data/services/authentik
-    rotation_interval: 168h  # 7 days
+    rotation_interval: 168h # 7 days
     keys:
       - secret-key
       - admin-password

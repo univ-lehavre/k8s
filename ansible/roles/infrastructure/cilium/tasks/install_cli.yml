@@ -9,14 +9,14 @@
   ansible.builtin.get_url:
     url: "https://github.com/cilium/cilium-cli/releases/download/{{ cilium_cli_version.content | trim }}/cilium-linux-amd64.tar.gz"
     dest: /tmp/cilium-linux-amd64.tar.gz
-    mode: '0644'
+    mode: "0644"
 
 - name: Extract Cilium CLI
   ansible.builtin.unarchive:
     src: /tmp/cilium-linux-amd64.tar.gz
     dest: /usr/local/bin
     remote_src: true
-    mode: '0755'
+    mode: "0755"
 
 - name: Clean up downloaded archive
   ansible.builtin.file:

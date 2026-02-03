@@ -63,16 +63,22 @@ nextcloud_oidc_client_id: nextcloud
 # Group mapping from Authentik/Authelia to Nextcloud groups
 # Groups are synced automatically via OIDC claims
 nextcloud_group_mapping:
-  # Authentik group → Nextcloud group
+  # Authentik/Authelia group → Nextcloud group
   admins: admin
+  devops: staff
   researchers: researchers
   users: users
+
+# Groups that get Nextcloud admin rights
+nextcloud_admin_groups:
+  - admins
 
 # Default quota per group (in bytes, 0 = unlimited)
 nextcloud_group_quotas:
   admin: 0
-  researchers: 107374182400  # 100 GB
-  users: 10737418240         # 10 GB
+  staff: 0
+  researchers: 107374182400 # 100 GB
+  users: 10737418240 # 10 GB
 
 # OnlyOffice integration
 nextcloud_onlyoffice_enabled: true

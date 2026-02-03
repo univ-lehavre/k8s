@@ -19,8 +19,11 @@
 
 - name: Generate bcrypt hash for admin password
   ansible.builtin.shell: |
+    set -o pipefail
     htpasswd -nbBC 10 "" "{{ argocd_admin_password }}" | tr -d ':\n' | sed 's/$2y/$2a/'
   register: argocd_admin_password_hash
+  args:
+    executable: /bin/bash
   when:
     - argocd_admin_password is defined
     - argocd_admin_password != ''
@@ -52,10 +55,10 @@
   retries: 30
   delay: 10
 
-- name: Create ArgoCD Ingress
+- name: Create ArgoCD HTTPRoute
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: argocd_ingress_enabled
 
 - name: Configure RBAC

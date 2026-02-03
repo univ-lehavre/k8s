@@ -12,7 +12,7 @@ helm_versions:
   vault: "0.27.0"
   external_secrets: "0.9.12"
   postgresql_ha: "14.0.4"
-  postgresql: "15.2.5"  # Standalone version for local/staging
+  postgresql: "15.2.5" # Standalone version for local/staging
   redis: "18.12.1"
 
   # Identity

@@ -62,8 +62,8 @@
   retries: 30
   delay: 10
 
-- name: Create ECRIN Ingress
+- name: Create ECRIN HTTPRoute
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: ecrin_ingress_enabled

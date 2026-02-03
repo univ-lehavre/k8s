@@ -12,26 +12,18 @@
         labels:
           app.kubernetes.io/name: flipt
 
-- name: Create Flipt database in PostgreSQL
-  kubernetes.core.k8s_exec:
-    namespace: "{{ namespaces.databases }}"
-    pod: postgresql-0
-    command: |
-      psql -U postgres -c "CREATE DATABASE {{ flipt_postgresql_database }};" || true
-      psql -U postgres -c "CREATE USER {{ flipt_postgresql_user }} WITH PASSWORD '{{ postgresql_superuser_password }}';" || true
-      psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE {{ flipt_postgresql_database }} TO {{ flipt_postgresql_user }};"
-    env:
-      - name: PGPASSWORD
-        value: "{{ postgresql_superuser_password }}"
+- name: Create Flipt database with proper permissions
+  ansible.builtin.include_tasks: ../../platform/postgresql/tasks/create_database.yml
+  vars:
+    db_name: "{{ flipt_postgresql_database }}"
+    db_user: "{{ flipt_postgresql_user }}"
+    db_password: "{{ database_passwords.flipt }}"
+    db_privileges: "{{ database_privileges.flipt.privileges }}"
+    db_schema_owner: "{{ database_privileges.flipt.schema_owner }}"
   when:
     - flipt_database_enabled
-    - postgresql_superuser_password is defined
-    - postgresql_superuser_password != ''
-  no_log: true
-  register: flipt_db_create
-  failed_when:
-    - flipt_db_create.rc != 0
-    - "'already exists' not in (flipt_db_create.stderr | default(''))"
+    - database_passwords.flipt is defined
+    - database_passwords.flipt != ''
 
 - name: Create Flipt ConfigMap
   kubernetes.core.k8s:
@@ -49,10 +41,11 @@
         namespace: "{{ flipt_namespace }}"
       type: Opaque
       stringData:
-        database-url: "postgres://{{ flipt_postgresql_user }}:{{ postgresql_superuser_password }}@{{ flipt_postgresql_host }}:{{ flipt_postgresql_port }}/{{ flipt_postgresql_database }}?sslmode=disable"
+        database-url: "postgres://{{ flipt_postgresql_user }}:{{ database_passwords.flipt }}@{{ flipt_postgresql_host }}:{{ flipt_postgresql_port }}/{{ flipt_postgresql_database
+          }}?sslmode={{ 'require' if postgresql_ssl_enabled | default(false) else 'disable' }}"
   when:
     - flipt_database_enabled
-    - postgresql_superuser_password is defined
+    - database_passwords.flipt is defined
   no_log: true
 
 - name: Deploy Flipt
@@ -96,8 +89,8 @@
   retries: 30
   delay: 10
 
-- name: Create Flipt Ingress
+- name: Create Flipt HTTPRoute
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: flipt_ingress_enabled

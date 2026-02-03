@@ -3,14 +3,14 @@
   ansible.builtin.set_fact:
     is_macos: "{{ ansible_os_family == 'Darwin' }}"
 
-- name: macOS - Check if Docker is available
+- name: MacOS - Check if Docker is available
   ansible.builtin.command: docker --version
   register: docker_check
   changed_when: false
   failed_when: false
   when: is_macos
 
-- name: macOS - Fail if Docker Desktop not installed
+- name: MacOS - Fail if Docker Desktop not installed
   ansible.builtin.fail:
     msg: |
       Docker Desktop is required for local development on macOS.
@@ -19,14 +19,14 @@
     - is_macos
     - docker_check.rc != 0
 
-- name: macOS - Verify Docker is running
+- name: MacOS - Verify Docker is running
   ansible.builtin.command: docker info
   register: docker_info
   changed_when: false
   failed_when: false
   when: is_macos
 
-- name: macOS - Prompt to start Docker Desktop
+- name: MacOS - Prompt to start Docker Desktop
   ansible.builtin.fail:
     msg: |
       Docker Desktop is installed but not running.
@@ -70,7 +70,7 @@
   ansible.builtin.copy:
     dest: /etc/docker/daemon.json
     content: "{{ docker_daemon_config | to_nice_json }}"
-    mode: '0644'
+    mode: "0644"
   notify: Restart Docker
   when: not is_macos
 

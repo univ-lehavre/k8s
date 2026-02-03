@@ -80,6 +80,5 @@ argocd_rbac_policy: |
 
 # Repository credentials (from Vault/ESO)
 argocd_repositories: []
-
 # Projects
 argocd_default_project_enabled: true

@@ -17,8 +17,8 @@
   retries: 30
   delay: 10
 
-- name: Create Hubble UI Ingress
+- name: Create Hubble UI HTTPRoute
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: hubble_ui_ingress_enabled

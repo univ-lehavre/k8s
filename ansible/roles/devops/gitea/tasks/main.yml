@@ -62,10 +62,10 @@
   retries: 30
   delay: 10
 
-- name: Create Gitea Ingress
+- name: Create Gitea HTTPRoute
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'ingress.yml.j2') | from_yaml }}"
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: gitea_ingress_enabled
 
 - name: Create SSH NodePort Service

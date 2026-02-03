@@ -13,6 +13,15 @@ postgresql:
   image:
     tag: {{ postgresql_version }}
 
+{% if postgresql_ssl_enabled | default(false) %}
+  # TLS/SSL Configuration
+  tls:
+    enabled: true
+    certificatesSecret: {{ postgresql_ssl_cert_secret }}
+    certFilename: tls.crt
+    certKeyFilename: tls.key
+{% endif %}
+
   resources:
     requests:
       cpu: {{ postgresql_resources.requests.cpu }}

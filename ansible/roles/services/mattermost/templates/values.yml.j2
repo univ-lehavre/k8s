@@ -23,11 +23,15 @@ persistence:
     storageClass: {{ mattermost_storage_class }}
     size: 1Gi
 
-# External database
+# External database - uses service-specific password and SSL
 externalDB:
   enabled: true
   externalDriverType: postgres
-  externalConnectionString: "postgres://{{ mattermost_postgresql_user }}:{{ postgresql_superuser_password }}@{{ mattermost_postgresql_host }}:{{ mattermost_postgresql_port }}/{{ mattermost_postgresql_database }}?sslmode=disable"
+{% if postgresql_ssl_enabled | default(false) %}
+  externalConnectionString: "postgres://{{ mattermost_postgresql_user }}:{{ database_passwords.mattermost }}@{{ mattermost_postgresql_host }}:{{ mattermost_postgresql_port }}/{{ mattermost_postgresql_database }}?sslmode=require"
+{% else %}
+  externalConnectionString: "postgres://{{ mattermost_postgresql_user }}:{{ database_passwords.mattermost }}@{{ mattermost_postgresql_host }}:{{ mattermost_postgresql_port }}/{{ mattermost_postgresql_database }}?sslmode=disable"
+{% endif %}
 
 # Disable built-in MySQL
 mysql:
@@ -45,13 +49,19 @@ config:
     Enable: true
     Secret: ""  # Configure via External Secrets
     Id: "{{ mattermost_oidc_client_id }}"
-    Scope: openid profile email
+    Scope: openid profile email groups
     AuthEndpoint: "https://auth.{{ domain }}/application/o/authorize/"
     TokenEndpoint: "https://auth.{{ domain }}/application/o/token/"
     UserApiEndpoint: "https://auth.{{ domain }}/application/o/userinfo/"
     DiscoveryEndpoint: "{{ mattermost_oidc_discovery_endpoint }}"
     ButtonText: "{{ mattermost_oidc_button_text }}"
     ButtonColor: "#6DB33F"
+{% if mattermost_group_sync_enabled | default(true) %}
+  # Group sync configuration for OIDC
+  # Maps Authelia/Authentik groups to Mattermost roles
+  GuestAccountsSettings:
+    Enable: false
+{% endif %}
 {% endif %}
 
 # Ingress disabled (managed separately)

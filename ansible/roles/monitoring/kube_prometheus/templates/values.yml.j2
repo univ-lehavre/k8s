@@ -114,12 +114,20 @@ grafana:
       auto_sign_up: {{ grafana_proxy_auto_sign_up | lower }}
       headers: "Email:{{ grafana_proxy_header_email }} Groups:{{ grafana_proxy_header_groups }}"
       enable_login_token: true
+      sync_ttl: 60
     auth:
       disable_login_form: false
       disable_signout_menu: false
     users:
       auto_assign_org: true
-      auto_assign_org_role: Viewer
+      auto_assign_org_role: {{ grafana_role_mapping.default_role | default('Viewer') }}
+    # Role mapping based on Authelia groups (JMESPath expression)
+    # Maps groups header to Grafana roles: admins→Admin, devops→Editor, others→Viewer
+    role_attribute_path: >-
+      contains(groups[*], '{{ grafana_role_mapping.admin_groups | default(["admins"]) | join("') || contains(groups[*], '") }}') && 'Admin' ||
+      contains(groups[*], '{{ grafana_role_mapping.editor_groups | default(["devops"]) | join("') || contains(groups[*], '") }}') && 'Editor' ||
+      '{{ grafana_role_mapping.default_role | default("Viewer") }}'
+    role_attribute_strict: false
 {% elif grafana_oidc_enabled | default(false) %}
     # OIDC authentication via Authentik
     auth.generic_oauth:

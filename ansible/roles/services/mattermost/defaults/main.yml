@@ -48,12 +48,18 @@ mattermost_oidc_client_id: mattermost
 mattermost_group_sync_enabled: true
 mattermost_group_attribute: groups
 
-# Role mapping from groups
+# Role mapping from Authelia/Authentik groups
 # admins → system_admin, devops → team_admin, others → team_user
-mattermost_admin_groups:
-  - admins
-mattermost_team_admin_groups:
-  - devops
+mattermost_role_mapping:
+  system_admin_groups:
+    - admins
+  team_admin_groups:
+    - devops
+# Users not in these groups get team_user role
+
+# Legacy aliases for backward compatibility
+mattermost_admin_groups: "{{ mattermost_role_mapping.system_admin_groups }}"
+mattermost_team_admin_groups: "{{ mattermost_role_mapping.team_admin_groups }}"
 
 # Default team for all users
 mattermost_default_team: "{{ organization_name | default('atlas') | lower }}"

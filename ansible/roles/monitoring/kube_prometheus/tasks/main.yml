@@ -74,8 +74,8 @@
   retries: 30
   delay: 10
 
-- name: Create Grafana Ingress
+- name: Create Grafana HTTPRoute
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'grafana-ingress.yml.j2') | from_yaml }}"
+    definition: "{{ lookup('template', 'grafana-httproute.yml.j2') | from_yaml }}"
   when: grafana_ingress_enabled

@@ -49,7 +49,7 @@ trivy_operator_resources:
     memory: 256Mi
 
 # Scan schedule (cron format)
-trivy_scan_schedule: "0 1 * * *"  # Daily at 1 AM
+trivy_scan_schedule: "0 1 * * *" # Daily at 1 AM
 
 # Compliance reports
 trivy_compliance_enabled: true

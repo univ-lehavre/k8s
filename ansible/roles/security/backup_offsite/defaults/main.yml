@@ -15,7 +15,7 @@ backup_encryption_enabled: true
 backup_encryption_key: "{{ lookup('env', 'BACKUP_ENCRYPTION_KEY') | default(omit) }}"
 
 # Backup schedule (cron format)
-backup_schedule: "0 3 * * *"  # Daily at 3 AM
+backup_schedule: "0 3 * * *" # Daily at 3 AM
 
 # Retention policy
 backup_retention_days: 30

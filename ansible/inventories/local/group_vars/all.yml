@@ -13,7 +13,7 @@ k3d_cluster_name: atlas-local
 k3d_api_port: 6550
 k3d_http_port: 80
 k3d_https_port: 443
-k3d_agents: 0  # Single node for local dev
+k3d_agents: 0 # Single node for local dev
 
 # Storage configuration
 storage_class: local-path
@@ -34,7 +34,7 @@ backup_enabled: false
 replicas:
   default: 1
   postgresql: 1
-  redis: 0  # Standalone mode
+  redis: 0 # Standalone mode
   authentik_server: 1
   authentik_worker: 1
 
