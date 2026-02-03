@@ -54,6 +54,15 @@ spec:
         - ports:
             - port: "6379"
               protocol: TCP
+    # Allow MariaDB access (for MySQL-compatible services like REDCap)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mariadb
+            app.kubernetes.io/name: mariadb
+      toPorts:
+        - ports:
+            - port: "3306"
+              protocol: TCP
 
 ---
 # Deny direct pod-to-pod communication within database namespace

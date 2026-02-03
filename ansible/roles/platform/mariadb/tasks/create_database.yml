@@ -1,0 +1,34 @@
+---
+# Create database and user in MariaDB
+# This task file is included by services that need a MariaDB database
+#
+# Required variables:
+#   mariadb_db_name: Name of the database to create
+#   mariadb_db_user: Username for the database
+#   mariadb_db_password: Password for the user
+#
+# Optional variables:
+#   mariadb_db_privileges: Privileges to grant (default: ALL PRIVILEGES)
+#   mariadb_db_host: Host pattern for user (default: %)
+
+- name: Create MariaDB database and user for {{ mariadb_db_name }}
+  kubernetes.core.k8s_exec:
+    namespace: "{{ mariadb_namespace | default('mariadb') }}"
+    pod: mariadb-0
+    command: >
+      mysql -u root -p{{ mariadb_root_password }} -e "
+        CREATE DATABASE IF NOT EXISTS \`{{ mariadb_db_name }}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        CREATE USER IF NOT EXISTS '{{ mariadb_db_user }}'@'{{ mariadb_db_host | default('%') }}' IDENTIFIED BY '{{ mariadb_db_password }}';
+        GRANT {{ mariadb_db_privileges | default('ALL PRIVILEGES') }} ON \`{{ mariadb_db_name }}\`.* TO '{{ mariadb_db_user }}'@'{{ mariadb_db_host | default('%') }}';
+        FLUSH PRIVILEGES;
+      "
+  when:
+    - mariadb_root_password is defined
+    - mariadb_root_password != ''
+    - mariadb_db_password is defined
+    - mariadb_db_password != ''
+  no_log: true
+  register: mariadb_db_create
+  failed_when:
+    - mariadb_db_create.rc != 0
+    - "'already exists' not in (mariadb_db_create.stderr | default(''))"

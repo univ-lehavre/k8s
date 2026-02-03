@@ -11,6 +11,7 @@ network_policies_default_deny: true
 network_policies_namespaces:
   - vault
   - postgresql
+  - mariadb
   - redis
   - authentik
   - authelia
@@ -66,10 +67,6 @@ postgresql_l7_policies:
     namespace: gitea
     database: gitea
     user: gitea_user
-  - service: redcap
-    namespace: redcap
-    database: redcap
-    user: redcap_user
   - service: flipt
     namespace: flipt
     database: flipt
@@ -78,3 +75,11 @@ postgresql_l7_policies:
     namespace: authelia
     database: authelia
     user: authelia_user
+
+# MariaDB L7 filtering - for MySQL-compatible services
+# REDCap requires MySQL/MariaDB, not PostgreSQL
+mariadb_l7_policies:
+  - service: redcap
+    namespace: redcap
+    database: redcap
+    user: redcap_user

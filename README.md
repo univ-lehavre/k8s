@@ -31,8 +31,8 @@ Plateforme Kubernetes automatisée pour le déploiement de microservices orient�
 │  ┌─────────────────────────────────────────────┐   │  Prometheus     │     │
 │  │              Data Layer                      │   │  Grafana        │     │
 │  │                                              │   │  Hubble         │     │
-│  │  PostgreSQL HA    Redis       SeaweedFS     │   └─────────────────┘     │
-│  │  (7 databases)    (cache)     (S3)          │                            │
+│  │  PostgreSQL HA   MariaDB   Redis  SeaweedFS │   └─────────────────┘     │
+│  │  (7 databases)  (REDCap)  (cache)   (S3)    │                            │
 │  └─────────────────────────────────────────────┘                            │
 │                                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
@@ -147,7 +147,7 @@ ansible-playbook playbooks/site.yml -i inventories/production
 | 1     | `phase-01-preparation.yml` | Prérequis système, Docker (K3D)                                              |
 | 2     | `phase-02-k3s-core.yml`    | K3s/K3D, Cilium, Envoy Gateway, Cert-Manager, Longhorn                       |
 | 3     | `phase-03-vault.yml`       | HashiCorp Vault, External Secrets Operator                                   |
-| 4     | `phase-04-databases.yml`   | PostgreSQL HA, Redis                                                         |
+| 4     | `phase-04-databases.yml`   | PostgreSQL HA, MariaDB, Redis                                                |
 | 5     | `phase-05-services.yml`    | Authelia, Mattermost, Nextcloud, OnlyOffice, REDCap, ECRIN, Flipt, SeaweedFS |
 | 6     | `phase-06-devops.yml`      | Gitea, ArgoCD                                                                |
 | 7     | `phase-07-monitoring.yml`  | Prometheus, Grafana, Hubble UI                                               |
@@ -182,7 +182,8 @@ ansible-playbook playbooks/site.yml -i inventories/production
 │   │   ├── platform/
 │   │   │   ├── vault/                  # Secrets management
 │   │   │   ├── external_secrets/       # Secret sync
-│   │   │   ├── postgresql/             # Database
+│   │   │   ├── postgresql/             # Database (PostgreSQL)
+│   │   │   ├── mariadb/                # Database (MySQL-compatible)
 │   │   │   ├── redis/                  # Cache
 │   │   │   └── authelia/               # IAM
 │   │   │
@@ -267,8 +268,15 @@ network_policy_l7_enabled: true
 | `mattermost_db` | Mattermost      |
 | `nextcloud_db`  | Nextcloud       |
 | `gitea_db`      | Gitea           |
-| `redcap_db`     | REDCap          |
 | `flipt_db`      | Flipt           |
+
+### MariaDB
+
+REDCap nécessite MySQL ou un dérivé MySQL (MariaDB, Percona). Il n'est **pas compatible avec PostgreSQL**.
+
+| Database   | Service |
+| ---------- | ------- |
+| `redcap`   | REDCap  |
 
 ### Redis
 
@@ -337,22 +345,109 @@ kubectl port-forward -n kube-system svc/hubble-ui 8080:80
 
 ## Versions des Composants
 
-| Composant        | Version     | Latest   | Commentaires                                                                 |
-| ---------------- | ----------- | -------- | ---------------------------------------------------------------------------- |
-| K3s              | 1.29.2+k3s1 | 1.35.x   | Version LTS stable, upgrade planifié après validation des workloads          |
-| Cilium           | 1.16.5      | 1.17.5   | Attente stabilisation 1.17, breaking changes Gateway API                     |
-| Envoy Gateway    | 1.2.0       | 1.6.3    | Upgrade majeur requis, testing en cours sur staging                          |
-| Longhorn         | 1.6.0       | 1.11.0   | v1.11 a un bug mémoire (hotfix requis), reste sur 1.6 LTS                    |
-| Cert-Manager     | 1.14.3      | 1.19.3   | Upgrade planifié, pas de breaking changes bloquants                          |
-| Vault            | 0.27.0      | 0.30.0   | Upgrade planifié, requiert Kubernetes 1.29+                                  |
-| External Secrets | 0.9.12      | 1.3.1    | Version 1.x = breaking changes API, migration en cours                       |
-| PostgreSQL HA    | 14.0.4      | 16.3.2   | v16.x requiert migration données, planifié prochain cycle maintenance        |
-| Redis            | 18.12.1     | 24.1.2   | v24.x = Redis 8, breaking changes config, évaluation en cours                |
-| Authelia         | 0.9.0       | 0.10.49  | Chart beta, upgrade après stabilisation                                      |
-| Gitea            | 10.1.1      | 12.5.0   | v12.x supprime support MySQL/MariaDB intégré, OK pour nous (PostgreSQL)      |
-| ArgoCD           | 6.4.0       | 9.3.7    | v9.x = ArgoCD v3.0, breaking changes majeurs, migration planifiée Q2         |
-| Kube-Prometheus  | 56.21.1     | 81.4.3   | Upgrade fréquents, version stable testée en production                       |
-| Kyverno          | 3.3.0       | 3.7.0    | Upgrade planifié, pas de breaking changes majeurs                            |
+| Composant        | Version | Latest  | Commentaires                                                 |
+| ---------------- | ------- | ------- | ------------------------------------------------------------ |
+| K3s              | 1.29.2  | 1.35.x  | Version LTS stable, upgrade planifié après validation        |
+| Cilium           | 1.16.5  | 1.17.5  | Attente stabilisation 1.17, breaking changes Gateway API     |
+| Envoy Gateway    | 1.2.0   | 1.6.3   | Upgrade majeur requis, testing en cours sur staging          |
+| Longhorn         | 1.6.0   | 1.11.0  | v1.11 a un bug mémoire (hotfix requis), reste sur 1.6 LTS    |
+| Cert-Manager     | 1.14.3  | 1.19.3  | Upgrade planifié, pas de breaking changes bloquants          |
+| Vault            | 1.15.2  | 1.21.2  | Upgrade planifié, requiert Kubernetes 1.29+                  |
+| External Secrets | 0.9.12  | 1.3.x   | Version 1.x = breaking changes API, migration en cours       |
+| PostgreSQL       | 16.x    | 18.1    | Migration données requise pour version majeure               |
+| MariaDB          | 11.2.x  | 11.8.5  | Pour REDCap (incompatible PostgreSQL)                        |
+| Redis            | 7.2.x   | 8.6-rc  | v8.x breaking changes config, évaluation en cours            |
+| Authelia         | 4.38.x  | 4.39.15 | Upgrade vers 4.39.15 planifié                                |
+| Gitea            | 1.21.x  | 1.25.4  | Upgrade planifié                                             |
+| ArgoCD           | 2.10.x  | 3.3.0   | v3.x breaking changes majeurs, migration planifiée Q2        |
+| Prometheus       | 2.x     | 3.9.1   | Via kube-prometheus-stack                                    |
+| Kyverno          | 1.12.x  | 1.17.0  | Upgrade planifié                                             |
+
+## Autorisations et Contrôle d'Accès
+
+### Groupes Utilisateurs
+
+| Groupe        | Description                              |
+| ------------- | ---------------------------------------- |
+| `admins`      | Administrateurs avec accès complet       |
+| `devops`      | Équipe DevOps (déploiement, monitoring)  |
+| `developers`  | Développeurs (accès lecture + sync)      |
+| `researchers` | Chercheurs (accès aux outils recherche)  |
+
+### Matrice des Autorisations par Service
+
+| Service    | admins | devops | developers | researchers | Niveau Auth |
+| ---------- | :----: | :----: | :--------: | :---------: | ----------- |
+| Vault      | ✅     | ✅     | ❌         | ❌          | 2FA         |
+| ArgoCD     | ✅     | ✅     | 👁️         | ❌          | 2FA         |
+| Authentik  | ✅     | ❌     | ❌         | ❌          | 2FA         |
+| Gitea      | ✅     | ✅     | ✅         | ✅          | 1FA         |
+| Grafana    | ✅     | ✅     | ✅         | ✅          | 1FA         |
+| Hubble UI  | ✅     | ✅     | ❌         | ❌          | 1FA         |
+| Mattermost | ✅     | ✅     | ✅         | ✅          | 1FA         |
+| Nextcloud  | ✅     | ✅     | ✅         | ✅          | 1FA         |
+| REDCap     | ✅     | ❌     | ❌         | ✅          | 2FA         |
+
+**Légende** : ✅ Accès complet | 👁️ Lecture seule | ❌ Pas d'accès | 1FA = mot de passe | 2FA = mot de passe + TOTP/WebAuthn
+
+### Politiques de Sécurité Kubernetes
+
+| Politique                     | Local   | Staging  | Production | Description                                     |
+| ----------------------------- | ------- | -------- | ---------- | ----------------------------------------------- |
+| Network Policies (Cilium)     | ❌      | ✅       | ✅         | Default deny + allowlist explicite              |
+| L7 Network Filtering          | ❌      | ✅       | ✅         | Filtrage applicatif PostgreSQL                  |
+| Pod Security Standards        | ❌      | baseline | restricted | Restrictions conteneurs (privileged, hostPath…) |
+| Kyverno Policies              | Audit   | Audit    | Enforce    | 8 policies (registries, labels, limits…)        |
+| etcd Encryption               | ❌      | ✅       | ✅         | Chiffrement secrets au repos                    |
+
+### Kyverno Policies Déployées
+
+| Policy                     | Description                                              |
+| -------------------------- | -------------------------------------------------------- |
+| `disallow-privileged`      | Interdit les conteneurs privilégiés                      |
+| `disallow-host-namespaces` | Interdit l'accès aux namespaces host (PID, network)      |
+| `disallow-host-path`       | Interdit le montage de chemins host                      |
+| `disallow-latest-tag`      | Interdit l'utilisation du tag `:latest`                  |
+| `restrict-registries`      | Limite aux registries approuvés (docker.io, ghcr.io…)    |
+| `require-labels`           | Exige les labels `app.kubernetes.io/name` et `/component`|
+| `require-resource-limits`  | Exige les limites CPU et mémoire                         |
+| `require-probes`           | Exige les probes liveness et readiness (non-local)       |
+
+### Network Policies par Namespace
+
+| Namespace  | Ingress autorisé depuis                                                       | Egress autorisé vers                    |
+| ---------- | ----------------------------------------------------------------------------- | --------------------------------------- |
+| postgresql | vault, authelia, authentik, mattermost, nextcloud, gitea, flipt               | -                                       |
+| mariadb    | redcap                                                                        | -                                       |
+| redis      | authelia, authentik, nextcloud, gitea                                         | -                                       |
+| vault      | external-secrets, envoy-gateway                                               | postgresql                              |
+| authelia   | envoy-gateway                                                                 | redis, postgresql                       |
+| authentik  | envoy-gateway                                                                 | redis, postgresql                       |
+| argocd     | envoy-gateway                                                                 | gitea, authentik, external (HTTPS, SSH) |
+| gitea      | envoy-gateway, argocd                                                         | postgresql, redis                       |
+| nextcloud  | envoy-gateway                                                                 | postgresql, redis, seaweedfs            |
+| mattermost | envoy-gateway                                                                 | postgresql, redis                       |
+
+### Isolation des Bases de Données (L7)
+
+Chaque service ne peut accéder qu'à sa propre base de données grâce au filtrage L7 Cilium :
+
+#### PostgreSQL
+
+| Service    | Base de données autorisée |
+| ---------- | ------------------------- |
+| Vault      | `vault`                   |
+| Authelia   | `authelia_db`             |
+| Mattermost | `mattermost_db`           |
+| Nextcloud  | `nextcloud_db`            |
+| Gitea      | `gitea_db`                |
+| Flipt      | `flipt_db`                |
+
+#### MariaDB
+
+| Service    | Base de données autorisée |
+| ---------- | ------------------------- |
+| REDCap     | `redcap`                  |
 
 ## Documentation
 

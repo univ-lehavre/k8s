@@ -11,6 +11,8 @@
   roles:
     - role: platform/postgresql
       tags: [databases, postgresql, platform]
+    - role: platform/mariadb
+      tags: [databases, mariadb, platform]
     - role: platform/redis
       tags: [databases, redis, platform]
 
@@ -20,4 +22,5 @@
         msg: |
           Databases deployed:
           - PostgreSQL: postgresql.postgresql.svc.cluster.local:5432
+          - MariaDB: mariadb.mariadb.svc.cluster.local:3306
           - Redis: redis-master.redis.svc.cluster.local:6379

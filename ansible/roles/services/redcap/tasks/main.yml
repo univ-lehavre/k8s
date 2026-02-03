@@ -12,25 +12,15 @@
         labels:
           app.kubernetes.io/name: redcap
 
-- name: Create REDCap database in PostgreSQL
-  kubernetes.core.k8s_exec:
-    namespace: "{{ namespaces.databases }}"
-    pod: postgresql-0
-    command: |
-      psql -U postgres -c "CREATE DATABASE {{ redcap_postgresql_database }};" || true
-      psql -U postgres -c "CREATE USER {{ redcap_postgresql_user }} WITH PASSWORD '{{ postgresql_superuser_password }}';" || true
-      psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE {{ redcap_postgresql_database }} TO {{ redcap_postgresql_user }};"
-    env:
-      - name: PGPASSWORD
-        value: "{{ postgresql_superuser_password }}"
-  when:
-    - postgresql_superuser_password is defined
-    - postgresql_superuser_password != ''
-  no_log: true
-  register: redcap_db_create
-  failed_when:
-    - redcap_db_create.rc != 0
-    - "'already exists' not in (redcap_db_create.stderr | default(''))"
+- name: Create REDCap database in MariaDB
+  ansible.builtin.include_role:
+    name: platform/mariadb
+    tasks_from: create_database.yml
+  vars:
+    mariadb_db_name: "{{ redcap_mariadb_database }}"
+    mariadb_db_user: "{{ redcap_mariadb_user }}"
+    mariadb_db_password: "{{ database_passwords.redcap }}"
+    mariadb_db_privileges: "{{ database_privileges.redcap.privileges }}"
 
 - name: Create REDCap secrets
   kubernetes.core.k8s:
@@ -44,7 +34,7 @@
       type: Opaque
       stringData:
         salt: "{{ redcap_salt }}"
-        db-password: "{{ postgresql_superuser_password }}"
+        db-password: "{{ database_passwords.redcap }}"
   when:
     - redcap_salt is defined
     - redcap_salt != ''

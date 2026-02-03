@@ -45,13 +45,13 @@ spec:
               memory: {{ redcap_resources.limits.memory }}
           env:
             - name: REDCAP_DB_HOST
-              value: "{{ redcap_postgresql_host }}"
+              value: "{{ redcap_mariadb_host }}"
             - name: REDCAP_DB_PORT
-              value: "{{ redcap_postgresql_port | string }}"
+              value: "{{ redcap_mariadb_port | string }}"
             - name: REDCAP_DB_NAME
-              value: "{{ redcap_postgresql_database }}"
+              value: "{{ redcap_mariadb_database }}"
             - name: REDCAP_DB_USER
-              value: "{{ redcap_postgresql_user }}"
+              value: "{{ redcap_mariadb_user }}"
             - name: REDCAP_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
