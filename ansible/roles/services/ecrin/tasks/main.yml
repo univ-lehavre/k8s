@@ -22,9 +22,23 @@
         name: ecrin-config
         namespace: "{{ ecrin_namespace }}"
       data:
-        OIDC_ENABLED: "{{ ecrin_oidc_enabled | lower }}"
+        OIDC_ENABLED: "{{ ecrin_oidc_enabled | string | lower }}"
         OIDC_AUTHORITY: "{{ ecrin_oidc_authority }}"
         OIDC_CLIENT_ID: "{{ ecrin_oidc_client_id }}"
+
+- name: Create ECRIN OIDC Secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: ecrin-oidc-secret
+        namespace: "{{ ecrin_namespace }}"
+      type: Opaque
+      stringData:
+        OIDC_CLIENT_SECRET: "{{ ecrin_oidc_client_secret }}"
+  when: ecrin_oidc_enabled | default(false)
 
 - name: Deploy ECRIN
   kubernetes.core.k8s:

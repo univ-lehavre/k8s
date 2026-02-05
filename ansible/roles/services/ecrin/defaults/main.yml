@@ -6,7 +6,7 @@ ecrin_namespace: ecrin
 
 # Image settings
 ecrin_image: ecrin/mdr-portal
-ecrin_image_tag: latest
+ecrin_image_tag: "{{ helm_versions.ecrin }}"
 
 # Resources
 ecrin_resources:
@@ -24,7 +24,9 @@ ecrin_ingress_class: cilium
 ecrin_ingress_tls_secret: ecrin-tls
 ecrin_ingress_issuer: "{{ tls_issuer }}"
 
-# OIDC settings (Authentik)
+# OIDC settings (Authelia)
 ecrin_oidc_enabled: true
-ecrin_oidc_authority: "https://auth.{{ domain }}/application/o/ecrin/"
+ecrin_oidc_authority: "https://login.{{ domain }}"
 ecrin_oidc_client_id: ecrin
+# Uses the same secret as configured in Authelia OIDC client
+ecrin_oidc_client_secret: "{{ authelia_oidc_ecrin_secret }}"

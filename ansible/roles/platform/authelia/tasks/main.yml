@@ -20,6 +20,22 @@
     repo_url: "{{ helm_repositories.authelia.url }}"
     state: present
 
+- name: Generate OIDC RSA private key (if not provided)
+  ansible.builtin.command:
+    cmd: openssl genrsa 4096
+  register: oidc_private_key_generated
+  changed_when: false
+  when:
+    - authelia_oidc_enabled | default(false)
+    - authelia_oidc_private_key is not defined
+  no_log: true
+
+- name: Set OIDC private key fact
+  ansible.builtin.set_fact:
+    _authelia_oidc_private_key: "{{ authelia_oidc_private_key | default(oidc_private_key_generated.stdout | default('')) }}"
+  when: authelia_oidc_enabled | default(false)
+  no_log: true
+
 - name: Create Authelia secrets
   kubernetes.core.k8s:
     state: present
@@ -37,6 +53,7 @@
             'SESSION_SECRET': authelia_session_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')),
             'STORAGE_ENCRYPTION_KEY': authelia_storage_key | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits'))
           }
+          | combine({'OIDC_HMAC_SECRET': authelia_oidc_hmac_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')), 'OIDC_PRIVATE_KEY': _authelia_oidc_private_key} if authelia_oidc_enabled | default(false) else {})
           | combine({'REDIS_PASSWORD': redis_password | default('')} if authelia_redis_enabled else {})
           | combine({'STORAGE_POSTGRES_PASSWORD': authelia_postgresql_password | default('')} if authelia_storage_backend == 'postgres' else {})
         }}

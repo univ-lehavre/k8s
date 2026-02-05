@@ -148,8 +148,47 @@ data:
 {% endfor %}
 
     # Identity providers (OIDC)
-    # Authelia can act as an OIDC provider
+    # Authelia acts as an OIDC provider for platform applications
+{% if authelia_oidc_enabled | default(false) %}
+    identity_providers:
+      oidc:
+        hmac_secret:
+          path: /secrets/OIDC_HMAC_SECRET
+        jwks:
+          - key_id: main
+            algorithm: RS256
+            use: sig
+            key:
+              path: /secrets/OIDC_PRIVATE_KEY
+        cors:
+          endpoints:
+            - authorization
+            - token
+            - revocation
+            - introspection
+            - userinfo
+          allowed_origins_from_client_redirect_uris: true
+        clients:
+{% for client in authelia_oidc_clients | default([]) %}
+          - client_id: {{ client.id }}
+            client_name: {{ client.description }}
+            client_secret: {{ client.secret }}
+            public: false
+            authorization_policy: {{ client.authorization_policy | default('one_factor') }}
+            consent_mode: implicit
+            redirect_uris:
+{% for uri in client.redirect_uris %}
+              - {{ uri }}
+{% endfor %}
+            scopes:
+{% for scope in client.scopes | default(['openid', 'profile', 'email']) %}
+              - {{ scope }}
+{% endfor %}
+            userinfo_signed_response_alg: {{ client.userinfo_signed_response_alg | default('none') }}
+            token_endpoint_auth_method: {{ client.token_endpoint_auth_method | default('client_secret_basic') }}
+{% endfor %}
+{% else %}
     identity_providers:
       oidc:
         enabled: false
-        # Configure OIDC clients here if needed
+{% endif %}

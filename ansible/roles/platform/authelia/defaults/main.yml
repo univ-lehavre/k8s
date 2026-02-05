@@ -35,7 +35,8 @@ authelia_session_inactivity: 5m
 authelia_session_remember_me: 1M
 
 # Redis backend (for session storage)
-authelia_redis_enabled: true
+# Disabled by default in local to reduce dependencies, enabled in staging/production
+authelia_redis_enabled: "{{ redis_enabled | default(false) }}"
 authelia_redis_host: "{{ redis_host | default('redis-master.databases.svc.cluster.local') }}"
 authelia_redis_port: 6379
 
@@ -125,6 +126,13 @@ authelia_access_rules:
   - domain: "chat.{{ domain }}"
     policy: one_factor
 
+  # ECRIN - researchers with 1FA
+  - domain: "ecrin.{{ domain }}"
+    policy: one_factor
+    subject:
+      - "group:researchers"
+      - "group:admins"
+
 # Default users (for development/testing)
 # In production, use LDAP or file-based users with external secrets
 authelia_default_users_enabled: "{{ env | default('local') == 'local' }}"
@@ -159,3 +167,28 @@ authelia_log_format: json
 # Metrics
 authelia_metrics_enabled: true
 authelia_metrics_port: 9959
+
+# OIDC Provider configuration
+authelia_oidc_enabled: true
+
+# Shared OIDC ECRIN secret - used by both Authelia and ECRIN roles
+# In production, provide via AUTHELIA_OIDC_ECRIN_SECRET environment variable
+# In local dev, generated once and cached
+_oidc_ecrin_secret_generated: "{{ lookup('password', '/dev/null length=64 chars=ascii_letters,digits') }}"
+authelia_oidc_ecrin_secret: "{{ secrets.authelia.oidc_ecrin_secret | default(_oidc_ecrin_secret_generated) }}"
+
+authelia_oidc_clients:
+  - id: ecrin
+    description: ECRIN MDR Portal
+    secret: "{{ authelia_oidc_ecrin_secret }}"
+    authorization_policy: one_factor
+    redirect_uris:
+      - "https://ecrin.{{ domain }}/signin-oidc"
+      - "https://ecrin.{{ domain }}/callback"
+    scopes:
+      - openid
+      - profile
+      - email
+      - groups
+    userinfo_signed_response_alg: none
+    token_endpoint_auth_method: client_secret_post
