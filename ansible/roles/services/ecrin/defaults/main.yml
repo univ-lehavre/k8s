@@ -4,9 +4,12 @@
 # Namespace
 ecrin_namespace: ecrin
 
-# Image settings
-ecrin_image: ecrin/mdr-portal
+# Image settings (GitHub Container Registry)
+ecrin_image: ghcr.io/univ-lehavre/atlas-ecrin
 ecrin_image_tag: "{{ helm_versions.ecrin }}"
+
+# Container port (SvelteKit Node adapter)
+ecrin_container_port: 3000
 
 # Resources
 ecrin_resources:
@@ -28,5 +31,10 @@ ecrin_ingress_issuer: "{{ tls_issuer }}"
 ecrin_oidc_enabled: true
 ecrin_oidc_authority: "https://login.{{ domain }}"
 ecrin_oidc_client_id: ecrin
+ecrin_oidc_redirect_uri: "https://ecrin.{{ domain }}/auth/callback"
 # Uses the same secret as configured in Authelia OIDC client
 ecrin_oidc_client_secret: "{{ authelia_oidc_ecrin_secret }}"
+
+# REDCap integration (external service)
+ecrin_redcap_url: "{{ lookup('env', 'ECRIN_REDCAP_URL') | default('') }}"
+ecrin_redcap_token: "{{ lookup('env', 'ECRIN_REDCAP_TOKEN') | default('') }}"

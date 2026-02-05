@@ -21,7 +21,7 @@ spec:
         - name: ecrin
           image: {{ ecrin_image }}:{{ ecrin_image_tag }}
           ports:
-            - containerPort: 80
+            - containerPort: {{ ecrin_container_port }}
           resources:
             requests:
               cpu: {{ ecrin_resources.requests.cpu }}
@@ -34,17 +34,17 @@ spec:
                 name: ecrin-config
 {% if ecrin_oidc_enabled | default(false) %}
             - secretRef:
-                name: ecrin-oidc-secret
+                name: ecrin-secrets
 {% endif %}
           readinessProbe:
             httpGet:
               path: /health
-              port: 80
+              port: {{ ecrin_container_port }}
             initialDelaySeconds: 10
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /health
-              port: 80
+              port: {{ ecrin_container_port }}
             initialDelaySeconds: 30
             periodSeconds: 10

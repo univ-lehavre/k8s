@@ -22,22 +22,24 @@
         name: ecrin-config
         namespace: "{{ ecrin_namespace }}"
       data:
-        OIDC_ENABLED: "{{ ecrin_oidc_enabled | string | lower }}"
-        OIDC_AUTHORITY: "{{ ecrin_oidc_authority }}"
-        OIDC_CLIENT_ID: "{{ ecrin_oidc_client_id }}"
+        PUBLIC_OIDC_AUTHORITY: "{{ ecrin_oidc_authority }}"
+        PUBLIC_OIDC_CLIENT_ID: "{{ ecrin_oidc_client_id }}"
+        PUBLIC_OIDC_REDIRECT_URI: "{{ ecrin_oidc_redirect_uri }}"
+        REDCAP_URL: "{{ ecrin_redcap_url }}"
 
-- name: Create ECRIN OIDC Secret
+- name: Create ECRIN Secrets
   kubernetes.core.k8s:
     state: present
     definition:
       apiVersion: v1
       kind: Secret
       metadata:
-        name: ecrin-oidc-secret
+        name: ecrin-secrets
         namespace: "{{ ecrin_namespace }}"
       type: Opaque
       stringData:
         OIDC_CLIENT_SECRET: "{{ ecrin_oidc_client_secret }}"
+        REDCAP_API_TOKEN: "{{ ecrin_redcap_token }}"
   when: ecrin_oidc_enabled | default(false)
 
 - name: Deploy ECRIN
@@ -59,7 +61,7 @@
           app: ecrin
         ports:
           - port: 80
-            targetPort: 80
+            targetPort: "{{ ecrin_container_port }}"
             protocol: TCP
 
 - name: Wait for ECRIN to be ready
