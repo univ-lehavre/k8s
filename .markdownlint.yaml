@@ -1,0 +1,47 @@
+# Configuration markdownlint
+# Documentation: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Default state for all rules
+default: true
+
+# Line length (MD013)
+MD013:
+  line_length: 180
+  heading_line_length: 100
+  code_block_line_length: 180
+  tables: false
+
+# Inline HTML (MD033)
+MD033:
+  allowed_elements:
+    - br
+    - sub
+    - sup
+
+# Fenced code blocks without language (MD040)
+MD040: false
+
+# First line should be a top-level heading (MD041)
+MD041: true
+
+# No duplicate headings (MD024)
+MD024:
+  siblings_only: true
+
+# Trailing punctuation in heading (MD026)
+MD026:
+  punctuation: ".,;:!"
+
+# Ordered list item prefix (MD029)
+MD029:
+  style: ordered
+
+# Spaces after list markers (MD030)
+MD030:
+  ul_single: 1
+  ol_single: 1
+  ul_multi: 1
+  ol_multi: 1
+
+# Table column style (MD060) - disabled, too strict for compact tables
+MD060: false

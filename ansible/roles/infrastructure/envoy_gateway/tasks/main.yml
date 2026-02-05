@@ -1,0 +1,96 @@
+---
+# Envoy Gateway deployment tasks
+# Deploys Gateway API implementation with support for forward auth
+
+- name: Create Envoy Gateway namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ envoy_gateway_namespace }}"
+        labels:
+          app.kubernetes.io/name: envoy-gateway
+          app.kubernetes.io/component: gateway-api
+
+- name: Install Gateway API CRDs
+  kubernetes.core.k8s:
+    state: present
+    src: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+  register: gateway_api_crds
+
+- name: Install Gateway API experimental CRDs (for ReferenceGrant)
+  kubernetes.core.k8s:
+    state: present
+    src: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
+  when: envoy_gateway_ext_auth_enabled | default(true)
+
+- name: Deploy Envoy Gateway via Helm
+  kubernetes.core.helm:
+    name: envoy-gateway
+    chart_ref: oci://docker.io/envoyproxy/gateway-helm
+    chart_version: "{{ envoy_gateway_version }}"
+    release_namespace: "{{ envoy_gateway_namespace }}"
+    create_namespace: false
+    wait: true
+    wait_timeout: 600s
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+
+- name: Wait for Envoy Gateway deployment
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: envoy-gateway
+    namespace: "{{ envoy_gateway_namespace }}"
+  register: eg_deployment
+  until: >
+    eg_deployment.resources | length > 0 and
+    eg_deployment.resources[0].status.readyReplicas | default(0) >= 1
+  retries: 30
+  delay: 10
+
+- name: Create wildcard certificate for Gateway
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'certificate.yml.j2') | from_yaml }}"
+  when: gateway_wildcard_enabled | default(true)
+
+- name: Create main Gateway resource
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'gateway.yml.j2') | from_yaml }}"
+
+- name: Wait for Gateway to be ready
+  kubernetes.core.k8s_info:
+    api_version: gateway.networking.k8s.io/v1
+    kind: Gateway
+    name: "{{ gateway_name }}"
+    namespace: "{{ envoy_gateway_namespace }}"
+  register: gateway_status
+  until: >
+    gateway_status.resources | length > 0 and
+    gateway_status.resources[0].status is defined and
+    gateway_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Accepted') | selectattr('status', 'equalto', 'True') | list | length > 0
+  retries: 30
+  delay: 10
+
+- name: Create ReferenceGrant for cross-namespace auth
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'reference-grant.yml.j2') | from_yaml_all | list }}"
+  when: envoy_gateway_ext_auth_enabled | default(true)
+
+- name: Display Gateway information
+  ansible.builtin.debug:
+    msg: |
+      Envoy Gateway deployed successfully!
+
+      Gateway Name: {{ gateway_name }}
+      Namespace: {{ envoy_gateway_namespace }}
+      GatewayClass: {{ envoy_gateway_class_name }}
+
+      To create HTTPRoutes, reference this gateway:
+        parentRefs:
+          - name: {{ gateway_name }}
+            namespace: {{ envoy_gateway_namespace }}

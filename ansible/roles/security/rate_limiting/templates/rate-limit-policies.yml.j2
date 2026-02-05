@@ -1,0 +1,142 @@
+# Per-service rate limiting annotations
+# Applied via Ingress annotations for Cilium
+
+---
+# Authelia rate limiting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: authelia-rate-limited
+  namespace: authelia
+  annotations:
+    cilium.io/rate-limit: "{{ rate_limiting_services.authelia.rps | default(rate_limiting_default_rps) }}"
+    cilium.io/rate-limit-burst: "{{ rate_limiting_services.authelia.burst | default(rate_limiting_default_burst) }}"
+spec:
+  ingressClassName: cilium
+  rules:
+    - host: "login.{{ domain }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: authelia
+                port:
+                  number: 9091
+  tls:
+    - hosts:
+        - "login.{{ domain }}"
+      secretName: authelia-tls
+
+---
+# Vault rate limiting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vault-rate-limited
+  namespace: vault
+  annotations:
+    cilium.io/rate-limit: "{{ rate_limiting_services.vault.rps | default(rate_limiting_default_rps) }}"
+    cilium.io/rate-limit-burst: "{{ rate_limiting_services.vault.burst | default(rate_limiting_default_burst) }}"
+spec:
+  ingressClassName: cilium
+  rules:
+    - host: "vault.{{ domain }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vault
+                port:
+                  number: 8200
+  tls:
+    - hosts:
+        - "vault.{{ domain }}"
+      secretName: vault-tls
+
+---
+# Gitea rate limiting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitea-rate-limited
+  namespace: gitea
+  annotations:
+    cilium.io/rate-limit: "{{ rate_limiting_services.gitea.rps | default(rate_limiting_default_rps) }}"
+    cilium.io/rate-limit-burst: "{{ rate_limiting_services.gitea.burst | default(rate_limiting_default_burst) }}"
+spec:
+  ingressClassName: cilium
+  rules:
+    - host: "git.{{ domain }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gitea-http
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - "git.{{ domain }}"
+      secretName: gitea-tls
+
+---
+# ArgoCD rate limiting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-rate-limited
+  namespace: argocd
+  annotations:
+    cilium.io/rate-limit: "{{ rate_limiting_services.argocd.rps | default(rate_limiting_default_rps) }}"
+    cilium.io/rate-limit-burst: "{{ rate_limiting_services.argocd.burst | default(rate_limiting_default_burst) }}"
+spec:
+  ingressClassName: cilium
+  rules:
+    - host: "argocd.{{ domain }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 443
+  tls:
+    - hosts:
+        - "argocd.{{ domain }}"
+      secretName: argocd-tls
+
+---
+# Grafana rate limiting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-rate-limited
+  namespace: monitoring
+  annotations:
+    cilium.io/rate-limit: "{{ rate_limiting_services.grafana.rps | default(rate_limiting_default_rps) }}"
+    cilium.io/rate-limit-burst: "{{ rate_limiting_services.grafana.burst | default(rate_limiting_default_burst) }}"
+spec:
+  ingressClassName: cilium
+  rules:
+    - host: "grafana.{{ domain }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-prometheus-stack-grafana
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - "grafana.{{ domain }}"
+      secretName: grafana-tls

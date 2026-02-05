@@ -1,0 +1,48 @@
+---
+# Network Policies tasks
+
+- name: Skip network policies for local environment
+  ansible.builtin.debug:
+    msg: "Network policies disabled for local environment"
+  when: not network_policies_enabled
+
+- name: Apply network policies
+  when: network_policies_enabled
+  block:
+    - name: Apply default deny policies
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'default-deny.yml.j2') | from_yaml }}"
+      loop: "{{ network_policies_namespaces }}"
+      loop_control:
+        loop_var: namespace
+      when: network_policies_default_deny
+
+    - name: Apply DNS allow policies
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'allow-dns.yml.j2') | from_yaml }}"
+      loop: "{{ network_policies_namespaces }}"
+      loop_control:
+        loop_var: namespace
+      when: network_policies_allow_dns
+
+    - name: Apply monitoring scrape policies
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'allow-monitoring.yml.j2') | from_yaml }}"
+      loop: "{{ network_policies_namespaces }}"
+      loop_control:
+        loop_var: namespace
+      when: network_policies_allow_monitoring
+
+    - name: Apply service-specific policies
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'service-policies.yml.j2') | from_yaml_all | list }}"
+
+    - name: Apply database isolation policies (L7)
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'database-isolation.yml.j2') | from_yaml_all | list }}"
+      when: network_policy_l7_enabled | default(false)

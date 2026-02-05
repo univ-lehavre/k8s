@@ -1,0 +1,57 @@
+---
+# AIDE - Advanced Intrusion Detection Environment
+
+- name: Install AIDE
+  ansible.builtin.apt:
+    name: aide
+    state: present
+    update_cache: true
+
+- name: Configure AIDE
+  ansible.builtin.template:
+    src: aide.conf.j2
+    dest: /etc/aide/aide.conf
+    mode: "0600"
+    owner: root
+    group: root
+
+- name: Check if AIDE database exists
+  ansible.builtin.stat:
+    path: /var/lib/aide/aide.db
+  register: aide_db
+
+- name: Initialize AIDE database (first run)
+  ansible.builtin.command: aideinit
+  when: not aide_db.stat.exists
+  register: aide_init
+  changed_when: aide_init.rc == 0
+
+- name: Move new AIDE database to active
+  ansible.builtin.copy:
+    src: /var/lib/aide/aide.db.new
+    dest: /var/lib/aide/aide.db
+    remote_src: true
+    mode: "0600"
+  when: not aide_db.stat.exists
+
+- name: Create AIDE cron job for daily checks
+  ansible.builtin.cron:
+    name: "AIDE integrity check"
+    minute: "{{ hardening_aide_cron_minute | default('0') }}"
+    hour: "{{ hardening_aide_cron_hour | default('5') }}"
+    job: "/usr/bin/aide --check --config=/etc/aide/aide.conf | /usr/bin/mail -s 'AIDE Report for {{ inventory_hostname }}' {{ admin_email | default('root') }}"
+    user: root
+    state: present
+  when: hardening_aide_cron_enabled | default(true)
+
+- name: Create AIDE update script
+  ansible.builtin.copy:
+    content: |
+      #!/bin/bash
+      # Update AIDE database after authorized changes
+      /usr/bin/aide --update --config=/etc/aide/aide.conf
+      mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+    dest: /usr/local/bin/aide-update
+    mode: "0700"
+    owner: root
+    group: root

@@ -1,0 +1,78 @@
+---
+# Environment identification
+env: staging
+env_name: "Staging"
+
+# Domain configuration
+domain: "{{ lookup('env', 'STAGING_DOMAIN') | default('atlas.chasset.net', true) }}"
+admin_email: "{{ lookup('env', 'LETSENCRYPT_EMAIL') | default('admin@example.com', true) }}"
+
+# K3s configuration
+k3s_type: k3s
+k3s_version: "v1.29.2+k3s1"
+k3s_token: "{{ lookup('env', 'K3S_TOKEN') }}"
+
+# Storage configuration
+storage_class: longhorn-encrypted
+storage_class_default: true
+
+# TLS configuration
+tls_issuer: letsencrypt-staging
+tls_issuer_email: "{{ admin_email }}"
+
+# Feature flags
+hardening_enabled: true
+ha_enabled: false
+wireguard_enabled: true
+longhorn_enabled: true
+backup_enabled: true
+
+# Replicas (single node staging)
+replicas:
+  default: 1
+  postgresql: 1
+  redis: 0 # Standalone mode
+
+# Resource profile
+resource_profile: standard
+
+# Namespaces
+namespaces:
+  vault: vault
+  databases: databases
+  mattermost: mattermost
+  nextcloud: nextcloud
+  seaweedfs: seaweedfs
+  redcap: redcap
+  ecrin: ecrin
+  flipt: flipt
+  gitea: gitea
+  argocd: argocd
+  monitoring: monitoring
+
+# PostgreSQL configuration
+postgresql_host: postgresql-postgresql-ha-pgpool.databases.svc.cluster.local
+postgresql_port: 5432
+
+# Redis configuration
+redis_host: redis-master.databases.svc.cluster.local
+redis_port: 6379
+redis_sentinel_enabled: false
+
+# Service URLs
+service_urls:
+  vault: "https://vault.{{ domain }}"
+  mattermost: "https://chat.{{ domain }}"
+  nextcloud: "https://cloud.{{ domain }}"
+  gitea: "https://git.{{ domain }}"
+  argocd: "https://argocd.{{ domain }}"
+  grafana: "https://grafana.{{ domain }}"
+  redcap: "https://redcap.{{ domain }}"
+  ecrin: "https://ecrin.{{ domain }}"
+  flipt: "https://flags.{{ domain }}"
+  longhorn: "https://longhorn.{{ domain }}"
+  hubble: "https://hubble.{{ domain }}"
+
+# Firewall allowed IPs (for K3s API access)
+admin_allowed_ips:
+  - "{{ lookup('env', 'ADMIN_IP') | default('0.0.0.0/0', true) }}"

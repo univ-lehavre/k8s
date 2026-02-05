@@ -1,0 +1,60 @@
+---
+# External Secrets Operator tasks
+
+- name: Create External Secrets namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ external_secrets_namespace }}"
+        labels:
+          app.kubernetes.io/name: external-secrets
+
+- name: Add External Secrets Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ external_secrets_chart_repo_name }}"
+    repo_url: "{{ external_secrets_chart_repo }}"
+
+- name: Deploy External Secrets Operator via Helm
+  kubernetes.core.helm:
+    name: external-secrets
+    chart_ref: "{{ external_secrets_chart_repo_name }}/external-secrets"
+    chart_version: "{{ helm_versions.external_secrets }}"
+    release_namespace: "{{ external_secrets_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 300s
+
+- name: Wait for External Secrets webhook to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: external-secrets-webhook
+    namespace: "{{ external_secrets_namespace }}"
+  register: eso_webhook
+  until:
+    - eso_webhook.resources | length > 0
+    - eso_webhook.resources[0].status.readyReplicas is defined
+    - eso_webhook.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create Vault service account for ESO
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: external-secrets-vault
+        namespace: "{{ external_secrets_namespace }}"
+  when: external_secrets_cluster_store_enabled
+
+- name: Create ClusterSecretStore for Vault
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'clustersecretstore.yml.j2') | from_yaml }}"
+  when: external_secrets_cluster_store_enabled

@@ -1,0 +1,85 @@
+---
+# ECRIN tasks
+
+- name: Create ECRIN namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ ecrin_namespace }}"
+        labels:
+          app.kubernetes.io/name: ecrin
+
+- name: Create ECRIN ConfigMap
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: ecrin-config
+        namespace: "{{ ecrin_namespace }}"
+      data:
+        PUBLIC_OIDC_AUTHORITY: "{{ ecrin_oidc_authority }}"
+        PUBLIC_OIDC_CLIENT_ID: "{{ ecrin_oidc_client_id }}"
+        PUBLIC_OIDC_REDIRECT_URI: "{{ ecrin_oidc_redirect_uri }}"
+        REDCAP_URL: "{{ ecrin_redcap_url }}"
+
+- name: Create ECRIN Secrets
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: ecrin-secrets
+        namespace: "{{ ecrin_namespace }}"
+      type: Opaque
+      stringData:
+        OIDC_CLIENT_SECRET: "{{ ecrin_oidc_client_secret }}"
+        REDCAP_API_TOKEN: "{{ ecrin_redcap_token }}"
+  when: ecrin_oidc_enabled | default(false)
+
+- name: Deploy ECRIN
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'deployment.yml.j2') | from_yaml }}"
+
+- name: Create ECRIN Service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: ecrin
+        namespace: "{{ ecrin_namespace }}"
+      spec:
+        selector:
+          app: ecrin
+        ports:
+          - port: 80
+            targetPort: "{{ ecrin_container_port }}"
+            protocol: TCP
+
+- name: Wait for ECRIN to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: ecrin
+    namespace: "{{ ecrin_namespace }}"
+  register: ecrin_deployment
+  until:
+    - ecrin_deployment.resources | length > 0
+    - ecrin_deployment.resources[0].status.readyReplicas is defined
+    - ecrin_deployment.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create ECRIN HTTPRoute
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
+  when: ecrin_ingress_enabled

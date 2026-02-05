@@ -1,0 +1,39 @@
+---
+# Require resource limits on all containers
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+  annotations:
+    policies.kyverno.io/title: Require Resource Limits
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Containers must have resource limits defined to prevent resource
+      exhaustion and ensure fair scheduling.
+spec:
+  validationFailureAction: {{ kyverno_validation_failure_action }}
+  background: {{ kyverno_background_scan | lower }}
+  rules:
+    - name: validate-resource-limits
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+{% for ns in kyverno_excluded_namespaces %}
+                - {{ ns }}
+{% endfor %}
+      validate:
+        message: "Containers must have CPU and memory limits defined."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"

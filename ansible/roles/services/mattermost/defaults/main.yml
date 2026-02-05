@@ -1,0 +1,69 @@
+---
+# Mattermost defaults
+
+# Namespace
+mattermost_namespace: mattermost
+
+# Helm chart settings
+mattermost_chart_repo: https://helm.mattermost.com
+mattermost_chart_repo_name: mattermost
+
+# Resources
+mattermost_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Storage
+mattermost_storage_class: "{{ storage_class }}"
+mattermost_storage_size: 10Gi
+
+# Database settings
+mattermost_postgresql_host: "postgresql.postgresql.svc.cluster.local"
+mattermost_postgresql_port: 5432
+mattermost_postgresql_database: "{{ database_config.mattermost.database }}"
+mattermost_postgresql_user: "{{ database_config.mattermost.user }}"
+
+# Secrets from CI/CD
+mattermost_admin_password: "{{ secrets.mattermost.admin_password | default(omit) }}"
+
+# Ingress settings
+mattermost_ingress_enabled: true
+mattermost_ingress_host: "chat.{{ domain }}"
+mattermost_ingress_class: cilium
+mattermost_ingress_tls_secret: mattermost-tls
+mattermost_ingress_issuer: "{{ tls_issuer }}"
+
+# OIDC settings (Authentik)
+mattermost_oidc_enabled: true
+mattermost_oidc_button_text: "Login with Authentik"
+mattermost_oidc_discovery_endpoint: "https://auth.{{ domain }}/application/o/mattermost/.well-known/openid-configuration"
+mattermost_oidc_client_id: mattermost
+
+# Group sync from Authentik/Authelia OIDC claims
+# Automatically creates Mattermost teams from groups
+mattermost_group_sync_enabled: true
+mattermost_group_attribute: groups
+
+# Role mapping from Authelia/Authentik groups
+# admins → system_admin, devops → team_admin, others → team_user
+mattermost_role_mapping:
+  system_admin_groups:
+    - admins
+  team_admin_groups:
+    - devops
+# Users not in these groups get team_user role
+
+# Legacy aliases for backward compatibility
+mattermost_admin_groups: "{{ mattermost_role_mapping.system_admin_groups }}"
+mattermost_team_admin_groups: "{{ mattermost_role_mapping.team_admin_groups }}"
+
+# Default team for all users
+mattermost_default_team: "{{ organization_name | default('atlas') | lower }}"
+
+# Site settings
+mattermost_site_name: "{{ organization_name | default('ATLAS') }} Chat"
+mattermost_enable_signup: false

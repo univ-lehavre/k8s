@@ -1,0 +1,60 @@
+---
+# Configuration yamllint pour compléter ansible-lint
+
+extends: default
+
+rules:
+  # Longueur de ligne
+  line-length:
+    max: 180
+    level: warning
+
+  # Indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # Commentaires
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: disable
+
+  # Espaces de fin
+  trailing-spaces: enable
+
+  # Lignes vides
+  empty-lines:
+    max: 2
+
+  # Documents
+  document-start: disable
+
+  # Clés dupliquées
+  key-duplicates: enable
+
+  # Accolades
+  braces:
+    max-spaces-inside: 1
+    min-spaces-inside: 0
+
+  # Crochets
+  brackets:
+    max-spaces-inside: 1
+    min-spaces-inside: 0
+
+  # Valeurs truthy (yes/no vs true/false)
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+    check-keys: false
+
+  # Octal values - required by ansible-lint
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
+
+ignore: |
+  .cache/
+  .github/
+  venv/
+  molecule/

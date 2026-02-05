@@ -1,0 +1,40 @@
+# SSH Hardening Configuration
+# Managed by Ansible - DO NOT EDIT MANUALLY
+
+# Disable root login
+PermitRootLogin {{ hardening_ssh_permit_root_login }}
+
+# Disable password authentication (key only)
+PasswordAuthentication {{ hardening_ssh_password_authentication }}
+ChallengeResponseAuthentication no
+
+# Enable public key authentication
+PubkeyAuthentication {{ hardening_ssh_pubkey_authentication }}
+
+# Limit authentication attempts
+MaxAuthTries {{ hardening_ssh_max_auth_tries }}
+LoginGraceTime {{ hardening_ssh_login_grace_time }}
+
+{% if hardening_ssh_allowed_users | length > 0 %}
+# Restrict users
+AllowUsers {{ hardening_ssh_allowed_users | join(' ') }}
+{% endif %}
+
+# Enable verbose logging
+LogLevel VERBOSE
+
+# Connection keepalive
+ClientAliveInterval {{ hardening_ssh_client_alive_interval }}
+ClientAliveCountMax {{ hardening_ssh_client_alive_count_max }}
+
+# Disable X11 forwarding
+X11Forwarding no
+
+# Disable TCP and Agent forwarding
+AllowTcpForwarding {{ hardening_ssh_allow_tcp_forwarding }}
+AllowAgentForwarding {{ hardening_ssh_allow_agent_forwarding }}
+
+# Use strong ciphers and MACs
+Ciphers aes256-gcm@openssh.com,chacha20-poly1305@openssh.com,aes256-ctr
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512

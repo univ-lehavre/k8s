@@ -1,0 +1,38 @@
+---
+# REDCap defaults
+
+# Namespace
+redcap_namespace: redcap
+
+# Image settings
+redcap_image: redcap/redcap
+redcap_image_tag: "{{ helm_versions.redcap }}"
+
+# Resources
+redcap_resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# Storage
+redcap_storage_class: "{{ storage_class }}"
+redcap_storage_size: 20Gi
+
+# Database settings (MariaDB - REDCap requires MySQL/MariaDB)
+redcap_mariadb_host: "mariadb.mariadb.svc.cluster.local"
+redcap_mariadb_port: 3306
+redcap_mariadb_database: "{{ database_config.redcap.database }}"
+redcap_mariadb_user: "{{ database_config.redcap.user }}"
+
+# Secrets from CI/CD
+redcap_salt: "{{ secrets.redcap.salt | default(omit) }}"
+
+# Ingress settings (Gateway API)
+redcap_ingress_enabled: true
+redcap_ingress_host: "redcap.{{ domain }}"
+
+# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+redcap_forward_auth_enabled: true

@@ -1,0 +1,85 @@
+---
+# Nextcloud defaults
+
+# Namespace
+nextcloud_namespace: nextcloud
+
+# Helm chart settings
+nextcloud_chart_repo: https://nextcloud.github.io/helm/
+nextcloud_chart_repo_name: nextcloud
+
+# Resources
+nextcloud_resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# Storage
+nextcloud_storage_class: "{{ storage_class }}"
+nextcloud_storage_size: 50Gi
+
+# Database settings
+nextcloud_postgresql_host: "postgresql.postgresql.svc.cluster.local"
+nextcloud_postgresql_port: 5432
+nextcloud_postgresql_database: "{{ database_config.nextcloud.database }}"
+nextcloud_postgresql_user: "{{ database_config.nextcloud.user }}"
+
+# Redis settings
+nextcloud_redis_host: "redis-master.redis.svc.cluster.local"
+nextcloud_redis_port: 6379
+
+# Secrets from CI/CD
+nextcloud_admin_password: "{{ secrets.nextcloud.admin_password | default(omit) }}"
+
+# Admin user
+nextcloud_admin_user: admin
+
+# Ingress settings
+nextcloud_ingress_enabled: true
+nextcloud_ingress_host: "cloud.{{ domain }}"
+nextcloud_ingress_class: cilium
+nextcloud_ingress_tls_secret: nextcloud-tls
+nextcloud_ingress_issuer: "{{ tls_issuer }}"
+
+# S3 primary storage (SeaweedFS)
+nextcloud_s3_enabled: true
+nextcloud_s3_bucket: nextcloud
+nextcloud_s3_host: seaweedfs-s3.seaweedfs.svc.cluster.local
+nextcloud_s3_port: 8333
+nextcloud_s3_use_ssl: "{{ env == 'production' }}"
+nextcloud_s3_use_path_style: true
+
+# Authentication mode: 'oidc' (Authentik) or 'saml' (for SAML-based SSO)
+nextcloud_auth_mode: oidc
+
+# OIDC settings (Authentik)
+nextcloud_oidc_enabled: "{{ nextcloud_auth_mode == 'oidc' }}"
+nextcloud_oidc_provider_url: "https://auth.{{ domain }}/application/o/nextcloud/"
+nextcloud_oidc_client_id: nextcloud
+
+# Group mapping from Authentik/Authelia to Nextcloud groups
+# Groups are synced automatically via OIDC claims
+nextcloud_group_mapping:
+  # Authentik/Authelia group → Nextcloud group
+  admins: admin
+  devops: staff
+  researchers: researchers
+  users: users
+
+# Groups that get Nextcloud admin rights
+nextcloud_admin_groups:
+  - admins
+
+# Default quota per group (in bytes, 0 = unlimited)
+nextcloud_group_quotas:
+  admin: 0
+  staff: 0
+  researchers: 107374182400 # 100 GB
+  users: 10737418240 # 10 GB
+
+# OnlyOffice integration
+nextcloud_onlyoffice_enabled: true
+nextcloud_onlyoffice_url: "https://office.{{ domain }}"

@@ -1,0 +1,39 @@
+---
+- name: Include SSH hardening
+  ansible.builtin.include_tasks: ssh.yml
+
+- name: Include firewall configuration
+  ansible.builtin.include_tasks: firewall.yml
+  when: hardening_ufw_enabled
+
+- name: Include fail2ban configuration
+  ansible.builtin.include_tasks: fail2ban.yml
+  when: hardening_fail2ban_enabled
+
+- name: Include unattended upgrades
+  ansible.builtin.include_tasks: unattended_upgrades.yml
+  when: hardening_unattended_upgrades_enabled
+
+- name: Include auditd configuration
+  ansible.builtin.include_tasks: auditd.yml
+  when: hardening_auditd_enabled
+
+- name: Include kernel hardening
+  ansible.builtin.include_tasks: kernel.yml
+  when: hardening_kernel_enabled | default(true)
+
+- name: Include AIDE file integrity monitoring
+  ansible.builtin.include_tasks: aide.yml
+  when: hardening_aide_enabled | default(true)
+
+- name: Include audit log forwarding
+  ansible.builtin.include_tasks: audit_forward.yml
+  when: hardening_audit_forward_enabled | default(false)
+
+- name: Include AppArmor configuration
+  ansible.builtin.include_tasks: apparmor.yml
+  when: hardening_apparmor_enabled | default(true)
+
+- name: Include password policy configuration
+  ansible.builtin.include_tasks: password_policy.yml
+  when: hardening_password_policy_enabled | default(true)

@@ -1,0 +1,62 @@
+---
+# PostgreSQL HA defaults
+
+# Namespace
+postgresql_namespace: postgresql
+
+# Helm chart settings
+postgresql_chart_repo: https://charts.bitnami.com/bitnami
+postgresql_chart_repo_name: bitnami
+
+# Cluster settings
+postgresql_replicas: "{{ 3 if ha_enabled else 1 }}"
+postgresql_ha_enabled: "{{ ha_enabled | default(false) }}"
+
+# Storage
+postgresql_storage_class: "{{ storage_class }}"
+postgresql_storage_size: 20Gi
+
+# Resources
+postgresql_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# PostgreSQL settings
+postgresql_version: "16"
+postgresql_database: postgres
+postgresql_username: postgres
+
+# Secrets from CI/CD
+postgresql_superuser_password: "{{ secrets.postgresql.superuser_password | default(omit) }}"
+postgresql_replication_password: "{{ secrets.postgresql.replication_password | default(omit) }}"
+
+# Pgpool settings (for HA)
+postgresql_pgpool_enabled: "{{ postgresql_ha_enabled }}"
+postgresql_pgpool_replicas: 2
+
+# Metrics
+postgresql_metrics_enabled: "{{ monitoring_enabled | default(true) }}"
+
+# Backup settings - enabled by default in staging/production
+postgresql_backup_enabled: "{{ env != 'local' }}"
+postgresql_backup_schedule: "0 2 * * *"
+postgresql_backup_retention_days: 7
+postgresql_backup_storage_class: "{{ storage_class }}"
+
+# SSL/TLS Configuration
+# Enabled by default for non-local environments
+postgresql_ssl_enabled: "{{ env != 'local' }}"
+postgresql_ssl_cert_secret: postgresql-tls
+postgresql_ssl_cert_issuer: "{{ tls_issuer }}"
+
+# Certificate settings
+postgresql_ssl_common_name: "postgresql.{{ postgresql_namespace }}.svc.cluster.local"
+postgresql_ssl_alt_names:
+  - "postgresql.{{ postgresql_namespace }}.svc"
+  - "postgresql.{{ postgresql_namespace }}"
+  - "postgresql"
+  - "*.postgresql-hl.{{ postgresql_namespace }}.svc.cluster.local"

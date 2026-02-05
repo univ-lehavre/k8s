@@ -1,0 +1,67 @@
+---
+# Cert-Manager tasks
+
+- name: Create cert-manager namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ cert_manager_namespace }}"
+        labels:
+          app.kubernetes.io/name: cert-manager
+
+- name: Add Jetstack Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ cert_manager_chart_repo_name }}"
+    repo_url: "{{ cert_manager_chart_repo }}"
+
+- name: Deploy cert-manager via Helm
+  kubernetes.core.helm:
+    name: cert-manager
+    chart_ref: "{{ cert_manager_chart_repo_name }}/cert-manager"
+    chart_version: "{{ helm_versions.cert_manager }}"
+    release_namespace: "{{ cert_manager_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 300s
+
+- name: Wait for cert-manager webhook to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: cert-manager-webhook
+    namespace: "{{ cert_manager_namespace }}"
+  register: webhook_deployment
+  until:
+    - webhook_deployment.resources | length > 0
+    - webhook_deployment.resources[0].status.readyReplicas is defined
+    - webhook_deployment.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create ClusterIssuers
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'clusterissuer.yml.j2') | from_yaml }}"
+  loop: "{{ cert_manager_cluster_issuers }}"
+  loop_control:
+    loop_var: issuer
+  when: issuer.enabled | bool
+
+- name: Verify ClusterIssuers are ready
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: ClusterIssuer
+    name: "{{ item.name }}"
+  register: issuer_status
+  loop: "{{ cert_manager_cluster_issuers | selectattr('enabled', 'equalto', true) | list }}"
+  until:
+    - issuer_status.resources | length > 0
+    - issuer_status.resources[0].status is defined
+    - issuer_status.resources[0].status.conditions is defined
+  retries: 10
+  delay: 5
+  when: item.enabled | bool

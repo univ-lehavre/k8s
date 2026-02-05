@@ -1,0 +1,60 @@
+---
+# Centralized Audit Log Forwarding
+
+- name: Install rsyslog for log forwarding
+  ansible.builtin.apt:
+    name:
+      - rsyslog
+      - rsyslog-gnutls
+    state: present
+  when: hardening_audit_forward_enabled | default(false)
+
+- name: Configure rsyslog for audit log forwarding
+  ansible.builtin.template:
+    src: rsyslog-audit-forward.conf.j2
+    dest: /etc/rsyslog.d/60-audit-forward.conf
+    mode: "0644"
+  notify: Restart rsyslog
+  when: hardening_audit_forward_enabled | default(false)
+
+- name: Configure auditd to forward to syslog
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: "^log_format"
+    line: "log_format = ENRICHED"
+    state: present
+  notify: Restart auditd
+  when: hardening_audit_forward_enabled | default(false)
+
+- name: Add audit dispatcher for syslog
+  ansible.builtin.template:
+    src: audit-syslog.conf.j2
+    dest: /etc/audit/plugins.d/syslog.conf
+    mode: "0640"
+  notify: Restart auditd
+  when: hardening_audit_forward_enabled | default(false)
+
+- name: Ensure audit log directory exists
+  ansible.builtin.file:
+    path: /var/log/audit
+    state: directory
+    mode: "0700"
+    owner: root
+    group: root
+
+- name: Configure logrotate for audit logs
+  ansible.builtin.copy:
+    content: |
+      /var/log/audit/audit.log {
+          daily
+          rotate 90
+          compress
+          delaycompress
+          notifempty
+          missingok
+          postrotate
+              /sbin/service auditd restart > /dev/null 2>&1 || true
+          endscript
+      }
+    dest: /etc/logrotate.d/audit
+    mode: "0644"

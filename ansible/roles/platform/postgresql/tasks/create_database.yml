@@ -1,0 +1,100 @@
+---
+# Reusable task file for creating application databases with proper security
+#
+# Usage:
+#   - include_tasks: ../../platform/postgresql/tasks/create_database.yml
+#     vars:
+#       db_name: myapp
+#       db_user: myapp_user
+#       db_password: "{{ database_passwords.myapp }}"
+#       db_privileges: "{{ database_privileges.myapp.privileges }}"
+#       db_schema_owner: "{{ database_privileges.myapp.schema_owner }}"
+#
+# This task enforces:
+# - Unique password per service (not superuser password)
+# - Minimal SQL privileges based on schema_owner flag
+# - Explicit REVOKE before GRANT for clean permissions
+
+- name: "Validate database password is set for {{ db_name }}"
+  ansible.builtin.assert:
+    that:
+      - db_password is defined
+      - db_password | length > 0
+    fail_msg: |
+      Database password for {{ db_name }} must be set via environment variable.
+      Each service must have a unique password.
+      Set {{ db_name | upper }}_DB_PASSWORD environment variable.
+    quiet: true
+
+- name: Create database in PostgreSQL - {{ db_name }}
+  kubernetes.core.k8s_exec:
+    namespace: "{{ postgresql_namespace | default('postgresql') }}"
+    pod: postgresql-0
+    command: >
+      psql -U postgres -c "CREATE DATABASE {{ db_name }};"
+    env:
+      - name: PGPASSWORD
+        value: "{{ postgresql_superuser_password }}"
+  no_log: true
+  register: db_create
+  failed_when:
+    - db_create.rc != 0
+    - "'already exists' not in (db_create.stderr | default(''))"
+  changed_when: db_create.rc == 0
+
+- name: Create user with minimal privileges - {{ db_user }}
+  kubernetes.core.k8s_exec:
+    namespace: "{{ postgresql_namespace | default('postgresql') }}"
+    pod: postgresql-0
+    command: |
+      psql -U postgres << 'EOSQL'
+      -- Create user if not exists, or update password
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ db_user }}') THEN
+          CREATE USER {{ db_user }} WITH PASSWORD '{{ db_password }}';
+          RAISE NOTICE 'Created user {{ db_user }}';
+        ELSE
+          ALTER USER {{ db_user }} WITH PASSWORD '{{ db_password }}';
+          RAISE NOTICE 'Updated password for user {{ db_user }}';
+        END IF;
+      END
+      $$;
+
+      -- Revoke all privileges first (clean slate)
+      REVOKE ALL PRIVILEGES ON DATABASE {{ db_name }} FROM {{ db_user }};
+
+      -- Grant connect permission
+      GRANT CONNECT ON DATABASE {{ db_name }} TO {{ db_user }};
+
+      -- Switch to the database for schema-level permissions
+      \c {{ db_name }}
+
+      -- Revoke public schema access from PUBLIC (security hardening)
+      REVOKE ALL ON SCHEMA public FROM PUBLIC;
+
+      {% if db_schema_owner | default(false) %}
+      -- Schema owner: full control for migrations/DDL
+      GRANT ALL PRIVILEGES ON SCHEMA public TO {{ db_user }};
+      GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {{ db_user }};
+      GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {{ db_user }};
+      GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO {{ db_user }};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {{ db_user }};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO {{ db_user }};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO {{ db_user }};
+      {% else %}
+      -- Standard user: CRUD only, no DDL permissions
+      GRANT USAGE ON SCHEMA public TO {{ db_user }};
+      GRANT {{ db_privileges | default('SELECT, INSERT, UPDATE, DELETE') }} ON ALL TABLES IN SCHEMA public TO {{ db_user }};
+      GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {{ db_user }};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT {{ db_privileges | default('SELECT, INSERT, UPDATE, DELETE') }} ON TABLES TO {{ db_user }};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO {{ db_user }};
+      {% endif %}
+
+      EOSQL
+    env:
+      - name: PGPASSWORD
+        value: "{{ postgresql_superuser_password }}"
+  no_log: true
+  register: user_create
+  changed_when: "'Created user' in (user_create.stdout | default('')) or 'Updated password' in (user_create.stdout | default(''))"

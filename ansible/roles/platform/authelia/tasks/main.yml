@@ -1,0 +1,114 @@
+---
+# Authelia deployment tasks
+# Deploys forward auth service with centralized access control
+
+- name: Create Authelia namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ authelia_namespace }}"
+        labels:
+          app.kubernetes.io/name: authelia
+          app.kubernetes.io/component: authentication
+
+- name: Add Authelia Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ helm_repositories.authelia.name }}"
+    repo_url: "{{ helm_repositories.authelia.url }}"
+    state: present
+
+- name: Generate OIDC RSA private key (if not provided)
+  ansible.builtin.command:
+    cmd: openssl genrsa 4096
+  register: oidc_private_key_generated
+  changed_when: false
+  when:
+    - authelia_oidc_enabled | default(false)
+    - authelia_oidc_private_key is not defined
+  no_log: true
+
+- name: Set OIDC private key fact
+  ansible.builtin.set_fact:
+    _authelia_oidc_private_key: "{{ authelia_oidc_private_key | default(oidc_private_key_generated.stdout | default('')) }}"
+  when: authelia_oidc_enabled | default(false)
+  no_log: true
+
+- name: Create Authelia secrets
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: authelia-secrets
+        namespace: "{{ authelia_namespace }}"
+      type: Opaque
+      stringData: >-
+        {{
+          {
+            'JWT_TOKEN': authelia_jwt_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')),
+            'SESSION_SECRET': authelia_session_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')),
+            'STORAGE_ENCRYPTION_KEY': authelia_storage_key | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits'))
+          }
+          | combine({'OIDC_HMAC_SECRET': authelia_oidc_hmac_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')), 'OIDC_PRIVATE_KEY': _authelia_oidc_private_key} if authelia_oidc_enabled | default(false) else {})
+          | combine({'REDIS_PASSWORD': redis_password | default('')} if authelia_redis_enabled else {})
+          | combine({'STORAGE_POSTGRES_PASSWORD': authelia_postgresql_password | default('')} if authelia_storage_backend == 'postgres' else {})
+        }}
+
+- name: Create Authelia configuration ConfigMap
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'configuration.yml.j2') | from_yaml }}"
+
+- name: Create Authelia users file (development only)
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'users.yml.j2') | from_yaml }}"
+  when: authelia_default_users_enabled | default(false)
+
+- name: Deploy Authelia via Helm
+  kubernetes.core.helm:
+    name: authelia
+    chart_ref: "{{ helm_repositories.authelia.name }}/authelia"
+    chart_version: "{{ authelia_version }}"
+    release_namespace: "{{ authelia_namespace }}"
+    create_namespace: false
+    wait: true
+    wait_timeout: 600s
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+
+- name: Wait for Authelia deployment
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: authelia
+    namespace: "{{ authelia_namespace }}"
+  register: authelia_deployment
+  until: >
+    authelia_deployment.resources | length > 0 and
+    authelia_deployment.resources[0].status.readyReplicas | default(0) >= 1
+  retries: 30
+  delay: 10
+
+- name: Create Authelia HTTPRoute
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml_all | list }}"
+
+- name: Display Authelia information
+  ansible.builtin.debug:
+    msg: |
+      Authelia deployed successfully!
+
+      Login URL: https://{{ authelia_host }}
+      Namespace: {{ authelia_namespace }}
+
+      Forward Auth endpoint for Envoy Gateway:
+        http://authelia.{{ authelia_namespace }}.svc.cluster.local:9091/api/authz/ext-authz
+
+      Access control rules configured for {{ authelia_access_rules | length }} domains.
+
+      Default policy: {{ authelia_default_policy }}

@@ -1,0 +1,40 @@
+---
+# Restrict container images to approved registries
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-image-registries
+  annotations:
+    policies.kyverno.io/title: Restrict Image Registries
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Container images must come from approved registries to ensure
+      supply chain security and prevent use of untrusted images.
+spec:
+  validationFailureAction: {{ kyverno_validation_failure_action }}
+  background: {{ kyverno_background_scan | lower }}
+  rules:
+    - name: validate-registries
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+{% for ns in kyverno_excluded_namespaces %}
+                - {{ ns }}
+{% endfor %}
+      validate:
+        message: "Images must be from an approved registry: {{ kyverno_allowed_registries | join(', ') }}"
+        pattern:
+          spec:
+            =(ephemeralContainers):
+              - image: "{{ kyverno_allowed_registries | join('/* | ') }}/*"
+            =(initContainers):
+              - image: "{{ kyverno_allowed_registries | join('/* | ') }}/*"
+            containers:
+              - image: "{{ kyverno_allowed_registries | join('/* | ') }}/*"

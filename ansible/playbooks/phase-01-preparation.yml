@@ -1,0 +1,31 @@
+---
+# Phase 1: System Preparation
+
+- name: Phase 1 - System Preparation (Remote hosts)
+  hosts: all:!localhost
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: common/prerequisites
+      tags: [preparation, prerequisites]
+
+- name: Phase 1 - System Preparation (Local - Docker for K3D)
+  hosts: localhost
+  gather_facts: true
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: common/docker
+      tags: [preparation, docker, k3d]
+      when: k3s_type == 'k3d'
+
+  post_tasks:
+    - name: Phase 1 complete
+      ansible.builtin.debug:
+        msg: "System preparation complete"

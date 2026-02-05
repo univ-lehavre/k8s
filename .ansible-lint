@@ -1,0 +1,65 @@
+---
+# Configuration ansible-lint pour le projet k8s
+
+# Profil de règles à utiliser
+profile: production # Options: min, basic, moderate, safety, shared, production
+
+# Répertoires et fichiers à exclure
+exclude_paths:
+  - .cache/
+  - .github/
+  - .git/
+  - molecule/
+  - venv/
+  - "*.retry"
+  - lefthook.yml # Fichier de configuration lefthook, pas Ansible
+  - .pre-commit-config.yaml # Fichier de configuration pre-commit, pas Ansible
+
+# Règles à ignorer (skip_list)
+skip_list:
+  - var-naming[no-role-prefix] # Garder les noms de variables actuels
+  - command-instead-of-module # curl | sh est la méthode recommandée pour K3s/K3D
+  - role-name[path] # Organisation en namespaces (common/, platform/, etc.)
+  # - yaml[line-length]  # Longueur de ligne YAML
+  # - name[casing]       # Casse des noms de tasks
+  # - risky-file-permissions  # Permissions de fichiers risquées
+
+# Règles à activer explicitement (warn_list)
+warn_list:
+  - experimental # Activer les règles expérimentales en mode warning
+
+# Configuration pour les règles spécifiques
+kinds:
+  # Définir les types de fichiers personnalisés
+  - yaml: "*.yaml.j2"
+  - yaml: "*.yml.j2"
+
+# Chemins des rôles pour la résolution
+use_default_rules: true
+loop_var_prefix: "{role}_"
+
+# Options supplémentaires
+# mock_modules:
+#   - custom_module
+
+# mock_roles:
+#   - custom.role
+
+# Utiliser des tags pour filtrer
+# tags:
+#   - skip_ansible_lint
+
+# Mode offline (ne pas télécharger les collections/roles)
+# offline: true
+
+# Configuration pour les variables non définies
+# var_naming_pattern: "^[a-z_][a-z0-9_]*$"
+
+# Afficher les règles passées avec succès
+# list_rules: true
+
+# Format de sortie (codeclimate, json, parseable, quiet, sarif)
+# format: parseable
+
+# Niveau de verbosité (-v, -vv, -vvv)
+# verbosity: 1

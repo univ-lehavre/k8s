@@ -1,0 +1,103 @@
+---
+# Off-site Encrypted Backup via Velero
+
+- name: Skip off-site backup for non-production environments
+  ansible.builtin.debug:
+    msg: "Off-site backup disabled for {{ env }} environment"
+  when: not backup_offsite_enabled
+
+- name: Configure off-site encrypted backup
+  when: backup_offsite_enabled
+  block:
+    - name: Create Velero namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ velero_namespace }}"
+            labels:
+              app.kubernetes.io/name: velero
+
+    - name: Create S3 credentials secret
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: velero-s3-credentials
+            namespace: "{{ velero_namespace }}"
+          type: Opaque
+          stringData:
+            cloud: |
+              [default]
+              aws_access_key_id={{ backup_s3_access_key }}
+              aws_secret_access_key={{ backup_s3_secret_key }}
+      no_log: true
+
+    - name: Create encryption key secret
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: velero-encryption-key
+            namespace: "{{ velero_namespace }}"
+          type: Opaque
+          stringData:
+            encryption-key: "{{ backup_encryption_key }}"
+      when: backup_encryption_enabled
+      no_log: true
+
+    - name: Add VMware Tanzu Helm repository
+      kubernetes.core.helm_repository:
+        name: vmware-tanzu
+        repo_url: https://vmware-tanzu.github.io/helm-charts
+
+    - name: Deploy Velero via Helm
+      kubernetes.core.helm:
+        name: velero
+        chart_ref: vmware-tanzu/velero
+        chart_version: "{{ velero_version }}"
+        release_namespace: "{{ velero_namespace }}"
+        create_namespace: true
+        values: "{{ lookup('template', 'velero-values.yml.j2') | from_yaml }}"
+        wait: true
+        wait_timeout: 300s
+
+    - name: Create backup schedules
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'backup-schedules.yml.j2') | from_yaml_all | list }}"
+
+    - name: Configure Longhorn backup target
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: longhorn.io/v1beta2
+          kind: Setting
+          metadata:
+            name: backup-target
+            namespace: longhorn-system
+          value: "s3://{{ backup_s3_bucket }}@{{ backup_s3_region }}/longhorn"
+      when: backup_targets.longhorn.enabled | default(true)
+
+    - name: Configure Longhorn backup credential
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: longhorn-backup-secret
+            namespace: longhorn-system
+          type: Opaque
+          stringData:
+            AWS_ACCESS_KEY_ID: "{{ backup_s3_access_key }}"
+            AWS_SECRET_ACCESS_KEY: "{{ backup_s3_secret_key }}"
+            AWS_ENDPOINTS: "https://{{ backup_s3_endpoint }}"
+      when: backup_targets.longhorn.enabled | default(true)
+      no_log: true

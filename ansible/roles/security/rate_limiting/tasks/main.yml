@@ -1,0 +1,39 @@
+---
+# Rate Limiting via Cilium CiliumClusterwideNetworkPolicy
+
+- name: Skip rate limiting for local environment
+  ansible.builtin.debug:
+    msg: "Rate limiting disabled for local environment"
+  when: not rate_limiting_enabled
+
+- name: Apply rate limiting configuration
+  when: rate_limiting_enabled
+  block:
+    - name: Create Cilium rate limiting ConfigMap
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: cilium-rate-limiting-config
+            namespace: kube-system
+          data:
+            config.yaml: |
+              # Rate limiting configuration
+              rateLimiting:
+                enabled: true
+                defaultRPS: {{ rate_limiting_default_rps }}
+                defaultBurst: {{ rate_limiting_default_burst }}
+                maxConnections: {{ rate_limiting_max_connections }}
+                maxConnectionsPerIP: {{ rate_limiting_max_connections_per_ip }}
+
+    - name: Apply Envoy rate limiting filter for Cilium Ingress
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'cilium-envoy-config.yml.j2') | from_yaml }}"
+
+    - name: Apply per-service rate limiting annotations via CiliumNetworkPolicy
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'rate-limit-policies.yml.j2') | from_yaml_all | list }}"

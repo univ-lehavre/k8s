@@ -1,0 +1,52 @@
+---
+# Cilium role defaults
+
+# Cilium version (from helm_versions)
+cilium_version: "{{ helm_versions.cilium }}"
+
+# Namespace
+cilium_namespace: kube-system
+
+# Operator replicas
+cilium_operator_replicas: 1
+
+# Hubble configuration
+cilium_hubble_enabled: true
+cilium_hubble_relay_enabled: true
+cilium_hubble_ui_enabled: true
+
+# Ingress controller
+# DISABLED: Using Envoy Gateway for Gateway API instead
+# Cilium remains as CNI + Network Policies + L7 filtering
+cilium_ingress_enabled: false
+cilium_ingress_default: false
+cilium_ingress_loadbalancer_mode: shared
+
+# kube-proxy replacement
+cilium_kube_proxy_replacement: true
+
+# Encryption (WireGuard)
+cilium_encryption_enabled: "{{ wireguard_enabled | default(false) }}"
+cilium_encryption_type: wireguard
+cilium_wireguard_userspace_fallback: true
+
+# K3s specific settings
+cilium_k8s_service_host: "{{ k3s_api_host | default('127.0.0.1') }}"
+cilium_k8s_service_port: "{{ k3s_api_port | default('6443') }}"
+
+# Resource limits
+cilium_resources:
+  agent:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  operator:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi

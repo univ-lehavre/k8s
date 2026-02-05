@@ -1,0 +1,110 @@
+---
+# Centralized Helm chart versions
+# Update this file to upgrade components across all environments
+
+helm_versions:
+  # Infrastructure
+  cilium: "1.16.5"
+  longhorn: "1.6.0"
+  cert_manager: "1.14.3"
+
+  # Platform
+  vault: "0.27.0"
+  external_secrets: "0.9.12"
+  postgresql_ha: "14.0.4"
+  postgresql: "15.2.5" # Standalone version for local/staging
+  mariadb: "18.2.2" # For MySQL-compatible services (REDCap)
+  redis: "18.12.1"
+
+  # Identity
+  authelia: "0.9.0"
+
+  # Gateway API
+  envoy_gateway: "1.2.0"
+
+  # Policy Engine
+  kyverno: "3.3.0"
+
+  # Services
+  mattermost: "7.0.0"
+  nextcloud: "4.6.4"
+  seaweedfs: "3.67.0"
+  flipt: "1.35.0"
+
+  # Docker image versions (non-Helm deployments)
+  onlyoffice: "8.0.1"
+  ecrin: "1.0.0"
+  redcap: "14.0.0"
+
+  # DevOps
+  gitea: "10.1.1"
+  argocd: "6.4.0"
+
+  # Monitoring
+  kube_prometheus_stack: "56.21.1"
+
+  # Security
+  velero: "1.13.0"
+  trivy_operator: "0.19.0"
+
+# Helm repository URLs
+helm_repositories:
+  cilium:
+    name: cilium
+    url: https://helm.cilium.io/
+
+  longhorn:
+    name: longhorn
+    url: https://charts.longhorn.io
+
+  jetstack:
+    name: jetstack
+    url: https://charts.jetstack.io
+
+  hashicorp:
+    name: hashicorp
+    url: https://helm.releases.hashicorp.com
+
+  external_secrets:
+    name: external-secrets
+    url: https://charts.external-secrets.io
+
+  bitnami:
+    name: bitnami
+    url: https://charts.bitnami.com/bitnami
+
+  mattermost:
+    name: mattermost
+    url: https://helm.mattermost.com
+
+  nextcloud:
+    name: nextcloud
+    url: https://nextcloud.github.io/helm/
+
+  seaweedfs:
+    name: seaweedfs
+    url: https://seaweedfs.github.io/seaweedfs/helm
+
+  gitea:
+    name: gitea
+    url: https://dl.gitea.io/charts/
+
+  argo:
+    name: argo
+    url: https://argoproj.github.io/argo-helm
+
+  prometheus_community:
+    name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+
+  grafana:
+    name: grafana
+    url: https://grafana.github.io/helm-charts
+
+  authelia:
+    name: authelia
+    url: https://charts.authelia.com
+
+  kyverno:
+    name: kyverno
+    url: https://kyverno.github.io/kyverno/

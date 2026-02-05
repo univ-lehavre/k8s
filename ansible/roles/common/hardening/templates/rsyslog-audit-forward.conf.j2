@@ -1,0 +1,79 @@
+# Rsyslog Audit Log Forwarding Configuration
+# Managed by Ansible
+
+# Load required modules
+module(load="imuxsock")
+module(load="imklog")
+
+{% if hardening_audit_forward_tls_enabled | default(true) %}
+# TLS configuration for secure log forwarding
+global(
+    DefaultNetstreamDriver="gtls"
+    DefaultNetstreamDriverCAFile="{{ hardening_audit_forward_ca_cert | default('/etc/ssl/certs/ca-certificates.crt') }}"
+{% if hardening_audit_forward_client_cert is defined %}
+    DefaultNetstreamDriverCertFile="{{ hardening_audit_forward_client_cert }}"
+    DefaultNetstreamDriverKeyFile="{{ hardening_audit_forward_client_key }}"
+{% endif %}
+)
+{% endif %}
+
+# Template for structured logging (JSON format)
+template(name="AuditLogFormat" type="list") {
+    constant(value="{")
+    constant(value="\"@timestamp\":\"")     property(name="timereported" dateFormat="rfc3339")
+    constant(value="\",\"host\":\"")        property(name="hostname")
+    constant(value="\",\"severity\":\"")    property(name="syslogseverity-text")
+    constant(value="\",\"facility\":\"")    property(name="syslogfacility-text")
+    constant(value="\",\"program\":\"")     property(name="programname")
+    constant(value="\",\"message\":\"")     property(name="msg" format="json")
+    constant(value="\"}\n")
+}
+
+# Filter audit logs and forward
+if ($programname == 'audit' or $syslogfacility-text == 'authpriv') then {
+{% if hardening_audit_forward_tls_enabled | default(true) %}
+    action(
+        type="omfwd"
+        target="{{ hardening_audit_forward_host }}"
+        port="{{ hardening_audit_forward_port | default('6514') }}"
+        protocol="tcp"
+        StreamDriver="gtls"
+        StreamDriverMode="1"
+        StreamDriverAuthMode="x509/name"
+        StreamDriverPermittedPeers="{{ hardening_audit_forward_host }}"
+        template="AuditLogFormat"
+        queue.type="LinkedList"
+        queue.size="10000"
+        queue.filename="audit_fwd"
+        queue.saveonshutdown="on"
+        action.resumeRetryCount="-1"
+    )
+{% else %}
+    action(
+        type="omfwd"
+        target="{{ hardening_audit_forward_host }}"
+        port="{{ hardening_audit_forward_port | default('514') }}"
+        protocol="tcp"
+        template="AuditLogFormat"
+        queue.type="LinkedList"
+        queue.size="10000"
+        queue.filename="audit_fwd"
+        queue.saveonshutdown="on"
+        action.resumeRetryCount="-1"
+    )
+{% endif %}
+}
+
+# Also forward K3s/Kubernetes audit logs
+if ($programname contains 'k3s' or $msg contains 'audit') then {
+    action(
+        type="omfwd"
+        target="{{ hardening_audit_forward_host }}"
+        port="{{ hardening_audit_forward_port | default('514') }}"
+        protocol="tcp"
+        template="AuditLogFormat"
+        queue.type="LinkedList"
+        queue.filename="k8s_audit_fwd"
+        queue.saveonshutdown="on"
+    )
+}

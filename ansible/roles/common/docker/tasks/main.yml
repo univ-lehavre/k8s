@@ -1,0 +1,98 @@
+---
+- name: Check if running on macOS
+  ansible.builtin.set_fact:
+    is_macos: "{{ ansible_os_family == 'Darwin' }}"
+
+- name: MacOS - Check if Docker is available
+  ansible.builtin.command: docker --version
+  register: docker_check
+  changed_when: false
+  failed_when: false
+  when: is_macos
+
+- name: MacOS - Fail if Docker Desktop not installed
+  ansible.builtin.fail:
+    msg: |
+      Docker Desktop is required for local development on macOS.
+      Please install it from: https://www.docker.com/products/docker-desktop/
+  when:
+    - is_macos
+    - docker_check.rc != 0
+
+- name: MacOS - Verify Docker is running
+  ansible.builtin.command: docker info
+  register: docker_info
+  changed_when: false
+  failed_when: false
+  when: is_macos
+
+- name: MacOS - Prompt to start Docker Desktop
+  ansible.builtin.fail:
+    msg: |
+      Docker Desktop is installed but not running.
+      Please start Docker Desktop and run this playbook again.
+  when:
+    - is_macos
+    - docker_info.rc != 0
+
+- name: Linux - Install Docker prerequisites
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+  when: not is_macos
+
+- name: Linux - Add Docker GPG key
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+    state: present
+  when: not is_macos
+
+- name: Linux - Add Docker repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+  when: not is_macos
+
+- name: Linux - Install Docker packages
+  ansible.builtin.apt:
+    name: "{{ docker_packages_debian }}"
+    state: present
+    update_cache: true
+  when: not is_macos
+
+- name: Linux - Configure Docker daemon
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: "{{ docker_daemon_config | to_nice_json }}"
+    mode: "0644"
+  notify: Restart Docker
+  when: not is_macos
+
+- name: Linux - Ensure Docker service is started
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
+  when: not is_macos
+
+- name: Linux - Add users to docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"
+  when:
+    - not is_macos
+    - docker_users | length > 0
+
+- name: Verify Docker is functional
+  ansible.builtin.command: docker run --rm hello-world
+  register: docker_hello
+  changed_when: false
+  failed_when: docker_hello.rc != 0

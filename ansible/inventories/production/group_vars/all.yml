@@ -1,0 +1,94 @@
+---
+# Environment identification
+env: production
+env_name: "Production"
+
+# Domain configuration
+domain: "{{ lookup('env', 'PROD_DOMAIN') | default('atlas.example.com', true) }}"
+admin_email: "{{ lookup('env', 'LETSENCRYPT_EMAIL') | default('admin@example.com', true) }}"
+
+# K3s configuration
+k3s_type: k3s
+k3s_version: "v1.29.2+k3s1"
+k3s_token: "{{ lookup('env', 'K3S_TOKEN') }}"
+
+# Storage configuration
+storage_class: longhorn-encrypted
+storage_class_default: true
+
+# TLS configuration
+tls_issuer: letsencrypt-prod
+tls_issuer_email: "{{ admin_email }}"
+
+# Feature flags
+hardening_enabled: true
+ha_enabled: true
+wireguard_enabled: true
+longhorn_enabled: true
+backup_enabled: true
+
+# Replicas (HA for production)
+replicas:
+  default: 2
+  postgresql: 3
+  redis: 2 # + sentinel
+
+# Resource profile
+resource_profile: production
+
+# Namespaces
+namespaces:
+  vault: vault
+  databases: databases
+  mattermost: mattermost
+  nextcloud: nextcloud
+  seaweedfs: seaweedfs
+  redcap: redcap
+  ecrin: ecrin
+  flipt: flipt
+  gitea: gitea
+  argocd: argocd
+  monitoring: monitoring
+
+# PostgreSQL configuration
+postgresql_host: postgresql-postgresql-ha-pgpool.databases.svc.cluster.local
+postgresql_port: 5432
+postgresql_ha_enabled: true
+
+# Redis configuration
+redis_host: redis-master.databases.svc.cluster.local
+redis_sentinel_host: redis.databases.svc.cluster.local
+redis_port: 6379
+redis_sentinel_port: 26379
+redis_sentinel_enabled: true
+redis_sentinel_master_set: mymaster
+
+# Service URLs
+service_urls:
+  vault: "https://vault.{{ domain }}"
+  mattermost: "https://chat.{{ domain }}"
+  nextcloud: "https://cloud.{{ domain }}"
+  gitea: "https://git.{{ domain }}"
+  argocd: "https://argocd.{{ domain }}"
+  grafana: "https://grafana.{{ domain }}"
+  redcap: "https://redcap.{{ domain }}"
+  ecrin: "https://ecrin.{{ domain }}"
+  flipt: "https://flags.{{ domain }}"
+  longhorn: "https://longhorn.{{ domain }}"
+  hubble: "https://hubble.{{ domain }}"
+
+# Firewall allowed IPs (for K3s API access)
+# ADMIN_IP is mandatory in production to prevent exposing K3s API to the internet
+admin_allowed_ips:
+  - "{{ lookup('env', 'ADMIN_IP') | mandatory('ADMIN_IP environment variable must be set for production') }}"
+
+# Longhorn settings for production
+longhorn_replica_count: 2
+longhorn_data_locality: best-effort
+
+# K3s cluster network CIDR (for firewall port restrictions)
+k3s_cluster_cidr: "10.0.2.0/24"
+
+# SSH allowed users (mandatory in production)
+hardening_ssh_allowed_users:
+  - debian

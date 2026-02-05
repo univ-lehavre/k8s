@@ -1,0 +1,72 @@
+---
+# OnlyOffice tasks
+
+- name: Create OnlyOffice namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ onlyoffice_namespace }}"
+        labels:
+          app.kubernetes.io/name: onlyoffice
+
+- name: Create OnlyOffice secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: onlyoffice-credentials
+        namespace: "{{ onlyoffice_namespace }}"
+      type: Opaque
+      stringData:
+        jwt-secret: "{{ onlyoffice_jwt_secret }}"
+  when:
+    - onlyoffice_jwt_secret is defined
+    - onlyoffice_jwt_secret != ''
+  no_log: true
+
+- name: Deploy OnlyOffice
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'deployment.yml.j2') | from_yaml_all | list }}"
+
+- name: Create OnlyOffice Service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: onlyoffice
+        namespace: "{{ onlyoffice_namespace }}"
+      spec:
+        selector:
+          app: onlyoffice
+        ports:
+          - port: 80
+            targetPort: 80
+            protocol: TCP
+
+- name: Wait for OnlyOffice to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: onlyoffice
+    namespace: "{{ onlyoffice_namespace }}"
+  register: onlyoffice_deployment
+  until:
+    - onlyoffice_deployment.resources | length > 0
+    - onlyoffice_deployment.resources[0].status.readyReplicas is defined
+    - onlyoffice_deployment.resources[0].status.readyReplicas >= 1
+  retries: 60
+  delay: 15
+
+- name: Create OnlyOffice HTTPRoute
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
+  when: onlyoffice_ingress_enabled

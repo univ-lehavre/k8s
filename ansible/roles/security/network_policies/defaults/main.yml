@@ -1,0 +1,80 @@
+---
+# Network Policies defaults
+
+# Enable network policies
+network_policies_enabled: "{{ env != 'local' }}"
+
+# Default deny all ingress/egress for namespaces
+network_policies_default_deny: true
+
+# Namespaces to apply policies to
+network_policies_namespaces:
+  - vault
+  - postgresql
+  - mariadb
+  - redis
+  - authelia
+  - mattermost
+  - nextcloud
+  - onlyoffice
+  - seaweedfs
+  - redcap
+  - ecrin
+  - flipt
+  - gitea
+  - argocd
+  - monitoring
+
+# Allow DNS for all pods
+network_policies_allow_dns: true
+
+# Allow monitoring scraping
+network_policies_allow_monitoring: true
+monitoring_namespace: monitoring
+
+# Ingress controller namespace
+# Changed from kube-system (Cilium Ingress) to envoy-gateway-system (Envoy Gateway)
+ingress_namespace: envoy-gateway-system
+
+# Authelia namespace (for forward auth policies)
+authelia_namespace: authelia
+
+# L7 Network Policy settings
+# Enable L7 filtering for database access control
+network_policy_l7_enabled: "{{ env != 'local' }}"
+
+# PostgreSQL L7 filtering - restrict by database name and user
+# Each service can only access its designated database
+postgresql_l7_policies:
+  - service: vault
+    namespace: vault
+    database: vault
+    user: vault_user
+  - service: mattermost
+    namespace: mattermost
+    database: mattermost
+    user: mattermost_user
+  - service: nextcloud
+    namespace: nextcloud
+    database: nextcloud
+    user: nextcloud_user
+  - service: gitea
+    namespace: gitea
+    database: gitea
+    user: gitea_user
+  - service: flipt
+    namespace: flipt
+    database: flipt
+    user: flipt_user
+  - service: authelia
+    namespace: authelia
+    database: authelia
+    user: authelia_user
+
+# MariaDB L7 filtering - for MySQL-compatible services
+# REDCap requires MySQL/MariaDB, not PostgreSQL
+mariadb_l7_policies:
+  - service: redcap
+    namespace: redcap
+    database: redcap
+    user: redcap_user

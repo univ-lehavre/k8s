@@ -1,0 +1,125 @@
+---
+# Kyverno deployment tasks
+# Deploys Kubernetes-native policy engine
+
+- name: Create Kyverno namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ kyverno_namespace }}"
+        labels:
+          app.kubernetes.io/name: kyverno
+          app.kubernetes.io/component: policy-engine
+
+- name: Add Kyverno Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ helm_repositories.kyverno.name }}"
+    repo_url: "{{ helm_repositories.kyverno.url }}"
+    state: present
+
+- name: Deploy Kyverno via Helm
+  kubernetes.core.helm:
+    name: kyverno
+    chart_ref: "{{ helm_repositories.kyverno.name }}/kyverno"
+    chart_version: "{{ kyverno_version }}"
+    release_namespace: "{{ kyverno_namespace }}"
+    create_namespace: false
+    wait: true
+    wait_timeout: 600s
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+
+- name: Wait for Kyverno admission controller
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: kyverno-admission-controller
+    namespace: "{{ kyverno_namespace }}"
+  register: kyverno_deployment
+  until: >
+    kyverno_deployment.resources | length > 0 and
+    kyverno_deployment.resources[0].status.readyReplicas | default(0) >= 1
+  retries: 30
+  delay: 10
+
+- name: Deploy Kyverno policies
+  when: kyverno_policies_enabled | default(true)
+  block:
+    - name: Deploy require-labels policy
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'policies/require-labels.yml.j2') | from_yaml }}"
+      when: kyverno_policy_require_labels | default(true)
+
+    - name: Deploy disallow-privileged policy
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'policies/disallow-privileged.yml.j2') | from_yaml }}"
+      when: kyverno_policy_disallow_privileged | default(true)
+
+    - name: Deploy require-resource-limits policy
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'policies/require-resource-limits.yml.j2') | from_yaml }}"
+      when: kyverno_policy_require_resource_limits | default(true)
+
+    - name: Deploy restrict-registries policy
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'policies/restrict-registries.yml.j2') | from_yaml }}"
+      when: kyverno_policy_restrict_registries | default(true)
+
+    - name: Deploy disallow-host-namespaces policy
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'policies/disallow-host-namespaces.yml.j2') | from_yaml }}"
+      when: kyverno_policy_disallow_host_namespaces | default(true)
+
+    - name: Deploy disallow-host-path policy
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'policies/disallow-host-path.yml.j2') | from_yaml }}"
+      when: kyverno_policy_disallow_host_path | default(true)
+
+    - name: Deploy require-probes policy
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'policies/require-probes.yml.j2') | from_yaml }}"
+      when: kyverno_policy_require_probes | default(false)
+
+    - name: Deploy disallow-latest-tag policy
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'policies/disallow-latest-tag.yml.j2') | from_yaml }}"
+      when: kyverno_policy_disallow_latest_tag | default(true)
+
+- name: Display Kyverno information
+  ansible.builtin.debug:
+    msg: |
+      Kyverno deployed successfully!
+
+      Namespace: {{ kyverno_namespace }}
+      Validation Mode: {{ kyverno_validation_failure_action }}
+
+      Policies deployed:
+      {% if kyverno_policy_require_labels %}- require-labels{% endif %}
+
+      {% if kyverno_policy_disallow_privileged %}- disallow-privileged{% endif %}
+
+      {% if kyverno_policy_require_resource_limits %}- require-resource-limits{% endif %}
+
+      {% if kyverno_policy_restrict_registries %}- restrict-registries{% endif %}
+
+      {% if kyverno_policy_disallow_host_namespaces %}- disallow-host-namespaces{% endif %}
+
+      {% if kyverno_policy_disallow_host_path %}- disallow-host-path{% endif %}
+
+      {% if kyverno_policy_require_probes %}- require-probes{% endif %}
+
+      {% if kyverno_policy_disallow_latest_tag %}- disallow-latest-tag{% endif %}
+
+
+      View policy reports:
+        kubectl get policyreport -A

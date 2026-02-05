@@ -1,0 +1,105 @@
+---
+# Trivy Operator for Image Scanning
+
+- name: Skip image scanning for local environment
+  ansible.builtin.debug:
+    msg: "Image scanning disabled for local environment"
+  when: not image_scanning_enabled
+
+- name: Deploy Trivy Operator
+  when: image_scanning_enabled
+  block:
+    - name: Create Trivy namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ trivy_operator_namespace }}"
+            labels:
+              app.kubernetes.io/name: trivy-operator
+              pod-security.kubernetes.io/enforce: privileged
+
+    - name: Add Aqua Security Helm repository
+      kubernetes.core.helm_repository:
+        name: aqua
+        repo_url: https://aquasecurity.github.io/helm-charts/
+
+    - name: Deploy Trivy Operator via Helm
+      kubernetes.core.helm:
+        name: trivy-operator
+        chart_ref: aqua/trivy-operator
+        chart_version: "{{ trivy_operator_version }}"
+        release_namespace: "{{ trivy_operator_namespace }}"
+        create_namespace: true
+        values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+        wait: true
+        wait_timeout: 300s
+
+    - name: Create ClusterComplianceReport for NSA standards
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: aquasecurity.github.io/v1alpha1
+          kind: ClusterComplianceReport
+          metadata:
+            name: nsa
+            labels:
+              app.kubernetes.io/managed-by: trivy-operator
+          spec:
+            compliance:
+              - nsa-1.0
+      when: "'nsa' in trivy_compliance_reports"
+
+    - name: Create ClusterComplianceReport for CIS benchmarks
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: aquasecurity.github.io/v1alpha1
+          kind: ClusterComplianceReport
+          metadata:
+            name: cis
+            labels:
+              app.kubernetes.io/managed-by: trivy-operator
+          spec:
+            compliance:
+              - cis-1.23
+      when: "'cis' in trivy_compliance_reports"
+
+    - name: Create PrometheusRule for vulnerability alerts
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: monitoring.coreos.com/v1
+          kind: PrometheusRule
+          metadata:
+            name: trivy-vulnerability-alerts
+            namespace: "{{ trivy_operator_namespace }}"
+            labels:
+              prometheus: kube-prometheus
+              role: alert-rules
+          spec:
+            groups:
+              - name: trivy.rules
+                rules:
+                  - alert: CriticalVulnerabilityFound
+                    expr: trivy_image_vulnerabilities{severity="Critical"} > 0
+                    for: 5m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "Critical vulnerability found in image"
+                      description: "Image {{ '{{' }} $labels.image_repository {{ '}}' }}:{{ '{{' }} $labels.image_tag {{ '}}' }} has {{ '{{' }} $value {{ '}}' }}
+                        critical vulnerabilities"
+
+                  - alert: HighVulnerabilityFound
+                    expr: trivy_image_vulnerabilities{severity="High"} > 5
+                    for: 1h
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "Multiple high vulnerabilities found"
+                      description: "Image {{ '{{' }} $labels.image_repository {{ '}}' }}:{{ '{{' }} $labels.image_tag {{ '}}' }} has {{ '{{' }} $value {{ '}}' }}
+                        high vulnerabilities"
+      when: monitoring_enabled | default(true)

@@ -1,0 +1,22 @@
+---
+# Apply Pod Security Standards to namespaces
+
+- name: Skip Pod Security Standards for local environment
+  ansible.builtin.debug:
+    msg: "Pod Security Standards disabled for local environment"
+  when: not pod_security_enabled
+
+- name: Apply Pod Security Standards labels to application namespaces
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ item }}"
+        labels:
+          pod-security.kubernetes.io/enforce: "{{ pod_security_enforce_level }}"
+          pod-security.kubernetes.io/audit: "{{ pod_security_audit_level }}"
+          pod-security.kubernetes.io/warn: "{{ pod_security_warn_level }}"
+  loop: "{{ pod_security_namespaces }}"
+  when: pod_security_enabled

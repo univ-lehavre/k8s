@@ -1,0 +1,25 @@
+---
+# Phase 7: Monitoring
+
+- name: Phase 7 - Monitoring Stack
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: monitoring/kube_prometheus
+      tags: [monitoring, prometheus, grafana, alertmanager]
+    - role: monitoring/hubble_ui
+      tags: [monitoring, hubble, cilium, network]
+
+  post_tasks:
+    - name: Phase 7 complete
+      ansible.builtin.debug:
+        msg: |
+          Monitoring deployed:
+          - Grafana: https://grafana.{{ domain }}
+          - Hubble UI: https://hubble.{{ domain }}
+
+          Default Grafana credentials: admin / {{ grafana_admin_password | default('check secrets') }}

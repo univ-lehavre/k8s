@@ -1,0 +1,35 @@
+---
+# ReferenceGrant allows SecurityPolicy in envoy-gateway-system
+# to reference Authelia service in authelia namespace
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-ext-auth-from-gateway
+  namespace: authelia
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: {{ envoy_gateway_namespace }}
+  to:
+    - group: ""
+      kind: Service
+      name: authelia
+
+---
+# ReferenceGrant allows HTTPRoutes from any namespace
+# to reference the main Gateway
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-routes-to-gateway
+  namespace: {{ envoy_gateway_namespace }}
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: "*"
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ gateway_name }}

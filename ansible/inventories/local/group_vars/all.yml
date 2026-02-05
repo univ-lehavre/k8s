@@ -1,0 +1,77 @@
+---
+# Environment identification
+env: local
+env_name: "Local Development"
+
+# Domain configuration
+domain: atlas.localhost
+admin_email: admin@atlas.localhost
+
+# K3s/K3D configuration
+k3s_type: k3d
+k3d_cluster_name: atlas-local
+k3d_api_port: 6550
+k3d_http_port: 80
+k3d_https_port: 443
+k3d_agents: 0 # Single node for local dev
+
+# Storage configuration
+storage_class: local-path
+storage_class_default: true
+
+# TLS configuration
+tls_issuer: selfsigned-issuer
+tls_issuer_email: "{{ admin_email }}"
+
+# Feature flags
+hardening_enabled: false
+ha_enabled: false
+wireguard_enabled: false
+longhorn_enabled: false
+backup_enabled: false
+
+# Replicas (minimal for local)
+replicas:
+  default: 1
+  postgresql: 1
+  redis: 0 # Standalone mode
+
+# Resource profile
+resource_profile: minimal
+
+# Namespaces
+namespaces:
+  vault: vault
+  databases: databases
+  mattermost: mattermost
+  nextcloud: nextcloud
+  seaweedfs: seaweedfs
+  redcap: redcap
+  ecrin: ecrin
+  flipt: flipt
+  gitea: gitea
+  argocd: argocd
+  monitoring: monitoring
+
+# PostgreSQL configuration
+postgresql_host: postgresql-postgresql-ha-pgpool.databases.svc.cluster.local
+postgresql_port: 5432
+
+# Redis configuration
+redis_host: redis-master.databases.svc.cluster.local
+redis_port: 6379
+redis_sentinel_enabled: false
+
+# Service URLs
+service_urls:
+  vault: "https://vault.{{ domain }}"
+  mattermost: "https://chat.{{ domain }}"
+  nextcloud: "https://cloud.{{ domain }}"
+  gitea: "https://git.{{ domain }}"
+  argocd: "https://argocd.{{ domain }}"
+  grafana: "https://grafana.{{ domain }}"
+  redcap: "https://redcap.{{ domain }}"
+  ecrin: "https://ecrin.{{ domain }}"
+  flipt: "https://flags.{{ domain }}"
+  longhorn: "https://longhorn.{{ domain }}"
+  hubble: "https://hubble.{{ domain }}"

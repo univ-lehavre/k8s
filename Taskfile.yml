@@ -1,0 +1,250 @@
+---
+# Taskfile pour le projet k8s
+# Installation: brew install go-task/tap/go-task
+# Utilisation: task --list
+# Documentation: https://taskfile.dev
+
+version: "3"
+
+vars:
+  ANSIBLE_DIR: ansible
+  PROFILE: production
+  REPORT_FILE: ansible-lint-report.json
+
+tasks:
+  default:
+    desc: Afficher l'aide
+    cmds:
+      - task --list-all
+    silent: true
+
+  # Installation et configuration
+  install-deps:
+    desc: Installer toutes les dépendances
+    cmds:
+      - echo "📦 Installation des dépendances..."
+      - echo "ℹ️  Outils requis: brew install ansible-lint yamllint markdownlint-cli2"
+      - ansible-galaxy install -r {{.ANSIBLE_DIR}}/requirements.yml
+      - task: install-hooks
+      - echo "✅ Dépendances installées"
+
+  install-hooks:
+    desc: Installer les git hooks avec lefthook
+    cmds:
+      - echo "🪝 Installation des git hooks..."
+      - lefthook install
+      - echo "✅ Git hooks installés"
+
+  install-galaxy:
+    desc: Installer les collections et rôles Ansible
+    cmds:
+      - echo "📦 Installation des collections Ansible..."
+      - ansible-galaxy install -r {{.ANSIBLE_DIR}}/requirements.yml
+
+  install-galaxy-update:
+    desc: Mettre à jour les collections et rôles Ansible
+    cmds:
+      - echo "🔄 Mise à jour des collections..."
+      - ansible-galaxy install -r {{.ANSIBLE_DIR}}/requirements.yml --force
+      - echo "✅ Collections mises à jour"
+
+  # Linting
+  lint:
+    desc: Linter le projet Ansible
+    cmds:
+      - echo "🔍 Linting du projet..."
+      - ansible-lint --profile={{.PROFILE}}
+
+  lint-fix:
+    desc: Linter et corriger automatiquement
+    cmds:
+      - echo "🔧 Linting avec auto-fix..."
+      - ansible-lint --fix --profile={{.PROFILE}}
+
+  lint-report:
+    desc: Générer un rapport de linting (format CodeClimate)
+    cmds:
+      - echo "📊 Génération du rapport..."
+      - ansible-lint --format=codeclimate > {{.REPORT_FILE}}
+      - echo "✅ Rapport généré → {{.REPORT_FILE}}"
+
+  lint-file:
+    desc: Linter un fichier spécifique (usage - task lint-file -- path/to/file.yml)
+    cmds:
+      - ansible-lint --profile={{.PROFILE}} {{.CLI_ARGS}}
+
+  lint-role:
+    desc: Linter un rôle spécifique (usage - task lint-role -- gitea)
+    cmds:
+      - ansible-lint --profile={{.PROFILE}} {{.ANSIBLE_DIR}}/roles/{{.CLI_ARGS}}
+
+  # Validation YAML
+  yaml-lint:
+    desc: Valider la syntaxe YAML
+    cmds:
+      - echo "📝 Validation YAML..."
+      - yamllint -c .yamllint --strict .
+
+  # Validation Markdown
+  md-lint:
+    desc: Valider la syntaxe Markdown
+    cmds:
+      - echo "📝 Validation Markdown..."
+      - markdownlint-cli2 "**/*.md" "#node_modules" "#venv" "#.cache"
+
+  md-lint-fix:
+    desc: Corriger automatiquement les fichiers Markdown
+    cmds:
+      - echo "🔧 Correction Markdown..."
+      - markdownlint-cli2 --fix "**/*.md" "#node_modules" "#venv" "#.cache"
+
+  yaml-fix:
+    desc: Formater les fichiers YAML avec yamlfmt (si installé)
+    cmds:
+      - |
+        if command -v yamlfmt >/dev/null 2>&1; then
+          yamlfmt -formatter retain_line_breaks=true .
+        else
+          echo "⚠️  yamlfmt non installé. Installer avec - go install github.com/google/yamlfmt/cmd/yamlfmt@latest"
+        fi
+
+  # Vérification syntaxe Ansible
+  syntax-check:
+    desc: Vérifier la syntaxe des playbooks
+    cmds:
+      - echo "🔍 Vérification de la syntaxe..."
+      - for: { var: PLAYBOOKS, split: "\\n" }
+        cmd: ansible-playbook --syntax-check {{.ITEM}}
+      - echo "✅ Syntaxe correcte"
+    vars:
+      PLAYBOOKS:
+        sh: find {{.ANSIBLE_DIR}}/playbooks -name "*.yml" -type f 2>/dev/null || echo ""
+
+  syntax-check-file:
+    desc: Vérifier la syntaxe d'un playbook spécifique
+    cmds:
+      - ansible-playbook --syntax-check {{.CLI_ARGS}}
+
+  # Checks combinés
+  check:
+    desc: Lancer tous les checks (lint + yamllint + mdlint)
+    deps:
+      - lint
+      - yaml-lint
+      - md-lint
+
+  check-quick:
+    desc: Check rapide (lint seulement)
+    cmds:
+      - task: lint
+
+  # Git hooks
+  hooks-test:
+    desc: Tester les hooks pre-commit sur tous les fichiers
+    cmds:
+      - echo "🪝 Test des hooks pre-commit..."
+      - lefthook run pre-commit --all-files
+
+  hooks-skip:
+    desc: Exemple pour skip les hooks (info seulement)
+    cmds:
+      - echo "Pour bypasser les hooks-"
+      - echo "  LEFTHOOK=0 git commit -m 'message'"
+      - echo "  LEFTHOOK_EXCLUDE=ansible-lint git commit -m 'message'"
+    silent: true
+
+  # Nettoyage
+  clean:
+    desc: Nettoyer les fichiers temporaires
+    cmds:
+      - echo "🧹 Nettoyage..."
+      - find . -type f -name '*.retry' -delete
+      - find . -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+      - find . -type d -name '.pytest_cache' -exec rm -rf {} + 2>/dev/null || true
+      - rm -f {{.REPORT_FILE}}
+      - echo "✅ Nettoyage terminé"
+
+  clean-cache:
+    desc: Nettoyer le cache ansible-lint
+    cmds:
+      - rm -rf .cache/
+      - echo "✅ Cache nettoyé"
+
+  # CI/CD
+  ci:
+    desc: Commande CI complète
+    cmds:
+      - task: install-deps
+      - task: check
+      - echo "✅ CI passée avec succès"
+
+  ci-fast:
+    desc: CI rapide (sans install)
+    cmds:
+      - task: check
+      - echo "✅ CI rapide passée"
+
+  # Debug et info
+  info:
+    desc: Afficher les informations sur l'environnement
+    cmds:
+      - echo "📋 Informations environnement-"
+      - echo "  ansible-lint → $(ansible-lint --version | head -1)"
+      - echo "  yamllint → $(yamllint --version 2>&1 || echo 'non installé')"
+      - echo "  markdownlint-cli2 → $(markdownlint-cli2 --version 2>&1 || echo 'non installé')"
+      - echo "  lefthook → $(lefthook version)"
+      - echo "  ansible → $(ansible --version | head -1)"
+      - echo "  task → $(task --version)"
+    silent: true
+
+  info-rules:
+    desc: Lister toutes les règles ansible-lint disponibles
+    cmds:
+      - ansible-lint -L
+
+  info-rule:
+    desc: Afficher les détails d'une règle (usage - task info-rule -- var-naming)
+    cmds:
+      - ansible-lint -T {{.CLI_ARGS}}
+
+  # Profils de linting
+  lint-min:
+    desc: Linter avec profil minimal
+    cmds:
+      - ansible-lint --profile=min
+
+  lint-basic:
+    desc: Linter avec profil basic
+    cmds:
+      - ansible-lint --profile=basic
+
+  lint-moderate:
+    desc: Linter avec profil moderate
+    cmds:
+      - ansible-lint --profile=moderate
+
+  lint-safety:
+    desc: Linter avec profil safety (recommandé)
+    cmds:
+      - ansible-lint --profile=safety
+
+  lint-production:
+    desc: Linter avec profil production (le plus strict)
+    cmds:
+      - ansible-lint --profile=production
+
+  # Raccourcis
+  format:
+    desc: Formater automatiquement (alias lint-fix)
+    cmds:
+      - task: lint-fix
+
+  fix:
+    desc: Corriger automatiquement (alias lint-fix)
+    cmds:
+      - task: lint-fix
+
+  test-hooks:
+    desc: Tester les hooks (alias hooks-test)
+    cmds:
+      - task: hooks-test

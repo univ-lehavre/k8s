@@ -1,0 +1,62 @@
+---
+# Image Scanning defaults (Trivy Operator)
+
+image_scanning_enabled: "{{ env != 'local' }}"
+
+# Trivy Operator settings
+trivy_operator_namespace: trivy-system
+trivy_operator_version: "{{ helm_versions.trivy_operator }}"
+
+# Scan configuration
+trivy_scan_job_timeout: 5m
+trivy_concurrent_scan_jobs: 10
+
+# Vulnerability severity threshold
+# Options: UNKNOWN, LOW, MEDIUM, HIGH, CRITICAL
+trivy_severity_threshold: HIGH
+
+# Scan targets
+trivy_scan_vulnerabilities: true
+trivy_scan_misconfigurations: true
+trivy_scan_exposed_secrets: true
+trivy_scan_rbac_assessment: true
+
+# Ignore unfixed vulnerabilities
+trivy_ignore_unfixed: false
+
+# Private registry authentication (if needed)
+trivy_private_registry_enabled: false
+trivy_private_registry_server: ""
+trivy_private_registry_username: ""
+trivy_private_registry_password: ""
+
+# Resource limits for scanner
+trivy_scanner_resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Operator resources
+trivy_operator_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# Scan schedule (cron format)
+trivy_scan_schedule: "0 1 * * *" # Daily at 1 AM
+
+# Compliance reports
+trivy_compliance_enabled: true
+trivy_compliance_reports:
+  - nsa
+  - cis
+
+# Webhook for alerts (optional)
+trivy_webhook_enabled: false
+trivy_webhook_url: ""

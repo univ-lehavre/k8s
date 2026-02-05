@@ -1,0 +1,23 @@
+---
+# Docker role defaults (for local K3D development)
+
+# Docker packages (macOS uses Docker Desktop)
+docker_packages_debian:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# Docker daemon configuration
+docker_daemon_config:
+  storage-driver: overlay2
+  log-driver: json-file
+  log-opts:
+    max-size: "10m"
+    max-file: "3"
+
+# Docker users (users to add to docker group)
+docker_users: []
+# Whether this is macOS (Docker Desktop)
+docker_is_macos: "{{ ansible_os_family == 'Darwin' }}"

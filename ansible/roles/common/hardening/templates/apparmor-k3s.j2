@@ -1,0 +1,74 @@
+# {{ ansible_managed }}
+# AppArmor profile for K3s containerd
+# This profile provides security restrictions for containers running under K3s
+
+#include <tunables/global>
+
+profile k3s-containerd flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  # Allow network access
+  network,
+
+  # Allow capability operations needed by containers
+  capability chown,
+  capability dac_override,
+  capability dac_read_search,
+  capability fowner,
+  capability fsetid,
+  capability kill,
+  capability net_bind_service,
+  capability setfcap,
+  capability setgid,
+  capability setpcap,
+  capability setuid,
+  capability sys_chroot,
+  capability sys_ptrace,
+  capability sys_admin,
+
+  # Deny dangerous capabilities
+  deny capability sys_rawio,
+  deny capability sys_boot,
+  deny capability sys_module,
+
+  # Allow read access to system files
+  /etc/** r,
+  /usr/** r,
+  /lib/** r,
+  /proc/** r,
+  /sys/** r,
+
+  # Allow containerd runtime operations
+  /run/containerd/** rw,
+  /run/k3s/** rw,
+  /var/lib/rancher/k3s/** rw,
+  /var/log/pods/** rw,
+  /var/log/containers/** rw,
+
+  # Allow container image layers
+  /var/lib/containerd/** rw,
+
+  # Allow tmp access
+  /tmp/** rw,
+  /var/tmp/** rw,
+
+  # Allow execution of binaries
+  /usr/bin/** ix,
+  /usr/sbin/** ix,
+  /bin/** ix,
+  /sbin/** ix,
+
+  # Deny write to sensitive locations
+  deny /boot/** w,
+  deny /etc/shadow w,
+  deny /etc/passwd w,
+  deny /etc/sudoers w,
+  deny /etc/sudoers.d/** w,
+
+  # Signal handling
+  signal (receive) peer=unconfined,
+  signal (send,receive) peer=k3s-containerd,
+
+  # Ptrace for container debugging (restricted)
+  ptrace (read,trace,tracedby) peer=k3s-containerd,
+}

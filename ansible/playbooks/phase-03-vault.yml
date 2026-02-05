@@ -1,0 +1,24 @@
+---
+# Phase 3: Vault & Secrets Management
+
+- name: Phase 3 - Vault & External Secrets
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: platform/vault
+      tags: [vault, secrets, platform]
+    - role: platform/external_secrets
+      tags: [external-secrets, secrets, platform]
+
+  post_tasks:
+    - name: Phase 3 complete
+      ansible.builtin.debug:
+        msg: |
+          Vault and External Secrets deployed.
+          {% if secrets.vault.root_token is not defined or secrets.vault.root_token == '' %}
+          IMPORTANT: Save the Vault root token and unseal keys displayed above!
+          {% endif %}

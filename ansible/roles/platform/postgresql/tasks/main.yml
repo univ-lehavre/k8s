@@ -1,0 +1,134 @@
+---
+# PostgreSQL HA tasks
+
+- name: Create PostgreSQL namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ postgresql_namespace }}"
+        labels:
+          app.kubernetes.io/name: postgresql
+
+- name: Add Bitnami Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ postgresql_chart_repo_name }}"
+    repo_url: "{{ postgresql_chart_repo }}"
+
+- name: Create PostgreSQL secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: postgresql-credentials
+        namespace: "{{ postgresql_namespace }}"
+      type: Opaque
+      stringData:
+        postgresql-password: "{{ postgresql_superuser_password }}"
+        repmgr-password: "{{ postgresql_replication_password }}"
+  when:
+    - postgresql_superuser_password is defined
+    - postgresql_superuser_password != ''
+  no_log: true
+
+- name: Create PostgreSQL TLS certificate
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: "{{ postgresql_ssl_cert_secret }}"
+        namespace: "{{ postgresql_namespace }}"
+      spec:
+        secretName: "{{ postgresql_ssl_cert_secret }}"
+        duration: 8760h # 1 year
+        renewBefore: 720h # 30 days
+        commonName: "{{ postgresql_ssl_common_name }}"
+        dnsNames: "{{ postgresql_ssl_alt_names }}"
+        privateKey:
+          algorithm: RSA
+          size: 2048
+        issuerRef:
+          name: "{{ postgresql_ssl_cert_issuer }}"
+          kind: ClusterIssuer
+  when: postgresql_ssl_enabled | default(false)
+
+- name: Wait for PostgreSQL TLS certificate to be ready
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: Certificate
+    namespace: "{{ postgresql_namespace }}"
+    name: "{{ postgresql_ssl_cert_secret }}"
+  register: pg_cert
+  until:
+    - pg_cert.resources | length > 0
+    - pg_cert.resources[0].status.conditions is defined
+    - pg_cert.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+  retries: 30
+  delay: 10
+  when: postgresql_ssl_enabled | default(false)
+
+- name: Deploy PostgreSQL HA via Helm
+  kubernetes.core.helm:
+    name: postgresql
+    chart_ref: "{{ postgresql_chart_repo_name }}/postgresql-ha"
+    chart_version: "{{ helm_versions.postgresql_ha }}"
+    release_namespace: "{{ postgresql_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+  when: postgresql_ha_enabled
+
+- name: Deploy PostgreSQL standalone via Helm
+  kubernetes.core.helm:
+    name: postgresql
+    chart_ref: "{{ postgresql_chart_repo_name }}/postgresql"
+    chart_version: "{{ helm_versions.postgresql }}"
+    release_namespace: "{{ postgresql_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values-standalone.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+  when: not postgresql_ha_enabled
+
+- name: Wait for PostgreSQL to be ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ postgresql_namespace }}"
+    label_selectors:
+      - app.kubernetes.io/name=postgresql
+  register: pg_pods
+  until:
+    - pg_pods.resources | length > 0
+    - pg_pods.resources | selectattr('status.phase', 'equalto', 'Running') | list | length == pg_pods.resources | length
+  retries: 30
+  delay: 10
+
+- name: Store PostgreSQL connection info in Vault
+  kubernetes.core.k8s_exec:
+    namespace: "{{ namespaces.vault }}"
+    pod: vault-0
+    command: |
+      vault kv put secret/postgresql
+        host=postgresql.{{ postgresql_namespace }}.svc.cluster.local
+        port=5432
+        username={{ postgresql_username }}
+        password={{ postgresql_superuser_password }}
+    env:
+      - name: VAULT_TOKEN
+        value: "{{ secrets.vault.root_token }}"
+  when:
+    - secrets.vault.root_token is defined
+    - secrets.vault.root_token != ''
+  no_log: true
+  register: postgresql_vault_store
+  failed_when:
+    - postgresql_vault_store.rc != 0
+    - "'path is already in use' not in (postgresql_vault_store.stderr | default(''))"

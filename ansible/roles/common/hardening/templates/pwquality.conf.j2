@@ -1,0 +1,41 @@
+# {{ ansible_managed }}
+# Password quality requirements
+
+# Minimum password length
+minlen = {{ hardening_password_min_length }}
+
+# Minimum number of character classes (uppercase, lowercase, digits, special)
+minclass = {{ hardening_password_min_class }}
+
+# Maximum number of consecutive same characters
+maxrepeat = {{ hardening_password_max_repeat }}
+
+# Maximum number of consecutive characters from the same class
+maxclassrepeat = {{ hardening_password_max_class_repeat }}
+
+# Require at least one digit
+dcredit = -1
+
+# Require at least one uppercase letter
+ucredit = -1
+
+# Require at least one lowercase letter
+lcredit = -1
+
+# Require at least one special character
+ocredit = -1
+
+# Number of characters that must differ from the old password
+difok = {{ hardening_password_difok }}
+
+# Reject passwords containing the username
+reject_username
+
+# Enforce password policy for root
+enforce_for_root
+
+# Check password against dictionary
+dictcheck = 1
+
+# Check for monotonic sequences
+usercheck = 1

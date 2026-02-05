@@ -1,0 +1,64 @@
+---
+# Local Path Provisioner tasks
+
+- name: Check if local-path-provisioner already exists (K3D)
+  kubernetes.core.k8s_info:
+    api_version: storage.k8s.io/v1
+    kind: StorageClass
+    name: local-path
+  register: existing_local_path
+  when: local_path_already_installed
+
+- name: Configure existing local-path as default (K3D)
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: local-path
+        annotations:
+          storageclass.kubernetes.io/is-default-class: "{{ local_path_default_storage_class | lower }}"
+      provisioner: rancher.io/local-path
+      reclaimPolicy: "{{ local_path_reclaim_policy }}"
+      volumeBindingMode: "{{ local_path_volume_binding_mode }}"
+  when:
+    - local_path_already_installed
+    - existing_local_path.resources | length > 0
+
+- name: Install local-path-provisioner (non-K3D)
+  when: not local_path_already_installed
+  block:
+    - name: Create namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ local_path_namespace }}"
+
+    - name: Add local-path-provisioner Helm repository
+      kubernetes.core.helm_repository:
+        name: "{{ local_path_chart_repo_name }}"
+        repo_url: "{{ local_path_chart_repo }}"
+
+    - name: Deploy local-path-provisioner via Helm
+      kubernetes.core.helm:
+        name: local-path-provisioner
+        chart_ref: "{{ local_path_chart_repo_name }}/local-path-provisioner"
+        release_namespace: "{{ local_path_namespace }}"
+        create_namespace: true
+        values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+        wait: true
+        wait_timeout: 300s
+
+- name: Verify local-path StorageClass exists
+  kubernetes.core.k8s_info:
+    api_version: storage.k8s.io/v1
+    kind: StorageClass
+    name: local-path
+  register: local_path_sc
+  until: local_path_sc.resources | length > 0
+  retries: 10
+  delay: 5

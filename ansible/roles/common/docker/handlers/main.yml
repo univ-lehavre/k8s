@@ -1,0 +1,6 @@
+---
+- name: Restart Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
+  when: ansible_os_family != 'Darwin'

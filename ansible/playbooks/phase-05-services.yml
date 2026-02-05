@@ -1,0 +1,56 @@
+---
+# Phase 5: Application Services
+
+- name: Phase 5 - Authelia (Forward Auth)
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: platform/authelia
+      tags: [services, authelia, auth, forward-auth]
+
+- name: Phase 5 - Application Services
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    # Object Storage (needed by Nextcloud)
+    - role: services/seaweedfs
+      tags: [services, seaweedfs, storage, s3]
+
+    # Collaboration
+    - role: services/mattermost
+      tags: [services, mattermost, collaboration, chat]
+    - role: services/nextcloud
+      tags: [services, nextcloud, collaboration, files]
+    - role: services/onlyoffice
+      tags: [services, onlyoffice, collaboration, office]
+
+    # Research
+    - role: services/redcap
+      tags: [services, redcap, research]
+    - role: services/ecrin
+      tags: [services, ecrin, research]
+
+    # Feature Flags
+    - role: services/flipt
+      tags: [services, flipt, feature-flags]
+
+  post_tasks:
+    - name: Phase 5 complete
+      ansible.builtin.debug:
+        msg: |
+          Application services deployed:
+          - Authelia (Forward Auth): https://login.{{ domain }}
+          - Mattermost: https://chat.{{ domain }}
+          - Nextcloud: https://cloud.{{ domain }}
+          - OnlyOffice: https://office.{{ domain }}
+          - REDCap: https://redcap.{{ domain }}
+          - ECRIN: https://ecrin.{{ domain }}
+          - Flipt: https://flags.{{ domain }}

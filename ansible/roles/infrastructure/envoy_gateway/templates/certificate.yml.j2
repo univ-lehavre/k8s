@@ -1,0 +1,18 @@
+---
+# Wildcard certificate for Gateway
+# Managed by cert-manager
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ gateway_wildcard_secret_name }}
+  namespace: {{ envoy_gateway_namespace }}
+spec:
+  secretName: {{ gateway_wildcard_secret_name }}
+  issuerRef:
+    name: {{ gateway_tls_issuer }}
+    kind: ClusterIssuer
+  dnsNames:
+    - "*.{{ domain }}"
+    - "{{ domain }}"
+  duration: 2160h  # 90 days
+  renewBefore: 360h  # 15 days

@@ -1,0 +1,20 @@
+---
+# K3s master-specific configuration
+k3s_role: server
+k3s_server_init: true
+
+# etcd encryption
+k3s_etcd_encryption: true
+
+# API server arguments
+k3s_server_args:
+  - "--disable=traefik"
+  - "--disable=servicelb"
+  - "--disable=local-storage"
+  - "--flannel-backend=none"
+  - "--disable-network-policy"
+  - "--write-kubeconfig-mode=644"
+  - "--kube-apiserver-arg=audit-log-path=/var/log/kubernetes/audit.log"
+  - "--kube-apiserver-arg=audit-log-maxage=30"
+  - "--kube-apiserver-arg=audit-log-maxbackup=10"
+  - "--kube-apiserver-arg=audit-log-maxsize=100"

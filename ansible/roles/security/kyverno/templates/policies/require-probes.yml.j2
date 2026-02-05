@@ -1,0 +1,48 @@
+---
+# Require liveness and readiness probes
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes
+  annotations:
+    policies.kyverno.io/title: Require Liveness and Readiness Probes
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Liveness and readiness probes help Kubernetes determine the state
+      of pods and manage them accordingly. This policy requires that
+      all containers have both probes defined.
+spec:
+  validationFailureAction: {{ kyverno_validation_failure_action }}
+  background: {{ kyverno_background_scan | lower }}
+  rules:
+    - name: validate-probes
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+{% for ns in kyverno_excluded_namespaces %}
+                - {{ ns }}
+{% endfor %}
+          # Exclude Jobs and CronJobs which typically don't need probes
+          - resources:
+              kinds:
+                - Pod
+              selector:
+                matchExpressions:
+                  - key: job-name
+                    operator: Exists
+      validate:
+        message: "Containers must have liveness and readiness probes defined."
+        pattern:
+          spec:
+            containers:
+              - livenessProbe:
+                  periodSeconds: ">0"
+                readinessProbe:
+                  periodSeconds: ">0"

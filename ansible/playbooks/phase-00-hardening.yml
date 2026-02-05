@@ -1,0 +1,26 @@
+---
+# Phase 0: System Hardening
+# Only runs on staging/production
+
+- name: Phase 0 - System Hardening
+  hosts: all:!localhost
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  pre_tasks:
+    - name: Check if hardening is enabled
+      ansible.builtin.debug:
+        msg: "Applying system hardening to {{ inventory_hostname }}"
+
+  roles:
+    - role: common/hardening
+      tags: [hardening, security, ssh, firewall, fail2ban, auditd]
+      when: hardening_enabled | default(false)
+
+  post_tasks:
+    - name: Phase 0 complete
+      ansible.builtin.debug:
+        msg: "System hardening complete on {{ inventory_hostname }}"

@@ -1,0 +1,82 @@
+---
+- name: Add Cilium Helm repository
+  kubernetes.core.helm_repository:
+    name: cilium
+    repo_url: "{{ helm_repositories.cilium.url }}"
+    state: present
+
+- name: Install Cilium CLI
+  ansible.builtin.include_tasks: install_cli.yml
+  when: env != 'local'
+
+- name: Generate Cilium Helm values
+  ansible.builtin.set_fact:
+    cilium_values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+
+- name: Deploy Cilium via Helm
+  kubernetes.core.helm:
+    name: cilium
+    chart_ref: cilium/cilium
+    chart_version: "{{ cilium_version }}"
+    release_namespace: "{{ cilium_namespace }}"
+    create_namespace: false
+    values: "{{ cilium_values }}"
+    wait: true
+    wait_timeout: 600s
+  register: cilium_deploy
+
+- name: Wait for Cilium to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: DaemonSet
+    name: cilium
+    namespace: "{{ cilium_namespace }}"
+  register: cilium_ds
+  until:
+    - cilium_ds.resources | length > 0
+    - cilium_ds.resources[0].status.numberReady | default(0) == cilium_ds.resources[0].status.desiredNumberScheduled | default(1)
+  retries: 30
+  delay: 10
+
+- name: Wait for Cilium Operator to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: cilium-operator
+    namespace: "{{ cilium_namespace }}"
+  register: cilium_operator
+  until:
+    - cilium_operator.resources | length > 0
+    - cilium_operator.resources[0].status.readyReplicas | default(0) >= 1
+  retries: 30
+  delay: 10
+
+- name: Wait for Hubble Relay (if enabled)
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: hubble-relay
+    namespace: "{{ cilium_namespace }}"
+  register: hubble_relay
+  until:
+    - hubble_relay.resources | length > 0
+    - hubble_relay.resources[0].status.readyReplicas | default(0) >= 1
+  retries: 30
+  delay: 10
+  when: cilium_hubble_relay_enabled
+
+- name: Verify Cilium status
+  ansible.builtin.command: cilium status --wait
+  register: cilium_status
+  changed_when: false
+  failed_when: false
+  when: env != 'local'
+
+- name: Display Cilium status
+  ansible.builtin.debug:
+    msg: |
+      Cilium deployed successfully!
+      Version: {{ cilium_version }}
+      Hubble: {{ 'Enabled' if cilium_hubble_enabled else 'Disabled' }}
+      Encryption: {{ 'WireGuard' if cilium_encryption_enabled else 'Disabled' }}
+      Ingress Controller: {{ 'Enabled' if cilium_ingress_enabled else 'Disabled' }}

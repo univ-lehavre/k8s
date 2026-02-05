@@ -1,0 +1,48 @@
+---
+# K3s Server role defaults
+
+# K3s version
+k3s_version: "v1.29.2+k3s1"
+
+# K3s token (required for cluster)
+k3s_token: "{{ lookup('env', 'K3S_TOKEN') }}"
+
+# Server configuration
+k3s_server_init: true # First server initializes the cluster
+k3s_server_url: "" # Set for additional servers joining existing cluster
+
+# etcd encryption
+k3s_etcd_encryption: true
+k3s_etcd_encryption_key: "{{ lookup('env', 'ETCD_ENCRYPTION_KEY') | default(omit) }}"
+
+# Disable default components (we'll install Cilium, Longhorn, etc.)
+k3s_disable:
+  - traefik
+  - servicelb
+  - local-storage
+
+# Flannel backend (none = we use Cilium)
+k3s_flannel_backend: "none"
+
+# Disable default network policy (Cilium handles this)
+k3s_disable_network_policy: true
+
+# Write kubeconfig mode (0600 for security - contains cluster credentials)
+k3s_kubeconfig_mode: "0600"
+
+# API server arguments
+k3s_kube_apiserver_args:
+  - "audit-log-path=/var/log/kubernetes/audit.log"
+  - "audit-log-maxage=30"
+  - "audit-log-maxbackup=10"
+  - "audit-log-maxsize=100"
+
+# Node labels
+k3s_node_labels: []
+# Node taints
+k3s_node_taints: []
+# Data directory
+k3s_data_dir: "/var/lib/rancher/k3s"
+
+# Installation method
+k3s_install_script_url: "https://get.k3s.io"

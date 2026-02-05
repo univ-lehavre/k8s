@@ -1,0 +1,122 @@
+---
+# MariaDB tasks
+# Deploys MariaDB for services requiring MySQL compatibility (e.g., REDCap)
+
+- name: Create MariaDB namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ mariadb_namespace }}"
+        labels:
+          app.kubernetes.io/name: mariadb
+
+- name: Add Bitnami Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ mariadb_chart_repo_name }}"
+    repo_url: "{{ mariadb_chart_repo }}"
+
+- name: Create MariaDB secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: mariadb-credentials
+        namespace: "{{ mariadb_namespace }}"
+      type: Opaque
+      stringData:
+        mariadb-root-password: "{{ mariadb_root_password }}"
+        mariadb-replication-password: "{{ mariadb_replication_password }}"
+  when:
+    - mariadb_root_password is defined
+    - mariadb_root_password != ''
+  no_log: true
+
+- name: Create MariaDB TLS certificate
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: "{{ mariadb_ssl_cert_secret }}"
+        namespace: "{{ mariadb_namespace }}"
+      spec:
+        secretName: "{{ mariadb_ssl_cert_secret }}"
+        duration: 8760h # 1 year
+        renewBefore: 720h # 30 days
+        commonName: "{{ mariadb_ssl_common_name }}"
+        dnsNames: "{{ mariadb_ssl_alt_names }}"
+        privateKey:
+          algorithm: RSA
+          size: 2048
+        issuerRef:
+          name: "{{ mariadb_ssl_cert_issuer }}"
+          kind: ClusterIssuer
+  when: mariadb_ssl_enabled | default(false)
+
+- name: Wait for MariaDB TLS certificate to be ready
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: Certificate
+    namespace: "{{ mariadb_namespace }}"
+    name: "{{ mariadb_ssl_cert_secret }}"
+  register: mariadb_cert
+  until:
+    - mariadb_cert.resources | length > 0
+    - mariadb_cert.resources[0].status.conditions is defined
+    - mariadb_cert.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+  retries: 30
+  delay: 10
+  when: mariadb_ssl_enabled | default(false)
+
+- name: Deploy MariaDB via Helm
+  kubernetes.core.helm:
+    name: mariadb
+    chart_ref: "{{ mariadb_chart_repo_name }}/mariadb"
+    chart_version: "{{ helm_versions.mariadb }}"
+    release_namespace: "{{ mariadb_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+
+- name: Wait for MariaDB to be ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ mariadb_namespace }}"
+    label_selectors:
+      - app.kubernetes.io/name=mariadb
+  register: mariadb_pods
+  until:
+    - mariadb_pods.resources | length > 0
+    - mariadb_pods.resources | selectattr('status.phase', 'equalto', 'Running') | list | length == mariadb_pods.resources | length
+  retries: 30
+  delay: 10
+
+- name: Store MariaDB connection info in Vault
+  kubernetes.core.k8s_exec:
+    namespace: "{{ namespaces.vault }}"
+    pod: vault-0
+    command: |
+      vault kv put secret/mariadb
+        host=mariadb.{{ mariadb_namespace }}.svc.cluster.local
+        port=3306
+        username=root
+        password={{ mariadb_root_password }}
+    env:
+      - name: VAULT_TOKEN
+        value: "{{ secrets.vault.root_token }}"
+  when:
+    - secrets.vault.root_token is defined
+    - secrets.vault.root_token != ''
+  no_log: true
+  register: mariadb_vault_store
+  failed_when:
+    - mariadb_vault_store.rc != 0
+    - "'path is already in use' not in (mariadb_vault_store.stderr | default(''))"

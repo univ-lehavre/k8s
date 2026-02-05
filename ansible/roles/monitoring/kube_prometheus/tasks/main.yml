@@ -1,0 +1,81 @@
+---
+# Kube-Prometheus Stack tasks
+
+- name: Create monitoring namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ prometheus_namespace }}"
+        labels:
+          app.kubernetes.io/name: monitoring
+
+- name: Add Prometheus Community Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ prometheus_chart_repo_name }}"
+    repo_url: "{{ prometheus_chart_repo }}"
+
+- name: Create Grafana secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: grafana-credentials
+        namespace: "{{ prometheus_namespace }}"
+      type: Opaque
+      stringData:
+        admin-user: "{{ grafana_admin_user }}"
+        admin-password: "{{ grafana_admin_password }}"
+  when:
+    - grafana_admin_password is defined
+    - grafana_admin_password != ''
+  no_log: true
+
+- name: Deploy kube-prometheus-stack via Helm
+  kubernetes.core.helm:
+    name: kube-prometheus-stack
+    chart_ref: "{{ prometheus_chart_repo_name }}/kube-prometheus-stack"
+    chart_version: "{{ helm_versions.kube_prometheus_stack }}"
+    release_namespace: "{{ prometheus_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 900s
+
+- name: Wait for Prometheus to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: StatefulSet
+    name: prometheus-kube-prometheus-stack-prometheus
+    namespace: "{{ prometheus_namespace }}"
+  register: prometheus_sts
+  until:
+    - prometheus_sts.resources | length > 0
+    - prometheus_sts.resources[0].status.readyReplicas is defined
+    - prometheus_sts.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Wait for Grafana to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: kube-prometheus-stack-grafana
+    namespace: "{{ prometheus_namespace }}"
+  register: grafana_deployment
+  until:
+    - grafana_deployment.resources | length > 0
+    - grafana_deployment.resources[0].status.readyReplicas is defined
+    - grafana_deployment.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create Grafana HTTPRoute
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'grafana-httproute.yml.j2') | from_yaml }}"
+  when: grafana_ingress_enabled

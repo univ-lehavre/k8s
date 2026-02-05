@@ -1,0 +1,142 @@
+---
+# Configuration Lefthook pour le projet k8s
+# Installation: lefthook install
+# https://github.com/evilmartians/lefthook
+
+# Configuration globale
+colors: true
+no_tty: false
+
+# Pre-commit hooks
+pre-commit:
+  parallel: true # Exécuter les commandes en parallèle pour plus de vitesse
+
+  commands:
+    # Ansible Lint
+    ansible-lint:
+      glob: "*.{yml,yaml}"
+      exclude: "(^\\.git/|^\\.cache/|^molecule/|^venv/)"
+      run: ansible-lint --profile=safety --force-color {staged_files}
+      stage_fixed: true # Stage les fichiers fixés automatiquement
+
+    # YAML Lint (optionnel, installé si disponible)
+    yamllint:
+      glob: "*.{yml,yaml}"
+      exclude: "(^\\.git/|^\\.cache/|^molecule/|^venv/)"
+      run: |
+        if command -v yamllint >/dev/null 2>&1; then
+          yamllint -c .yamllint --strict {staged_files}
+        else
+          echo "⚠️  yamllint not installed (optional). Install: pip install yamllint"
+        fi
+
+    # Markdown Lint
+    markdownlint:
+      glob: "*.md"
+      exclude: "(^\\.git/|^node_modules/|^venv/)"
+      run: |
+        if command -v markdownlint-cli2 >/dev/null 2>&1; then
+          markdownlint-cli2 {staged_files}
+        else
+          echo "⚠️  markdownlint-cli2 not installed. Install: brew install markdownlint-cli2"
+        fi
+
+    # Trailing whitespace
+    trailing-whitespace:
+      glob: "*.{yml,yaml,md,sh,txt}"
+      run: |
+        if grep -n '[[:space:]]$' {staged_files}; then
+          echo "❌ Trailing whitespace found in the above files"
+          exit 1
+        fi
+
+    # Check for merge conflicts
+    merge-conflicts:
+      glob: "*"
+      exclude: "(lefthook\\.yml$)" # Exclude self (contains pattern for detection)
+      run: |
+        if grep -rn '<''<<''<<<< HEAD' {staged_files}; then
+          echo "❌ Merge conflict markers found"
+          exit 1
+        fi
+
+# Pre-push hooks
+pre-push:
+  parallel: false
+
+  commands:
+    # Lint complet avant push
+    full-ansible-lint:
+      run: ansible-lint --profile=production
+
+    # Vérifier que nous ne pushons pas sur main/master sans protection
+    protect-main:
+      run: |
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+          echo "⚠️  You're about to push to $branch. Are you sure? (Ctrl+C to cancel)"
+          read -r response
+        fi
+
+# Prepare-commit-msg hooks (pour modifier les messages de commit avant validation)
+prepare-commit-msg:
+  commands:
+    # Supprimer les lignes contenant des adresses email
+    remove-emails:
+      run: |
+        commit_msg_file="{1}"
+        # Supprimer les lignes contenant des adresses email
+        sed -i.bak '/[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*\.[a-zA-Z]\{2,\}/d' "$commit_msg_file"
+        rm -f "${commit_msg_file}.bak"
+
+# Commit-msg hooks (pour valider les messages de commit)
+commit-msg:
+  commands:
+    # Validation du format de message de commit (Conventional Commits)
+    commitlint:
+      run: |
+        commit_msg=$(cat {1})
+        # Vérifier le format: type(scope): message
+        if ! echo "$commit_msg" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?: .+'; then
+          echo "❌ Commit message must follow Conventional Commits format:"
+          echo "   type(scope): description"
+          echo ""
+          echo "   Types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert"
+          echo ""
+          echo "   Example: feat(gitea): add OIDC configuration"
+          # Mettre en warning au lieu de bloquer
+          # exit 1
+        fi
+
+# Post-checkout hooks
+post-checkout:
+  commands:
+    # Afficher un rappel pour installer les dépendances
+    dependencies-reminder:
+      run: |
+        if [ -f ansible/requirements.yml ]; then
+          echo "💡 Don't forget to run: ansible-galaxy install -r ansible/requirements.yml"
+        fi
+
+# Post-merge hooks
+post-merge:
+  commands:
+    # Vérifier les dépendances après un merge
+    check-requirements:
+      run: |
+        if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet "ansible/requirements.yml"; then
+          echo "⚠️  ansible/requirements.yml has changed. Run: ansible-galaxy install -r ansible/requirements.yml"
+        fi
+
+# Configuration pour skip temporaire
+# Utiliser: LEFTHOOK=0 git commit -m "message" pour skip tous les hooks
+# Utiliser: LEFTHOOK_EXCLUDE=ansible-lint git commit pour skip un hook spécifique
+skip_output:
+  - meta
+  - success
+
+# Exemples de commandes utiles:
+# lefthook run pre-commit --all-files  # Linter tous les fichiers
+# lefthook run ansible-lint            # Lancer seulement ansible-lint
+# LEFTHOOK=0 git commit                # Skip tous les hooks
+# LEFTHOOK_EXCLUDE=ansible-lint git commit  # Skip un hook spécifique

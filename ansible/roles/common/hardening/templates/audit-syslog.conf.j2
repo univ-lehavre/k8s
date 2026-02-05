@@ -1,0 +1,9 @@
+# Audit dispatcher plugin for syslog forwarding
+# Managed by Ansible
+
+active = yes
+direction = out
+path = /sbin/audisp-syslog
+type = always
+args = LOG_LOCAL6
+format = string

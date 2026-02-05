@@ -1,0 +1,82 @@
+---
+# Gitea defaults
+
+# Namespace
+gitea_namespace: gitea
+
+# Helm chart settings
+gitea_chart_repo: https://dl.gitea.com/charts/
+gitea_chart_repo_name: gitea-charts
+
+# Resources
+gitea_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Storage
+gitea_storage_class: "{{ storage_class }}"
+gitea_storage_size: 20Gi
+
+# Database settings
+gitea_postgresql_host: "postgresql.postgresql.svc.cluster.local"
+gitea_postgresql_port: 5432
+gitea_postgresql_database: "{{ database_config.gitea.database }}"
+gitea_postgresql_user: "{{ database_config.gitea.user }}"
+
+# Redis settings
+gitea_redis_host: "redis-master.redis.svc.cluster.local"
+gitea_redis_port: 6379
+
+# Secrets from CI/CD
+gitea_admin_password: "{{ secrets.gitea.admin_password | default(omit) }}"
+
+# Admin user - use environment variable or generate a less predictable name
+gitea_admin_user: "{{ lookup('env', 'GITEA_ADMIN_USER') | default('gitea_admin', true) }}"
+gitea_admin_email: "gitea@{{ domain }}"
+
+# Ingress settings
+gitea_ingress_enabled: true
+gitea_ingress_host: "git.{{ domain }}"
+gitea_ingress_class: cilium
+gitea_ingress_tls_secret: gitea-tls
+gitea_ingress_issuer: "{{ tls_issuer }}"
+
+# SSH settings
+gitea_ssh_enabled: true
+gitea_ssh_port: 22
+gitea_ssh_nodeport: 30022
+
+# Authentication mode: 'oidc' or 'proxy' (Authelia headers)
+gitea_auth_mode: proxy
+
+# Proxy auth settings (Authelia headers via reverse proxy)
+gitea_proxy_auth_enabled: "{{ gitea_auth_mode == 'proxy' }}"
+gitea_proxy_header_name: Remote-User
+gitea_proxy_header_email: Remote-Email
+gitea_proxy_header_groups: Remote-Groups
+gitea_proxy_auto_register: true
+
+# Role mapping from Authelia groups
+# admins → site admin, devops → can create orgs, users → regular
+gitea_role_mapping:
+  admin_groups:
+    - admins
+  org_creator_groups:
+    - devops
+    - admins
+  restricted_groups: []
+# Legacy alias for backward compatibility
+gitea_admin_groups: "{{ gitea_role_mapping.admin_groups }}"
+
+# OIDC settings (Authelia) - alternative to proxy auth
+gitea_oidc_enabled: "{{ gitea_auth_mode == 'oidc' }}"
+gitea_oidc_name: authelia
+gitea_oidc_auto_discover_url: "https://login.{{ domain }}/.well-known/openid-configuration"
+gitea_oidc_client_id: gitea
+
+# LFS
+gitea_lfs_enabled: true

@@ -1,0 +1,83 @@
+---
+# REDCap tasks
+
+- name: Create REDCap namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ redcap_namespace }}"
+        labels:
+          app.kubernetes.io/name: redcap
+
+- name: Create REDCap database in MariaDB
+  ansible.builtin.include_role:
+    name: platform/mariadb
+    tasks_from: create_database.yml
+  vars:
+    mariadb_db_name: "{{ redcap_mariadb_database }}"
+    mariadb_db_user: "{{ redcap_mariadb_user }}"
+    mariadb_db_password: "{{ database_passwords.redcap }}"
+    mariadb_db_privileges: "{{ database_privileges.redcap.privileges }}"
+
+- name: Create REDCap secrets
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: redcap-credentials
+        namespace: "{{ redcap_namespace }}"
+      type: Opaque
+      stringData:
+        salt: "{{ redcap_salt }}"
+        db-password: "{{ database_passwords.redcap }}"
+  when:
+    - redcap_salt is defined
+    - redcap_salt != ''
+  no_log: true
+
+- name: Deploy REDCap
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'deployment.yml.j2') | from_yaml_all | list }}"
+
+- name: Create REDCap Service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: redcap
+        namespace: "{{ redcap_namespace }}"
+      spec:
+        selector:
+          app: redcap
+        ports:
+          - port: 80
+            targetPort: 80
+            protocol: TCP
+
+- name: Wait for REDCap to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: redcap
+    namespace: "{{ redcap_namespace }}"
+  register: redcap_deployment
+  until:
+    - redcap_deployment.resources | length > 0
+    - redcap_deployment.resources[0].status.readyReplicas is defined
+    - redcap_deployment.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Create REDCap HTTPRoute
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
+  when: redcap_ingress_enabled

@@ -1,0 +1,94 @@
+# AIDE Configuration - Managed by Ansible
+# Advanced Intrusion Detection Environment
+
+# Database locations
+database_in=file:/var/lib/aide/aide.db
+database_out=file:/var/lib/aide/aide.db.new
+database_new=file:/var/lib/aide/aide.db.new
+
+# Gzip the database
+gzip_dbout=yes
+
+# Report settings
+report_url=stdout
+report_url=file:/var/log/aide/aide.log
+
+# Define what to check
+# p: permissions
+# i: inode
+# n: number of links
+# u: user
+# g: group
+# s: size
+# b: block count
+# m: mtime
+# a: atime
+# c: ctime
+# S: check for growing size
+# md5: md5 checksum
+# sha256: sha256 checksum
+
+# Rule definitions
+NORMAL = p+i+n+u+g+s+m+c+sha256
+DIR = p+i+n+u+g
+PERMS = p+u+g
+LOG = p+u+g+i+n+S
+LSPP = p+i+n+u+g+s+m+c+sha256
+DATAONLY = p+n+u+g+s+sha256
+
+# Critical system binaries
+/bin NORMAL
+/sbin NORMAL
+/usr/bin NORMAL
+/usr/sbin NORMAL
+/usr/local/bin NORMAL
+/usr/local/sbin NORMAL
+
+# System configuration
+/etc NORMAL
+!/etc/mtab
+!/etc/.*~
+
+# Boot files
+/boot NORMAL
+
+# Kernel and modules
+/lib/modules NORMAL
+
+# K3s and Kubernetes binaries
+/usr/local/bin/k3s NORMAL
+/usr/local/bin/kubectl NORMAL
+/var/lib/rancher DATAONLY
+
+# SSH configuration
+/etc/ssh NORMAL
+
+# SSL/TLS certificates
+/etc/ssl NORMAL
+/etc/pki NORMAL
+
+# Cron
+/etc/cron.d NORMAL
+/etc/cron.daily NORMAL
+/etc/cron.hourly NORMAL
+/etc/cron.monthly NORMAL
+/etc/cron.weekly NORMAL
+/etc/crontab NORMAL
+
+# Exclude dynamic files
+!/var/log
+!/var/spool
+!/var/cache
+!/var/tmp
+!/tmp
+!/run
+!/proc
+!/sys
+!/dev
+
+# Exclude AIDE's own database
+!/var/lib/aide
+
+# Exclude K3s dynamic data
+!/var/lib/rancher/k3s/agent
+!/var/lib/rancher/k3s/data

@@ -1,0 +1,194 @@
+---
+# Authelia configuration ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authelia-config
+  namespace: {{ authelia_namespace }}
+data:
+  configuration.yml: |
+    ---
+    # Authelia Configuration
+    # https://www.authelia.com/configuration/
+
+    theme: auto
+
+    # Logging
+    log:
+      level: {{ authelia_log_level }}
+      format: {{ authelia_log_format }}
+
+    # Server configuration
+    server:
+      address: tcp://0.0.0.0:9091
+      endpoints:
+        enable_pprof: false
+        enable_expvars: false
+        authz:
+          ext-authz:
+            implementation: ExtAuthz
+
+    # TOTP (2FA)
+    totp:
+      disable: false
+      issuer: {{ authelia_totp_issuer }}
+      period: {{ authelia_totp_period }}
+      skew: {{ authelia_totp_skew }}
+
+{% if authelia_webauthn_enabled %}
+    # WebAuthn (FIDO2/Passkeys)
+    webauthn:
+      disable: false
+      display_name: {{ authelia_webauthn_display_name }}
+      attestation_conveyance_preference: indirect
+      user_verification: preferred
+{% endif %}
+
+    # Authentication backend
+{% if authelia_default_users_enabled %}
+    authentication_backend:
+      file:
+        path: /config/users_database.yml
+        password:
+          algorithm: argon2id
+          iterations: 3
+          memory: 65536
+          parallelism: 4
+          key_length: 32
+          salt_length: 16
+{% else %}
+    # Configure LDAP or other backend for production
+    authentication_backend:
+      file:
+        path: /config/users_database.yml
+{% endif %}
+
+    # Password policy
+    password_policy:
+      standard:
+        enabled: true
+        min_length: {{ authelia_password_min_length }}
+        max_length: 0
+        require_uppercase: {{ authelia_password_require_uppercase | lower }}
+        require_lowercase: {{ authelia_password_require_lowercase | lower }}
+        require_number: {{ authelia_password_require_number | lower }}
+        require_special: {{ authelia_password_require_special | lower }}
+
+    # Session configuration
+    session:
+      name: {{ authelia_session_name }}
+      domain: {{ authelia_cookie_domain }}
+      same_site: lax
+      expiration: {{ authelia_session_expiration }}
+      inactivity: {{ authelia_session_inactivity }}
+      remember_me: {{ authelia_session_remember_me }}
+{% if authelia_redis_enabled %}
+      redis:
+        host: {{ authelia_redis_host }}
+        port: {{ authelia_redis_port }}
+{% endif %}
+
+    # Regulation (brute force protection)
+    regulation:
+      max_retries: 3
+      find_time: 2m
+      ban_time: 5m
+
+    # Storage backend
+    storage:
+{% if authelia_storage_backend == 'postgres' %}
+      postgres:
+        address: tcp://{{ authelia_postgresql_host }}:{{ authelia_postgresql_port }}
+        database: {{ authelia_postgresql_database }}
+        username: {{ authelia_postgresql_username }}
+{% else %}
+      local:
+        path: /data/db.sqlite3
+{% endif %}
+
+    # Notification backend
+    notifier:
+{% if authelia_notification_backend == 'smtp' and authelia_smtp_host %}
+      smtp:
+        address: submissions://{{ authelia_smtp_host }}:{{ authelia_smtp_port }}
+        sender: {{ authelia_smtp_sender }}
+        disable_require_tls: false
+{% else %}
+      filesystem:
+        filename: /data/notification.txt
+{% endif %}
+
+    # Access Control Rules
+    # This is where authorization decisions are made
+    access_control:
+      default_policy: {{ authelia_default_policy }}
+
+      rules:
+{% for rule in authelia_access_rules %}
+        - domain: "{{ rule.domain }}"
+          policy: {{ rule.policy }}
+{% if rule.subject is defined %}
+          subject:
+{% for subject in rule.subject %}
+            - "{{ subject }}"
+{% endfor %}
+{% endif %}
+{% if rule.resources is defined %}
+          resources:
+{% for resource in rule.resources %}
+            - "{{ resource }}"
+{% endfor %}
+{% endif %}
+{% if rule.methods is defined %}
+          methods:
+{% for method in rule.methods %}
+            - "{{ method }}"
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+    # Identity providers (OIDC)
+    # Authelia acts as an OIDC provider for platform applications
+{% if authelia_oidc_enabled | default(false) %}
+    identity_providers:
+      oidc:
+        hmac_secret:
+          path: /secrets/OIDC_HMAC_SECRET
+        jwks:
+          - key_id: main
+            algorithm: RS256
+            use: sig
+            key:
+              path: /secrets/OIDC_PRIVATE_KEY
+        cors:
+          endpoints:
+            - authorization
+            - token
+            - revocation
+            - introspection
+            - userinfo
+          allowed_origins_from_client_redirect_uris: true
+        clients:
+{% for client in authelia_oidc_clients | default([]) %}
+          - client_id: {{ client.id }}
+            client_name: {{ client.description }}
+            client_secret: {{ client.secret }}
+            public: false
+            authorization_policy: {{ client.authorization_policy | default('one_factor') }}
+            consent_mode: implicit
+            redirect_uris:
+{% for uri in client.redirect_uris %}
+              - {{ uri }}
+{% endfor %}
+            scopes:
+{% for scope in client.scopes | default(['openid', 'profile', 'email']) %}
+              - {{ scope }}
+{% endfor %}
+            userinfo_signed_response_alg: {{ client.userinfo_signed_response_alg | default('none') }}
+            token_endpoint_auth_method: {{ client.token_endpoint_auth_method | default('client_secret_basic') }}
+{% endfor %}
+{% else %}
+    identity_providers:
+      oidc:
+        enabled: false
+{% endif %}

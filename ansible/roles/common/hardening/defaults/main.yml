@@ -1,0 +1,83 @@
+---
+# Hardening role defaults
+
+# SSH hardening
+hardening_ssh_permit_root_login: "no"
+hardening_ssh_password_authentication: "no"
+hardening_ssh_pubkey_authentication: "yes"
+hardening_ssh_max_auth_tries: 3
+hardening_ssh_login_grace_time: "30s"
+hardening_ssh_client_alive_interval: 300
+hardening_ssh_client_alive_count_max: 3
+hardening_ssh_allowed_users: [] # MUST be set per environment in production
+
+# SSH forwarding settings
+hardening_ssh_allow_tcp_forwarding: "no"
+hardening_ssh_allow_agent_forwarding: "no"
+
+# Firewall (UFW)
+hardening_ufw_enabled: true
+hardening_ufw_default_incoming: deny
+hardening_ufw_default_outgoing: allow
+hardening_ufw_rules:
+  - { rule: allow, port: 22, proto: tcp, comment: "SSH" }
+  - { rule: allow, port: 80, proto: tcp, comment: "HTTP" }
+  - { rule: allow, port: 443, proto: tcp, comment: "HTTPS" }
+  # K3s API port - restricted to admin IPs
+  # - { rule: allow, port: 6443, proto: tcp, from: "{{ admin_allowed_ips }}", comment: 'K3s API' }
+
+# Fail2ban
+hardening_fail2ban_enabled: true
+hardening_fail2ban_bantime: "10m"
+hardening_fail2ban_findtime: "10m"
+hardening_fail2ban_maxretry: 3
+
+# Unattended upgrades
+hardening_unattended_upgrades_enabled: true
+hardening_unattended_upgrades_reboot: true
+hardening_unattended_upgrades_reboot_time: "04:00"
+
+# Auditd
+hardening_auditd_enabled: true
+
+# K3s cluster network CIDR (for internal port restrictions)
+# MUST be set per environment in production
+k3s_cluster_cidr: "10.0.0.0/8"
+
+# Kernel hardening
+hardening_kernel_enabled: true
+hardening_disable_ipv6: false
+
+# AIDE file integrity monitoring
+hardening_aide_enabled: "{{ env != 'local' }}"
+hardening_aide_cron_enabled: true
+hardening_aide_cron_hour: "5"
+hardening_aide_cron_minute: "0"
+
+# Audit log forwarding (to SIEM)
+hardening_audit_forward_enabled: false
+hardening_audit_forward_host: ""
+hardening_audit_forward_port: "514"
+hardening_audit_forward_tls_enabled: true
+hardening_audit_forward_ca_cert: "/etc/ssl/certs/ca-certificates.crt"
+
+# AppArmor configuration (Debian-based systems)
+hardening_apparmor_enabled: "{{ env != 'local' }}"
+hardening_apparmor_enforce_profiles:
+  - /usr/sbin/sshd
+  - /usr/sbin/ntpd
+hardening_apparmor_k3s_profile_enabled: false
+
+# Password policy
+hardening_password_policy_enabled: "{{ env != 'local' }}"
+hardening_password_max_days: 90
+hardening_password_min_days: 7
+hardening_password_warn_age: 14
+hardening_password_min_length: 14
+hardening_password_min_class: 3
+hardening_password_max_repeat: 3
+hardening_password_max_class_repeat: 4
+hardening_password_difok: 5
+hardening_password_lockout_enabled: true
+hardening_password_lockout_attempts: 5
+hardening_password_lockout_time: 900

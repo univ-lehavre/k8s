@@ -1,0 +1,108 @@
+---
+- name: Add Longhorn Helm repository
+  kubernetes.core.helm_repository:
+    name: longhorn
+    repo_url: "{{ helm_repositories.longhorn.url }}"
+    state: present
+
+- name: Create Longhorn namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ longhorn_namespace }}"
+
+- name: Generate Longhorn encryption key if not provided
+  ansible.builtin.set_fact:
+    longhorn_crypto_key: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') | b64encode }}"
+  when:
+    - longhorn_encryption_enabled
+    - longhorn_crypto_key is not defined or longhorn_crypto_key == ''
+  no_log: true
+
+- name: Create Longhorn encryption secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: longhorn-crypto
+        namespace: "{{ longhorn_namespace }}"
+      type: Opaque
+      stringData:
+        CRYPTO_KEY_VALUE: "{{ longhorn_crypto_key }}"
+        CRYPTO_KEY_PROVIDER: "secret"
+  when: longhorn_encryption_enabled
+  no_log: true
+
+- name: Generate Longhorn Helm values
+  ansible.builtin.set_fact:
+    longhorn_values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+
+- name: Deploy Longhorn via Helm
+  kubernetes.core.helm:
+    name: longhorn
+    chart_ref: longhorn/longhorn
+    chart_version: "{{ longhorn_version }}"
+    release_namespace: "{{ longhorn_namespace }}"
+    create_namespace: false
+    values: "{{ longhorn_values }}"
+    wait: true
+    wait_timeout: 600s
+  register: longhorn_deploy
+
+- name: Wait for Longhorn Manager to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: DaemonSet
+    name: longhorn-manager
+    namespace: "{{ longhorn_namespace }}"
+  register: longhorn_manager
+  until:
+    - longhorn_manager.resources | length > 0
+    - longhorn_manager.resources[0].status.numberReady | default(0) == longhorn_manager.resources[0].status.desiredNumberScheduled | default(1)
+  retries: 30
+  delay: 10
+
+- name: Create encrypted StorageClass
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'storageclass.yml.j2') | from_yaml }}"
+  when: longhorn_encryption_enabled
+
+- name: Remove default annotation from unencrypted StorageClass
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: longhorn
+        annotations:
+          storageclass.kubernetes.io/is-default-class: "false"
+  when: longhorn_encryption_enabled
+  register: longhorn_sc_update
+  failed_when:
+    - longhorn_sc_update.failed | default(false)
+    - "'not found' not in (longhorn_sc_update.msg | default(''))"
+
+- name: Display Longhorn encryption key warning
+  ansible.builtin.debug:
+    msg: |
+      WARNING: Longhorn encryption key has been configured.
+      SAVE THIS KEY SECURELY - it is required for data recovery!
+      The key is stored in the 'longhorn-crypto' secret in namespace '{{ longhorn_namespace }}'.
+      Store it offline in a secure location.
+  when: longhorn_encryption_enabled
+
+- name: Display Longhorn status
+  ansible.builtin.debug:
+    msg: |
+      Longhorn deployed successfully!
+      Version: {{ longhorn_version }}
+      Namespace: {{ longhorn_namespace }}
+      Encryption: {{ 'Enabled' if longhorn_encryption_enabled else 'Disabled' }}
+      Default StorageClass: {{ longhorn_storage_class_name }}

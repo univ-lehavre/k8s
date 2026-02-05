@@ -1,0 +1,19 @@
+---
+# Hubble UI defaults
+
+# Hubble UI is deployed as part of Cilium
+# This role manages additional configuration and ingress
+
+# Namespace (same as Cilium)
+hubble_namespace: kube-system
+
+# Ingress settings
+hubble_ui_ingress_enabled: true
+hubble_ui_ingress_host: "hubble.{{ domain }}"
+hubble_ui_ingress_class: cilium
+hubble_ui_ingress_tls_secret: hubble-tls
+hubble_ui_ingress_issuer: "{{ tls_issuer }}"
+
+# Forward Auth (Authelia)
+hubble_ui_forward_auth_enabled: true
+hubble_ui_forward_auth_address: "http://authelia.authelia.svc.cluster.local/api/verify?rd=https://login.{{ domain }}"

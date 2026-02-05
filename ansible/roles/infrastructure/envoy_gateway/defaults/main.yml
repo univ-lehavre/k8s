@@ -1,0 +1,60 @@
+---
+# Envoy Gateway configuration
+# Gateway API implementation for ATLAS platform
+
+# Namespace
+envoy_gateway_namespace: envoy-gateway-system
+
+# Version (from centralized helm_versions.yml)
+envoy_gateway_version: "{{ helm_versions.envoy_gateway }}"
+
+# GatewayClass name
+envoy_gateway_class_name: envoy
+
+# Gateway configuration
+gateway_name: atlas-gateway
+gateway_http_port: 80
+gateway_https_port: 443
+
+# TLS configuration
+gateway_tls_enabled: true
+gateway_tls_secret_name: "gateway-tls"
+gateway_tls_issuer: "{{ tls_issuer }}"
+
+# Wildcard certificate for all subdomains
+gateway_wildcard_enabled: true
+gateway_wildcard_secret_name: "wildcard-tls"
+
+# Resource limits
+envoy_gateway_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Proxy resources (per Gateway)
+envoy_proxy_resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Replicas
+envoy_gateway_replicas: "{{ 2 if ha_enabled | default(false) else 1 }}"
+
+# Enable rate limiting support
+envoy_gateway_rate_limit_enabled: true
+
+# Enable external auth support (for Authelia)
+envoy_gateway_ext_auth_enabled: true
+
+# Logging level
+envoy_gateway_log_level: info
+
+# Metrics
+envoy_gateway_metrics_enabled: true
+envoy_gateway_metrics_port: 19001
