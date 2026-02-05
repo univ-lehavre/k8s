@@ -330,13 +330,13 @@ sudo ufw enable
 Configurer un enregistrement DNS A chez votre fournisseur :
 
 ```
-*.staging.atlas.example.com  →  <IP_VM>
+*.atlas.chasset.net  →  <IP_VM>
 ```
 
 Ou au minimum :
 ```
-login.staging.atlas.example.com  →  <IP_VM>
-ecrin.staging.atlas.example.com  →  <IP_VM>
+login.atlas.chasset.net  →  <IP_VM>
+ecrin.atlas.chasset.net  →  <IP_VM>
 ```
 
 ### 2.4 Configuration Ansible (Machine Locale)
@@ -354,7 +354,7 @@ cp .env.example .env
 # ansible/.env
 
 # === STAGING ===
-export STAGING_DOMAIN="staging.atlas.example.com"
+export STAGING_DOMAIN="atlas.chasset.net"
 export STAGING_HOST="<IP_DE_VOTRE_VM>"
 export STAGING_SSH_KEY="~/.ssh/staging_key"
 
@@ -438,14 +438,14 @@ kubectl get httproute -A
 
 | Service | URL |
 |---------|-----|
-| ECRIN | https://ecrin.staging.atlas.example.com |
-| Authelia | https://login.staging.atlas.example.com |
+| ECRIN | https://ecrin.atlas.chasset.net |
+| Authelia | https://login.atlas.chasset.net |
 
 #### Vérifier les certificats TLS
 
 ```bash
 # Vérifier le certificat depuis le terminal
-openssl s_client -connect ecrin.staging.atlas.example.com:443 -servername ecrin.staging.atlas.example.com </dev/null 2>/dev/null | openssl x509 -noout -issuer -dates
+openssl s_client -connect ecrin.atlas.chasset.net:443 -servername ecrin.atlas.chasset.net </dev/null 2>/dev/null | openssl x509 -noout -issuer -dates
 ```
 
 Le certificat devrait être émis par "Let's Encrypt" (issuer contient "R3" ou "E1").
@@ -463,7 +463,7 @@ kubectl get challenges -A
 kubectl describe challenge -n ecrin
 
 # Vérifier que le port 80 est accessible
-curl -I http://ecrin.staging.atlas.example.com/.well-known/acme-challenge/test
+curl -I http://ecrin.atlas.chasset.net/.well-known/acme-challenge/test
 ```
 
 **Causes fréquentes** :
@@ -552,8 +552,8 @@ curl -k https://login.atlas.localhost/api/health
 curl -k https://ecrin.atlas.localhost/health
 
 # Test de connectivité (staging)
-curl https://login.staging.atlas.example.com/api/health
-curl https://ecrin.staging.atlas.example.com/health
+curl https://login.atlas.chasset.net/api/health
+curl https://ecrin.atlas.chasset.net/health
 ```
 
 ### 3.3 Métriques de Succès
@@ -576,7 +576,7 @@ curl https://ecrin.staging.atlas.example.com/health
 # ansible/.env pour staging
 
 # Staging
-export STAGING_DOMAIN="staging.atlas.example.com"
+export STAGING_DOMAIN="atlas.chasset.net"
 export STAGING_HOST="10.0.1.10"
 export STAGING_SSH_KEY="~/.ssh/staging_key"
 

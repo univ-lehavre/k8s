@@ -4,7 +4,7 @@ env: staging
 env_name: "Staging"
 
 # Domain configuration
-domain: "{{ lookup('env', 'STAGING_DOMAIN') | default('staging.atlas.example.com', true) }}"
+domain: "{{ lookup('env', 'STAGING_DOMAIN') | default('atlas.chasset.net', true) }}"
 admin_email: "{{ lookup('env', 'LETSENCRYPT_EMAIL') | default('admin@example.com', true) }}"
 
 # K3s configuration
