@@ -13,7 +13,7 @@ Automated deployment of the ATLAS microservices platform on Kubernetes (K3s/K3D)
 │  Phase 2: K3s/K3D + Cilium + Longhorn + Cert-Manager            │
 │  Phase 3: Vault + External Secrets                               │
 │  Phase 4: PostgreSQL HA + Redis                                  │
-│  Phase 5: Authentik + Mattermost + Nextcloud + OnlyOffice + ... │
+│  Phase 5: Authelia + Mattermost + Nextcloud + OnlyOffice + ...  │
 │  Phase 6: Gitea + ArgoCD                                         │
 │  Phase 7: Prometheus + Grafana + Hubble UI                       │
 │  Phase 8: Network Policies                                       │
@@ -78,7 +78,6 @@ ansible-playbook playbooks/phase-02-k3s-core.yml -i inventories/production
 | `K3S_TOKEN` | Cluster join token |
 | `POSTGRES_SUPERUSER_PASSWORD` | PostgreSQL admin password |
 | `REDIS_PASSWORD` | Redis password |
-| `AUTHENTIK_SECRET_KEY` | Authentik encryption key |
 
 ### Required (Production Only)
 
@@ -96,7 +95,6 @@ ansible-playbook playbooks/phase-02-k3s-core.yml -i inventories/production
 |----------|-------------|
 | `MATTERMOST_DB_PASSWORD` | Mattermost database password |
 | `NEXTCLOUD_DB_PASSWORD` | Nextcloud database password |
-| `AUTHENTIK_DB_PASSWORD` | Authentik database password |
 | `GITEA_DB_PASSWORD` | Gitea database password |
 | `REDCAP_DB_PASSWORD` | REDCap database password |
 | `FLIPT_DB_PASSWORD` | Flipt database password |
@@ -126,7 +124,7 @@ ansible-playbook playbooks/phase-07-monitoring.yml -i inventories/local --tags g
 | 2 | `k3s`, `cluster`, `infrastructure`, `cilium`, `longhorn`, `cert-manager`, `tls` |
 | 3 | `vault`, `secrets`, `external-secrets`, `platform` |
 | 4 | `databases`, `postgresql`, `redis` |
-| 5 | `services`, `authentik`, `mattermost`, `nextcloud`, `seaweedfs`, `redcap`, `flipt` |
+| 5 | `services`, `authelia`, `mattermost`, `nextcloud`, `seaweedfs`, `redcap`, `flipt` |
 | 6 | `devops`, `gitea`, `argocd`, `gitops` |
 | 7 | `monitoring`, `prometheus`, `grafana`, `hubble` |
 | 8 | `security`, `network-policies` |
@@ -137,7 +135,7 @@ After deployment, services are available at:
 
 | Service | URL |
 |---------|-----|
-| Authentik (SSO) | `https://auth.<domain>` |
+| Authelia (SSO) | `https://login.<domain>` |
 | Vault | `https://vault.<domain>` |
 | Mattermost | `https://chat.<domain>` |
 | Nextcloud | `https://cloud.<domain>` |
@@ -170,7 +168,7 @@ ansible/
 │   ├── common/             # Prerequisites, Docker, Hardening
 │   ├── k3s/                # K3s server, agent, K3D
 │   ├── infrastructure/     # Cilium, Longhorn, Cert-Manager
-│   ├── platform/           # Vault, PostgreSQL, Redis, Authentik
+│   ├── platform/           # Vault, PostgreSQL, Redis, Authelia
 │   ├── services/           # Mattermost, Nextcloud, etc.
 │   ├── devops/             # Gitea, ArgoCD
 │   ├── monitoring/         # Prometheus, Grafana, Hubble

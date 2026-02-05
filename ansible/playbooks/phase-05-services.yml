@@ -12,17 +12,6 @@
     - role: platform/authelia
       tags: [services, authelia, auth, forward-auth]
 
-- name: Phase 5 - Authentik (IAM/SSO/OIDC)
-  hosts: localhost
-  gather_facts: false
-  vars_files:
-    - ../vars/helm_versions.yml
-    - ../vars/secrets_mapping.yml
-
-  roles:
-    - role: platform/authentik
-      tags: [services, authentik, identity, sso, oidc]
-
 - name: Phase 5 - Application Services
   hosts: localhost
   gather_facts: false
@@ -59,7 +48,6 @@
         msg: |
           Application services deployed:
           - Authelia (Forward Auth): https://login.{{ domain }}
-          - Authentik (OIDC): https://auth.{{ domain }}
           - Mattermost: https://chat.{{ domain }}
           - Nextcloud: https://cloud.{{ domain }}
           - OnlyOffice: https://office.{{ domain }}

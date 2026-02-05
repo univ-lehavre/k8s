@@ -13,7 +13,6 @@ network_policies_namespaces:
   - postgresql
   - mariadb
   - redis
-  - authentik
   - authelia
   - mattermost
   - nextcloud
@@ -51,10 +50,6 @@ postgresql_l7_policies:
     namespace: vault
     database: vault
     user: vault_user
-  - service: authentik
-    namespace: authentik
-    database: authentik
-    user: authentik_user
   - service: mattermost
     namespace: mattermost
     database: mattermost

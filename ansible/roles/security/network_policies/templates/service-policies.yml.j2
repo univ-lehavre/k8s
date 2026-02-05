@@ -89,8 +89,6 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: vault
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authentik
-        - matchLabels:
             k8s:io.kubernetes.pod.namespace: authelia
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: mattermost
@@ -122,8 +120,6 @@ spec:
   ingress:
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authentik
-        - matchLabels:
             k8s:io.kubernetes.pod.namespace: authelia
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: nextcloud
@@ -154,50 +150,6 @@ spec:
       toPorts:
         - ports:
             - port: "8200"
-              protocol: TCP
-
----
-# Authentik: Allow from ingress and applications
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: authentik-ingress
-  namespace: authentik
-spec:
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: authentik
-  ingress:
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ ingress_namespace }}
-      toPorts:
-        - ports:
-            - port: "9000"
-              protocol: TCP
-            - port: "9443"
-              protocol: TCP
-
----
-# Authentik egress to PostgreSQL and Redis
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: authentik-egress
-  namespace: authentik
-spec:
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: authentik
-  egress:
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
-      toPorts:
-        - ports:
-            - port: "5432"
-              protocol: TCP
-            - port: "6379"
               protocol: TCP
 
 ---
@@ -399,10 +351,10 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authentik
+            k8s:io.kubernetes.pod.namespace: authelia
       toPorts:
         - ports:
-            - port: "9000"
+            - port: "9091"
               protocol: TCP
     # Allow HTTPS egress for external git repos
     - toCIDR:

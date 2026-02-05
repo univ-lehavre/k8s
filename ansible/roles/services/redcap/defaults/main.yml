@@ -6,7 +6,7 @@ redcap_namespace: redcap
 
 # Image settings
 redcap_image: redcap/redcap
-redcap_image_tag: latest
+redcap_image_tag: "{{ helm_versions.redcap }}"
 
 # Resources
 redcap_resources:

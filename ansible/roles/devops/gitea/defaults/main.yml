@@ -50,7 +50,7 @@ gitea_ssh_enabled: true
 gitea_ssh_port: 22
 gitea_ssh_nodeport: 30022
 
-# Authentication mode: 'oidc' (Authentik) or 'proxy' (Authelia headers)
+# Authentication mode: 'oidc' or 'proxy' (Authelia headers)
 gitea_auth_mode: proxy
 
 # Proxy auth settings (Authelia headers via reverse proxy)
@@ -72,10 +72,10 @@ gitea_role_mapping:
 # Legacy alias for backward compatibility
 gitea_admin_groups: "{{ gitea_role_mapping.admin_groups }}"
 
-# OIDC settings (Authentik) - alternative to proxy auth
+# OIDC settings (Authelia) - alternative to proxy auth
 gitea_oidc_enabled: "{{ gitea_auth_mode == 'oidc' }}"
-gitea_oidc_name: authentik
-gitea_oidc_auto_discover_url: "https://auth.{{ domain }}/application/o/gitea/.well-known/openid-configuration"
+gitea_oidc_name: authelia
+gitea_oidc_auto_discover_url: "https://login.{{ domain }}/.well-known/openid-configuration"
 gitea_oidc_client_id: gitea
 
 # LFS

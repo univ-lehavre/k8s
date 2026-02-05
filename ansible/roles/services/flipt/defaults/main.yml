@@ -6,7 +6,7 @@ flipt_namespace: flipt
 
 # Image settings
 flipt_image: flipt/flipt
-flipt_image_tag: latest
+flipt_image_tag: "{{ helm_versions.flipt }}"
 
 # Resources
 flipt_resources:

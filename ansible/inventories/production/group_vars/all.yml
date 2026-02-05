@@ -32,8 +32,6 @@ replicas:
   default: 2
   postgresql: 3
   redis: 2 # + sentinel
-  authentik_server: 2
-  authentik_worker: 2
 
 # Resource profile
 resource_profile: production
@@ -42,7 +40,6 @@ resource_profile: production
 namespaces:
   vault: vault
   databases: databases
-  authentik: authentik
   mattermost: mattermost
   nextcloud: nextcloud
   seaweedfs: seaweedfs
@@ -66,12 +63,8 @@ redis_sentinel_port: 26379
 redis_sentinel_enabled: true
 redis_sentinel_master_set: mymaster
 
-# Authentik URLs
-authentik_url: "https://auth.{{ domain }}"
-
 # Service URLs
 service_urls:
-  authentik: "https://auth.{{ domain }}"
   vault: "https://vault.{{ domain }}"
   mattermost: "https://chat.{{ domain }}"
   nextcloud: "https://cloud.{{ domain }}"

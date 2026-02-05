@@ -54,7 +54,7 @@ backup_targets:
   kubernetes:
     enabled: true
     namespaces:
-      - authentik
+      - authelia
       - mattermost
       - nextcloud
       - gitea
@@ -63,7 +63,7 @@ backup_targets:
     retention: 30d
 
 # Velero settings
-velero_version: "1.13.0"
+velero_version: "{{ helm_versions.velero }}"
 velero_namespace: velero
 
 # Resource limits

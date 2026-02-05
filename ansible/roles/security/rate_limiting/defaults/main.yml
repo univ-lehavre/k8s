@@ -9,7 +9,7 @@ rate_limiting_default_burst: 200
 
 # Per-service rate limiting overrides
 rate_limiting_services:
-  authentik:
+  authelia:
     enabled: true
     rps: 50
     burst: 100
@@ -17,9 +17,6 @@ rate_limiting_services:
       - path: "/api/"
         rps: 20
         burst: 40
-      - path: "/application/o/"
-        rps: 30
-        burst: 60
 
   vault:
     enabled: true

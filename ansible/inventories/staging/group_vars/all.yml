@@ -32,8 +32,6 @@ replicas:
   default: 1
   postgresql: 1
   redis: 0 # Standalone mode
-  authentik_server: 1
-  authentik_worker: 1
 
 # Resource profile
 resource_profile: standard
@@ -42,7 +40,6 @@ resource_profile: standard
 namespaces:
   vault: vault
   databases: databases
-  authentik: authentik
   mattermost: mattermost
   nextcloud: nextcloud
   seaweedfs: seaweedfs
@@ -62,12 +59,8 @@ redis_host: redis-master.databases.svc.cluster.local
 redis_port: 6379
 redis_sentinel_enabled: false
 
-# Authentik URLs
-authentik_url: "https://auth.{{ domain }}"
-
 # Service URLs
 service_urls:
-  authentik: "https://auth.{{ domain }}"
   vault: "https://vault.{{ domain }}"
   mattermost: "https://chat.{{ domain }}"
   nextcloud: "https://cloud.{{ domain }}"

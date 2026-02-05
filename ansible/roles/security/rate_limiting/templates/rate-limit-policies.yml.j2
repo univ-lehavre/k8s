@@ -2,32 +2,32 @@
 # Applied via Ingress annotations for Cilium
 
 ---
-# Authentik rate limiting
+# Authelia rate limiting
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: authentik-rate-limited
-  namespace: authentik
+  name: authelia-rate-limited
+  namespace: authelia
   annotations:
-    cilium.io/rate-limit: "{{ rate_limiting_services.authentik.rps | default(rate_limiting_default_rps) }}"
-    cilium.io/rate-limit-burst: "{{ rate_limiting_services.authentik.burst | default(rate_limiting_default_burst) }}"
+    cilium.io/rate-limit: "{{ rate_limiting_services.authelia.rps | default(rate_limiting_default_rps) }}"
+    cilium.io/rate-limit-burst: "{{ rate_limiting_services.authelia.burst | default(rate_limiting_default_burst) }}"
 spec:
   ingressClassName: cilium
   rules:
-    - host: "auth.{{ domain }}"
+    - host: "login.{{ domain }}"
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: authentik-server
+                name: authelia
                 port:
-                  number: 9000
+                  number: 9091
   tls:
     - hosts:
-        - "auth.{{ domain }}"
-      secretName: authentik-tls
+        - "login.{{ domain }}"
+      secretName: authelia-tls
 
 ---
 # Vault rate limiting

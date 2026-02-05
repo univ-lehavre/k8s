@@ -17,7 +17,6 @@ helm_versions:
   redis: "18.12.1"
 
   # Identity
-  authentik: "2024.2.0"
   authelia: "0.9.0"
 
   # Gateway API
@@ -30,6 +29,12 @@ helm_versions:
   mattermost: "7.0.0"
   nextcloud: "4.6.4"
   seaweedfs: "3.67.0"
+  flipt: "1.35.0"
+
+  # Docker image versions (non-Helm deployments)
+  onlyoffice: "8.0.1"
+  ecrin: "1.0.0"
+  redcap: "14.0.0"
 
   # DevOps
   gitea: "10.1.1"
@@ -37,6 +42,10 @@ helm_versions:
 
   # Monitoring
   kube_prometheus_stack: "56.21.1"
+
+  # Security
+  velero: "1.13.0"
+  trivy_operator: "0.19.0"
 
 # Helm repository URLs
 helm_repositories:
@@ -63,10 +72,6 @@ helm_repositories:
   bitnami:
     name: bitnami
     url: https://charts.bitnami.com/bitnami
-
-  authentik:
-    name: authentik
-    url: https://charts.goauthentik.io
 
   mattermost:
     name: mattermost

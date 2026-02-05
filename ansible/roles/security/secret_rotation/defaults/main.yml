@@ -25,15 +25,6 @@ secret_rotation_secrets:
       - redis-password
 
   # Service credentials
-  - name: authentik-credentials
-    namespace: authentik
-    vault_path: secret/data/services/authentik
-    rotation_interval: 168h # 7 days
-    keys:
-      - secret-key
-      - admin-password
-      - admin-token
-
   - name: mattermost-credentials
     namespace: mattermost
     vault_path: secret/data/services/mattermost

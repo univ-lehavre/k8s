@@ -261,14 +261,14 @@ network_policy_l7_enabled: true
 
 ### PostgreSQL
 
-| Database        | Service         |
-| --------------- | --------------- |
-| `vault`         | HashiCorp Vault |
-| `authelia_db`   | Authelia        |
-| `mattermost_db` | Mattermost      |
-| `nextcloud_db`  | Nextcloud       |
-| `gitea_db`      | Gitea           |
-| `flipt_db`      | Flipt           |
+| Database     | Service         |
+| ------------ | --------------- |
+| `vault`      | HashiCorp Vault |
+| `authelia`   | Authelia        |
+| `mattermost` | Mattermost      |
+| `nextcloud`  | Nextcloud       |
+| `gitea`      | Gitea           |
+| `flipt`      | Flipt           |
 
 ### MariaDB
 
@@ -415,18 +415,23 @@ kubectl port-forward -n kube-system svc/hubble-ui 8080:80
 
 ### Network Policies par Namespace
 
-| Namespace  | Ingress autorisé depuis                                                       | Egress autorisé vers                    |
-| ---------- | ----------------------------------------------------------------------------- | --------------------------------------- |
-| postgresql | vault, authelia, authentik, mattermost, nextcloud, gitea, flipt               | -                                       |
-| mariadb    | redcap                                                                        | -                                       |
-| redis      | authelia, authentik, nextcloud, gitea                                         | -                                       |
-| vault      | external-secrets, envoy-gateway                                               | postgresql                              |
-| authelia   | envoy-gateway                                                                 | redis, postgresql                       |
-| authentik  | envoy-gateway                                                                 | redis, postgresql                       |
-| argocd     | envoy-gateway                                                                 | gitea, authentik, external (HTTPS, SSH) |
-| gitea      | envoy-gateway, argocd                                                         | postgresql, redis                       |
-| nextcloud  | envoy-gateway                                                                 | postgresql, redis, seaweedfs            |
-| mattermost | envoy-gateway                                                                 | postgresql, redis                       |
+| Namespace  | Ingress autorisé depuis                                 | Egress autorisé vers                  |
+| ---------- | ------------------------------------------------------- | ------------------------------------- |
+| postgresql | vault, authelia, mattermost, nextcloud, gitea, flipt    | -                                     |
+| mariadb    | redcap                                                  | -                                     |
+| redis      | authelia, nextcloud, gitea                              | -                                     |
+| vault      | external-secrets, envoy-gateway                         | postgresql                            |
+| authelia   | envoy-gateway                                           | redis, postgresql                     |
+| argocd     | envoy-gateway                                           | gitea, external (HTTPS, SSH)          |
+| gitea      | envoy-gateway, argocd                                   | postgresql, redis                     |
+| nextcloud  | envoy-gateway                                           | postgresql, redis, seaweedfs          |
+| mattermost | envoy-gateway                                           | postgresql, redis                     |
+| onlyoffice | nextcloud, mattermost                                   | -                                     |
+| seaweedfs  | nextcloud                                               | -                                     |
+| redcap     | envoy-gateway                                           | mariadb                               |
+| ecrin      | envoy-gateway                                           | authelia (OIDC)                       |
+| flipt      | envoy-gateway                                           | postgresql                            |
+| monitoring | envoy-gateway                                           | tous (scraping)                       |
 
 ### Isolation des Bases de Données (L7)
 
@@ -437,11 +442,11 @@ Chaque service ne peut accéder qu'à sa propre base de données grâce au filtr
 | Service    | Base de données autorisée |
 | ---------- | ------------------------- |
 | Vault      | `vault`                   |
-| Authelia   | `authelia_db`             |
-| Mattermost | `mattermost_db`           |
-| Nextcloud  | `nextcloud_db`            |
-| Gitea      | `gitea_db`                |
-| Flipt      | `flipt_db`                |
+| Authelia   | `authelia`                |
+| Mattermost | `mattermost`              |
+| Nextcloud  | `nextcloud`               |
+| Gitea      | `gitea`                   |
+| Flipt      | `flipt`                   |
 
 #### MariaDB
 
