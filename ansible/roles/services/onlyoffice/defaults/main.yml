@@ -34,5 +34,8 @@ onlyoffice_ingress_host: "office.{{ domain }}"
 onlyoffice_ingress_tls_secret: onlyoffice-tls
 onlyoffice_ingress_issuer: "{{ tls_issuer }}"
 
+# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+onlyoffice_forward_auth_enabled: true
+
 # WOPI settings for Nextcloud integration
 onlyoffice_wopi_enabled: true

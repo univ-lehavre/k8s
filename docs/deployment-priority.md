@@ -160,11 +160,11 @@ ansible-playbook playbooks/phase-05-services.yml --tags seaweedfs,nextcloud,only
 
 ### Composants deployes (dans cet ordre)
 
-| Ordre | Composant  | Version | Namespace    | URL                       | Depend de                                     |
-| ----- | ---------- | ------- | ------------ | ------------------------- | --------------------------------------------- |
-| 1     | SeaweedFS  | 3.67.0  | `seaweedfs`  | interne                   | Vault, Longhorn                               |
-| 2     | Nextcloud  | 29      | `nextcloud`  | `https://cloud.<domain>`  | Authelia, PostgreSQL, SeaweedFS               |
-| 3     | OnlyOffice | 8.0.1   | `onlyoffice` | `https://office.<domain>` | Authelia                                      |
+| Ordre | Composant  | Version | Namespace    | URL                       | Depend de                       |
+| ----- | ---------- | ------- | ------------ | ------------------------- | ------------------------------- |
+| 1     | SeaweedFS  | 3.67.0  | `seaweedfs`  | interne                   | Vault, Longhorn                 |
+| 2     | Nextcloud  | 29      | `nextcloud`  | `https://cloud.<domain>`  | Authelia, PostgreSQL, SeaweedFS |
+| 3     | OnlyOffice | 8.0.1   | `onlyoffice` | `https://office.<domain>` | Authelia                        |
 
 **Ordre important** : SeaweedFS fournit le stockage S3 pour Nextcloud. OnlyOffice s'integre dans Nextcloud pour l'edition de documents.
 
@@ -283,10 +283,10 @@ ansible-playbook playbooks/phase-07-monitoring.yml
 
 ### Composants deployes
 
-| Composant             | Chart version      | Namespace     | URL                        | Depend de                                  |
-| --------------------- | ------------------ | ------------- | -------------------------- | ------------------------------------------ |
-| Kube Prometheus Stack | 56.21.1            | `monitoring`  | `https://grafana.<domain>` | Authelia (proxy auth), Envoy GW, Longhorn  |
-| Hubble UI             | inclus dans Cilium | `kube-system` | `https://hubble.<domain>`  | Cilium (Deployment), Authelia, Envoy GW    |
+| Composant             | Chart version      | Namespace     | URL                        | Depend de                                 |
+| --------------------- | ------------------ | ------------- | -------------------------- | ----------------------------------------- |
+| Kube Prometheus Stack | 56.21.1            | `monitoring`  | `https://grafana.<domain>` | Authelia (proxy auth), Envoy GW, Longhorn |
+| Hubble UI             | inclus dans Cilium | `kube-system` | `https://hubble.<domain>`  | Cilium (Deployment), Authelia, Envoy GW   |
 
 Le stack Prometheus inclut : Prometheus (collecte, 50Gi, retention 15j), Grafana (dashboards, proxy auth Authelia), Alertmanager (alertes).
 
@@ -329,15 +329,15 @@ ansible-playbook playbooks/phase-08-security.yml
 
 ### Composants deployes
 
-| Composant              | Version | Fonction                                                       | Depend de                  |
-| ---------------------- | ------- | -------------------------------------------------------------- | -------------------------- |
-| Kyverno                | 3.3.0   | 8 policies de securite (Audit en local, Enforce en production) | K3s                        |
-| Network Policies       | -       | Default deny + regles explicites par namespace                 | Cilium                     |
-| Pod Security Standards | -       | Baseline (staging) / Restricted (production)                   | K3s                        |
-| Rate Limiting          | -       | Protection des endpoints publics                               | Cilium, Envoy GW           |
-| Secret Rotation        | -       | Rotation automatique via ESO (production)                      | Vault, External Secrets    |
-| Trivy Operator         | 0.19.0  | Scan d'images, alertes Prometheus                              | Kube Prometheus (alertes)  |
-| Velero                 | 1.13.0  | Backups chiffres off-site (production)                         | Longhorn                   |
+| Composant              | Version | Fonction                                                       | Depend de                 |
+| ---------------------- | ------- | -------------------------------------------------------------- | ------------------------- |
+| Kyverno                | 3.3.0   | 8 policies de securite (Audit en local, Enforce en production) | K3s                       |
+| Network Policies       | -       | Default deny + regles explicites par namespace                 | Cilium                    |
+| Pod Security Standards | -       | Baseline (staging) / Restricted (production)                   | K3s                       |
+| Rate Limiting          | -       | Protection des endpoints publics                               | Cilium, Envoy GW          |
+| Secret Rotation        | -       | Rotation automatique via ESO (production)                      | Vault, External Secrets   |
+| Trivy Operator         | 0.19.0  | Scan d'images, alertes Prometheus                              | Kube Prometheus (alertes) |
+| Velero                 | 1.13.0  | Backups chiffres off-site (production)                         | Longhorn                  |
 
 ### Policies Kyverno
 

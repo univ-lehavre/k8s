@@ -89,6 +89,12 @@ authelia_access_rules:
       - "group:admins"
       - "group:devops"
 
+  # REDCap public surveys (no auth required for respondents)
+  - domain: "redcap.{{ domain }}"
+    policy: bypass
+    resources:
+      - "^/surveys([/?].*)?$"
+
   # REDCap - researchers with 2FA
   - domain: "redcap.{{ domain }}"
     policy: two_factor
@@ -132,6 +138,17 @@ authelia_access_rules:
     subject:
       - "group:researchers"
       - "group:admins"
+
+  # Flipt - devops with 1FA
+  - domain: "flags.{{ domain }}"
+    policy: one_factor
+    subject:
+      - "group:devops"
+      - "group:admins"
+
+  # OnlyOffice - all authenticated users
+  - domain: "office.{{ domain }}"
+    policy: one_factor
 
 # Default users (for development/testing)
 # In production, use LDAP or file-based users with external secrets

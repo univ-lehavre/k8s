@@ -54,6 +54,9 @@ grafana_ingress_host: "grafana.{{ domain }}"
 grafana_ingress_tls_secret: grafana-tls
 grafana_ingress_issuer: "{{ tls_issuer }}"
 
+# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+grafana_forward_auth_enabled: true
+
 prometheus_ingress_enabled: false
 prometheus_ingress_host: "prometheus.{{ domain }}"
 
