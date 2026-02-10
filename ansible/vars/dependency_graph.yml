@@ -1,0 +1,218 @@
+---
+# ATLAS Platform — Graphe de dépendances des composants
+#
+# Source unique de vérité pour les dépendances inter-composants.
+# Utilisé par playbooks/deploy.yml pour la résolution automatique.
+#
+# Chaque composant déclare :
+#   role   — chemin du rôle Ansible
+#   deps   — liste des composants prérequis
+#   health — comment vérifier que le composant est opérationnel (API K8s)
+
+atlas_components:
+
+  # --- Infrastructure ---
+
+  k3s:
+    role: "k3s/{{ k3s_type }}"
+    deps: []
+    health:
+      api: v1
+      kind: Node
+
+  cilium:
+    role: infrastructure/cilium
+    deps: [k3s]
+    health:
+      api: apps/v1
+      kind: DaemonSet
+      name: cilium
+      namespace: kube-system
+
+  envoy_gateway:
+    role: infrastructure/envoy_gateway
+    deps: [cilium]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: envoy-gateway
+      namespace: envoy-gateway-system
+
+  longhorn:
+    role: infrastructure/longhorn
+    deps: [cilium]
+    health:
+      api: apps/v1
+      kind: DaemonSet
+      name: longhorn-manager
+      namespace: longhorn-system
+
+  cert_manager:
+    role: infrastructure/cert_manager
+    deps: [cilium]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: cert-manager
+      namespace: cert-manager
+
+  # --- Plateforme ---
+
+  vault:
+    role: platform/vault
+    deps: [envoy_gateway, cert_manager, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: vault
+      namespace: vault
+
+  external_secrets:
+    role: platform/external_secrets
+    deps: [vault]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: external-secrets
+      namespace: external-secrets
+
+  postgresql:
+    role: platform/postgresql
+    deps: [vault, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: postgresql
+      namespace: postgresql
+
+  redis:
+    role: platform/redis
+    deps: [vault, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: redis-master
+      namespace: redis
+
+  mariadb:
+    role: platform/mariadb
+    deps: [vault, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: mariadb
+      namespace: mariadb
+
+  authelia:
+    role: platform/authelia
+    deps: [postgresql, redis, external_secrets]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: authelia
+      namespace: authelia
+
+  # --- Services ---
+
+  seaweedfs:
+    role: services/seaweedfs
+    deps: [vault, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: seaweedfs-master
+      namespace: seaweedfs
+
+  mattermost:
+    role: services/mattermost
+    deps: [authelia, postgresql]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: mattermost-team-edition
+      namespace: mattermost
+
+  nextcloud:
+    role: services/nextcloud
+    deps: [authelia, postgresql, seaweedfs]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: nextcloud
+      namespace: nextcloud
+
+  onlyoffice:
+    role: services/onlyoffice
+    deps: [authelia]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: onlyoffice
+      namespace: onlyoffice
+
+  redcap:
+    role: services/redcap
+    deps: [authelia, mariadb]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: redcap
+      namespace: redcap
+
+  ecrin:
+    role: services/ecrin
+    deps: [authelia]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: atlas-ecrin
+      namespace: ecrin
+
+  flipt:
+    role: services/flipt
+    deps: [authelia, postgresql]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: flipt
+      namespace: flipt
+
+  # --- DevOps ---
+
+  gitea:
+    role: devops/gitea
+    deps: [authelia, postgresql]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: gitea
+      namespace: gitea
+
+  argocd:
+    role: devops/argocd
+    deps: [authelia]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: argocd-server
+      namespace: argocd
+
+  # --- Monitoring ---
+
+  kube_prometheus:
+    role: monitoring/kube_prometheus
+    deps: [cilium]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: kube-prometheus-grafana
+      namespace: monitoring
+
+  hubble_ui:
+    role: monitoring/hubble_ui
+    deps: [cilium]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: hubble-ui
+      namespace: kube-system

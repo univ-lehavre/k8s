@@ -1,0 +1,29 @@
+---
+# Vérifie si un composant est déployé et sain dans le cluster.
+#
+# Entrées :
+#   _component_name  — nom du composant (ex: "postgresql")
+#   _component_def   — définition depuis atlas_components (contient .health)
+#
+# Sortie :
+#   _component_healthy — booléen (fact)
+
+- name: "Health check : {{ _component_name }}"
+  kubernetes.core.k8s_info:
+    api_version: "{{ _component_def.health.api }}"
+    kind: "{{ _component_def.health.kind }}"
+    name: "{{ _component_def.health.name | default(omit) }}"
+    namespace: "{{ _component_def.health.namespace | default(omit) }}"
+  register: _health_result
+  failed_when: false
+
+- name: "Évaluer santé : {{ _component_name }}"
+  ansible.builtin.set_fact:
+    _component_healthy: >-
+      {{
+        _health_result.resources | length > 0
+        and (
+          _health_result.resources[0].status.readyReplicas | default(0) | int >= 1
+          or _health_result.resources[0].status.numberReady | default(0) | int >= 1
+        )
+      }}

@@ -233,6 +233,31 @@ tasks:
     cmds:
       - ansible-lint --profile=production
 
+  # Déploiement avec résolution de dépendances
+  deploy:
+    desc: "Déployer un composant avec ses dépendances (usage : task deploy -- mattermost)"
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible-playbook playbooks/deploy.yml -e target={{.CLI_ARGS}}
+    preconditions:
+      - sh: "[ -n '{{.CLI_ARGS}}' ]"
+        msg: "Spécifier un composant. Usage : task deploy -- mattermost"
+
+  deploy-list:
+    desc: "Lister les composants déployables"
+    cmds:
+      - echo "Composants disponibles :" && grep -E '^\s{2}\w+:$' {{.ANSIBLE_DIR}}/vars/dependency_graph.yml | sed 's/://;s/^  /  - /'
+    silent: true
+
+  deploy-deps:
+    desc: "Afficher les dépendances d'un composant (usage : task deploy-deps -- mattermost)"
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible-playbook playbooks/deploy.yml -e target={{.CLI_ARGS}} --check
+    preconditions:
+      - sh: "[ -n '{{.CLI_ARGS}}' ]"
+        msg: "Spécifier un composant. Usage : task deploy-deps -- mattermost"
+
   # Raccourcis
   format:
     desc: Formater automatiquement (alias lint-fix)
