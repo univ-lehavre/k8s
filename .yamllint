@@ -58,3 +58,4 @@ ignore: |
   .github/
   venv/
   molecule/
+  node_modules/

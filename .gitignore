@@ -1,2 +1,8 @@
 ansible.log
-**/__pycache__/**
+__pycache__/
+*.pyc
+.env
+*.retry
+node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
