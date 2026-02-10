@@ -66,7 +66,7 @@
           ATLAS Platform Deployment Complete!
           ============================================
           Access your services at:
-          - Auth: https://auth.{{ domain }}
+          - Auth: https://login.{{ domain }}
           - Chat: https://chat.{{ domain }}
           - Cloud: https://cloud.{{ domain }}
           - Git: https://git.{{ domain }}

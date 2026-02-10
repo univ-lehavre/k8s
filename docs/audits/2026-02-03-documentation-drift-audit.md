@@ -32,7 +32,7 @@ Cet audit compare la documentation officielle du projet Atlas avec l'implémenta
 | Mattermost | Team Chat | PostgreSQL | Conforme |
 | Nextcloud | Files + Collaboration | PostgreSQL + SeaweedFS | Conforme |
 | OnlyOffice | Document Editor | Intégré Mattermost/Nextcloud | Conforme |
-| REDCap | Research Data Capture | PostgreSQL | Conforme |
+| REDCap | Research Data Capture | MariaDB | Conforme |
 | ECRIN | Researcher Platform | OIDC via Authelia | Conforme |
 | Flipt | Feature Flags | PostgreSQL | Conforme |
 
@@ -278,8 +278,13 @@ Policies appliquées en staging/production :
 | `mattermost_db` | Mattermost | mattermost |
 | `nextcloud_db` | Nextcloud | nextcloud |
 | `gitea_db` | Gitea | gitea |
-| `redcap_db` | REDCap | redcap |
 | `flipt_db` | Flipt | flipt |
+
+### 4.2 MariaDB - Bases de Données
+
+| Database | Service | Namespace |
+|----------|---------|-----------|
+| `redcap_db` | REDCap | redcap |
 
 Configuration PostgreSQL :
 
@@ -287,7 +292,7 @@ Configuration PostgreSQL :
 - **Standalone** (local) : 1 replica
 - **Chart** : Bitnami postgresql-ha 14.0.4
 
-### 4.2 Redis
+### 4.3 Redis
 
 | Fonction | Services |
 |----------|----------|

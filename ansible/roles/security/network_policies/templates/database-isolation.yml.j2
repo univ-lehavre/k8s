@@ -39,7 +39,7 @@ spec:
     # Allow PostgreSQL access (L7 filtered at PostgreSQL policy)
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.postgresql }}
             app.kubernetes.io/name: postgresql
       toPorts:
         - ports:
@@ -48,7 +48,7 @@ spec:
     # Allow Redis access (for services that need caching/sessions)
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.redis }}
             app.kubernetes.io/name: redis
       toPorts:
         - ports:
@@ -57,7 +57,7 @@ spec:
     # Allow MariaDB access (for MySQL-compatible services like REDCap)
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: mariadb
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.mariadb }}
             app.kubernetes.io/name: mariadb
       toPorts:
         - ports:
@@ -71,7 +71,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: deny-cross-db-direct-access
-  namespace: {{ namespaces.databases }}
+  namespace: {{ namespaces.postgresql }}
 spec:
   description: "Deny direct pod-to-pod access within database namespace from external namespaces"
   endpointSelector: {}
@@ -82,5 +82,5 @@ spec:
             - key: io.kubernetes.pod.namespace
               operator: NotIn
               values:
-                - {{ namespaces.databases }}
+                - {{ namespaces.postgresql }}
 {% endif %}

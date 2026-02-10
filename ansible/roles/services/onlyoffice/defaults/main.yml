@@ -31,7 +31,6 @@ onlyoffice_jwt_header: Authorization
 # Ingress settings
 onlyoffice_ingress_enabled: true
 onlyoffice_ingress_host: "office.{{ domain }}"
-onlyoffice_ingress_class: cilium
 onlyoffice_ingress_tls_secret: onlyoffice-tls
 onlyoffice_ingress_issuer: "{{ tls_issuer }}"
 

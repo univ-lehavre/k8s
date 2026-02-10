@@ -219,8 +219,14 @@ ansible-playbook playbooks/site.yml -i inventories/production
 │       └── helm_versions.yml           # Versions centralisées
 │
 ├── docs/
-│   └── audits/
-│       └── documentation-drift-audit.md
+│   ├── audits/
+│   │   ├── 2026-02-03-code-documentation-coherence.md
+│   │   ├── 2026-02-03-code-review.md
+│   │   ├── 2026-02-03-documentation-drift-audit.md
+│   │   └── 2026-02-03-linting-exceptions.md
+│   └── roadmaps/
+│       ├── 2026-02-03-documentation-coherence-remediation.md
+│       └── 2026-02-05-ecrin-deployment-guide.md
 │
 ├── Taskfile.yml
 └── README.md
@@ -380,7 +386,6 @@ kubectl port-forward -n kube-system svc/hubble-ui 8080:80
 | ---------- | :----: | :----: | :--------: | :---------: | ----------- |
 | Vault      | ✅     | ✅     | ❌         | ❌          | 2FA         |
 | ArgoCD     | ✅     | ✅     | 👁️         | ❌          | 2FA         |
-| Authentik  | ✅     | ❌     | ❌         | ❌          | 2FA         |
 | Gitea      | ✅     | ✅     | ✅         | ✅          | 1FA         |
 | Grafana    | ✅     | ✅     | ✅         | ✅          | 1FA         |
 | Hubble UI  | ✅     | ✅     | ❌         | ❌          | 1FA         |
@@ -456,7 +461,7 @@ Chaque service ne peut accéder qu'à sa propre base de données grâce au filtr
 
 ## Documentation
 
-- [Audit de conformité](docs/audits/documentation-drift-audit.md)
+- [Audit de conformité](docs/audits/2026-02-03-documentation-drift-audit.md)
 
 ## License
 

@@ -37,12 +37,12 @@ authelia_session_remember_me: 1M
 # Redis backend (for session storage)
 # Disabled by default in local to reduce dependencies, enabled in staging/production
 authelia_redis_enabled: "{{ redis_enabled | default(false) }}"
-authelia_redis_host: "{{ redis_host | default('redis-master.databases.svc.cluster.local') }}"
+authelia_redis_host: "{{ redis_host | default('redis-master.redis.svc.cluster.local') }}"
 authelia_redis_port: 6379
 
 # Storage backend (SQLite for simplicity, PostgreSQL for HA)
 authelia_storage_backend: "{{ 'postgres' if ha_enabled | default(false) else 'local' }}"
-authelia_postgresql_host: "{{ postgresql_host | default('postgresql.databases.svc.cluster.local') }}"
+authelia_postgresql_host: "{{ postgresql_host | default('postgresql.postgresql.svc.cluster.local') }}"
 authelia_postgresql_port: 5432
 authelia_postgresql_database: authelia
 authelia_postgresql_username: authelia
@@ -76,8 +76,8 @@ authelia_groups:
 # Access control rules
 # Override this in group_vars for environment-specific rules
 authelia_access_rules:
-  # Authentik UI - admins only with 2FA
-  - domain: "auth.{{ domain }}"
+  # Authelia login portal - admins only with 2FA
+  - domain: "login.{{ domain }}"
     policy: two_factor
     subject:
       - "group:admins"

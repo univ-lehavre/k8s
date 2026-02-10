@@ -1,5 +1,7 @@
 # Roadmap : Correction des Incohérences Documentation/Code
 
+> **ARCHIVE** : Les remédiations de ce roadmap ont été appliquées. Voir les commits postérieurs au 2026-02-05.
+
 **Date** : 2026-02-03
 **Source** : Audit `docs/audits/2026-02-03-code-documentation-coherence.md`
 **Objectif** : Aligner le code et la documentation à 100%

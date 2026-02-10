@@ -5,8 +5,8 @@
 gitea_namespace: gitea
 
 # Helm chart settings
-gitea_chart_repo: https://dl.gitea.com/charts/
-gitea_chart_repo_name: gitea-charts
+gitea_chart_repo: https://dl.gitea.io/charts/
+gitea_chart_repo_name: gitea
 
 # Resources
 gitea_resources:
@@ -41,7 +41,6 @@ gitea_admin_email: "gitea@{{ domain }}"
 # Ingress settings
 gitea_ingress_enabled: true
 gitea_ingress_host: "git.{{ domain }}"
-gitea_ingress_class: cilium
 gitea_ingress_tls_secret: gitea-tls
 gitea_ingress_issuer: "{{ tls_issuer }}"
 

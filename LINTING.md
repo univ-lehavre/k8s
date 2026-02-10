@@ -112,7 +112,7 @@ Fichier de configuration principal pour ansible-lint :
 
 Configuration pour yamllint :
 
-- Longueur de ligne max : 120 caractères
+- Longueur de ligne max : 180 caractères
 - Indentation : 2 espaces
 - Support des templates Jinja2
 
@@ -138,11 +138,11 @@ Configuration des git hooks :
    register: devops_gitea_db_create
    ```
 
-2. **yaml[line-length]** : Ligne trop longue (> 120 caractères)
+2. **yaml[line-length]** : Ligne trop longue (> 180 caractères)
 
    ```yaml
    # ❌ Mauvais
-   - name: Une très longue description qui dépasse la limite de 120 caractères et devrait être raccourcie
+   - name: Une très longue description qui dépasse la limite de 180 caractères et devrait être raccourcie
 
    # ✅ Bon
    - name: Description plus courte

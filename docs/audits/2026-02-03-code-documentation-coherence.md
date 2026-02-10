@@ -1,5 +1,7 @@
 # Audit de Cohérence : Code vs Documentation
 
+> **ARCHIVE** : Les incohérences identifiées dans cet audit ont été corrigées. Voir les commits postérieurs au 2026-02-05.
+
 **Date** : 2026-02-03
 **Auteur** : Audit automatisé
 **Scope** : Comparaison entre le code Ansible et la documentation du repository

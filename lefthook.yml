@@ -16,7 +16,7 @@ pre-commit:
     ansible-lint:
       glob: "*.{yml,yaml}"
       exclude: "(^\\.git/|^\\.cache/|^molecule/|^venv/)"
-      run: ansible-lint --profile=safety --force-color {staged_files}
+      run: ansible-lint --profile=production --force-color {staged_files}
       stage_fixed: true # Stage les fichiers fixés automatiquement
 
     # YAML Lint (optionnel, installé si disponible)

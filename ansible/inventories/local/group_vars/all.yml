@@ -42,9 +42,13 @@ resource_profile: minimal
 # Namespaces
 namespaces:
   vault: vault
-  databases: databases
+  postgresql: postgresql
+  redis: redis
+  mariadb: mariadb
+  authelia: authelia
   mattermost: mattermost
   nextcloud: nextcloud
+  onlyoffice: onlyoffice
   seaweedfs: seaweedfs
   redcap: redcap
   ecrin: ecrin
@@ -54,11 +58,11 @@ namespaces:
   monitoring: monitoring
 
 # PostgreSQL configuration
-postgresql_host: postgresql-postgresql-ha-pgpool.databases.svc.cluster.local
+postgresql_host: postgresql-postgresql-ha-pgpool.postgresql.svc.cluster.local
 postgresql_port: 5432
 
 # Redis configuration
-redis_host: redis-master.databases.svc.cluster.local
+redis_host: redis-master.redis.svc.cluster.local
 redis_port: 6379
 redis_sentinel_enabled: false
 

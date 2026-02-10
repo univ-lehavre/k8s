@@ -16,12 +16,15 @@
     namespace: "{{ mariadb_namespace | default('mariadb') }}"
     pod: mariadb-0
     command: >
-      mysql -u root -p{{ mariadb_root_password }} -e "
+      mysql -u root -e "
         CREATE DATABASE IF NOT EXISTS \`{{ mariadb_db_name }}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS '{{ mariadb_db_user }}'@'{{ mariadb_db_host | default('%') }}' IDENTIFIED BY '{{ mariadb_db_password }}';
         GRANT {{ mariadb_db_privileges | default('ALL PRIVILEGES') }} ON \`{{ mariadb_db_name }}\`.* TO '{{ mariadb_db_user }}'@'{{ mariadb_db_host | default('%') }}';
         FLUSH PRIVILEGES;
       "
+    env:
+      - name: MYSQL_PWD
+        value: "{{ mariadb_root_password }}"
   when:
     - mariadb_root_password is defined
     - mariadb_root_password != ''

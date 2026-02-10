@@ -33,22 +33,21 @@ mattermost_admin_password: "{{ secrets.mattermost.admin_password | default(omit)
 # Ingress settings
 mattermost_ingress_enabled: true
 mattermost_ingress_host: "chat.{{ domain }}"
-mattermost_ingress_class: cilium
 mattermost_ingress_tls_secret: mattermost-tls
 mattermost_ingress_issuer: "{{ tls_issuer }}"
 
-# OIDC settings (Authentik)
+# OIDC settings (Authelia)
 mattermost_oidc_enabled: true
-mattermost_oidc_button_text: "Login with Authentik"
-mattermost_oidc_discovery_endpoint: "https://auth.{{ domain }}/application/o/mattermost/.well-known/openid-configuration"
+mattermost_oidc_button_text: "Login with Authelia"
+mattermost_oidc_discovery_endpoint: "https://login.{{ domain }}/.well-known/openid-configuration"
 mattermost_oidc_client_id: mattermost
 
-# Group sync from Authentik/Authelia OIDC claims
+# Group sync from Authelia OIDC claims
 # Automatically creates Mattermost teams from groups
 mattermost_group_sync_enabled: true
 mattermost_group_attribute: groups
 
-# Role mapping from Authelia/Authentik groups
+# Role mapping from Authelia groups
 # admins → system_admin, devops → team_admin, others → team_user
 mattermost_role_mapping:
   system_admin_groups:

@@ -17,13 +17,13 @@
 - name: Install Gateway API CRDs
   kubernetes.core.k8s:
     state: present
-    src: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+    src: https://github.com/kubernetes-sigs/gateway-api/releases/download/{{ gateway_api_version }}/standard-install.yaml
   register: gateway_api_crds
 
 - name: Install Gateway API experimental CRDs (for ReferenceGrant)
   kubernetes.core.k8s:
     state: present
-    src: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
+    src: https://github.com/kubernetes-sigs/gateway-api/releases/download/{{ gateway_api_version }}/experimental-install.yaml
   when: envoy_gateway_ext_auth_enabled | default(true)
 
 - name: Deploy Envoy Gateway via Helm

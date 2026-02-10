@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: {{ gateway_name }}
     app.kubernetes.io/component: gateway
 spec:
-  gatewayClassName: eg
+  gatewayClassName: {{ envoy_gateway_class_name }}
   listeners:
     # HTTP listener (redirects to HTTPS)
     - name: http

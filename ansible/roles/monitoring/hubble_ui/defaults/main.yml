@@ -10,7 +10,6 @@ hubble_namespace: kube-system
 # Ingress settings
 hubble_ui_ingress_enabled: true
 hubble_ui_ingress_host: "hubble.{{ domain }}"
-hubble_ui_ingress_class: cilium
 hubble_ui_ingress_tls_secret: hubble-tls
 hubble_ui_ingress_issuer: "{{ tls_issuer }}"
 

@@ -47,15 +47,15 @@
 
 ### Composants Déployés
 
-| Composant | Phase | Rôle | Namespace |
-|-----------|-------|------|-----------|
-| K3D (local) / K3s (staging) | 2 | Cluster Kubernetes | - |
-| Cilium | 2 | CNI (réseau) | kube-system |
-| Envoy Gateway | 2 | Gateway API / Ingress | envoy-gateway-system |
-| Cert-Manager | 2 | Certificats TLS | cert-manager |
-| Local Path Provisioner | 2 | Stockage (local) | local-path-storage |
-| Authelia | 5 | Authentification OIDC | authelia |
-| ECRIN | 5 | Application | ecrin |
+| Composant                   | Phase | Rôle                  | Namespace            |
+| --------------------------- | ----- | --------------------- | -------------------- |
+| K3D (local) / K3s (staging) | 2     | Cluster Kubernetes    | -                    |
+| Cilium                      | 2     | CNI (réseau)          | kube-system          |
+| Envoy Gateway               | 2     | Gateway API / Ingress | envoy-gateway-system |
+| Cert-Manager                | 2     | Certificats TLS       | cert-manager         |
+| Local Path Provisioner      | 2     | Stockage (local)      | local-path-storage   |
+| Authelia                    | 5     | Authentification OIDC | authelia             |
+| ECRIN                       | 5     | Application           | ecrin                |
 
 ---
 
@@ -143,6 +143,7 @@ kubectl get pods -A
 **Temps estimé** : 5-10 minutes
 
 **Sortie attendue** :
+
 ```
 PLAY RECAP *********************************************************************
 localhost : ok=25   changed=15   unreachable=0    failed=0    skipped=5
@@ -196,9 +197,9 @@ kubectl get certificates -A
 
 #### URLs
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| ECRIN | https://ecrin.atlas.localhost | Application principale |
+| Service  | URL                           | Description                |
+| -------- | ----------------------------- | -------------------------- |
+| ECRIN    | https://ecrin.atlas.localhost | Application principale     |
 | Authelia | https://login.atlas.localhost | Portail d'authentification |
 
 #### Certificat Auto-signé
@@ -211,11 +212,11 @@ Le navigateur affichera un avertissement de sécurité car le certificat est aut
 
 #### Utilisateurs de Test
 
-| Username | Groupes | Mot de passe initial |
-|----------|---------|----------------------|
-| admin | admins, devops | À définir au 1er login |
-| developer | devops | À définir au 1er login |
-| researcher | researchers | À définir au 1er login |
+| Username   | Groupes        | Mot de passe initial   |
+| ---------- | -------------- | ---------------------- |
+| admin      | admins, devops | À définir au 1er login |
+| developer  | devops         | À définir au 1er login |
+| researcher | researchers    | À définir au 1er login |
 
 **Note** : Au premier accès, Authelia demandera de configurer la 2FA (TOTP).
 
@@ -281,22 +282,22 @@ sudo sed -i '' '/atlas.localhost/d' /etc/hosts
 
 #### Spécifications Minimales
 
-| Ressource | Minimum | Recommandé |
-|-----------|---------|------------|
-| CPU | 2 vCPU | 4 vCPU |
-| RAM | 4 GB | 8 GB |
-| Disque | 40 GB SSD | 80 GB SSD |
-| OS | Ubuntu 22.04 LTS | Ubuntu 24.04 LTS |
-| Réseau | IP publique | IP publique + DNS |
+| Ressource | Minimum          | Recommandé        |
+| --------- | ---------------- | ----------------- |
+| CPU       | 2 vCPU           | 4 vCPU            |
+| RAM       | 4 GB             | 8 GB              |
+| Disque    | 40 GB SSD        | 80 GB SSD         |
+| OS        | Ubuntu 22.04 LTS | Ubuntu 24.04 LTS  |
+| Réseau    | IP publique      | IP publique + DNS |
 
 #### Ports à Ouvrir (Firewall)
 
-| Port | Protocole | Usage |
-|------|-----------|-------|
-| 22 | TCP | SSH |
-| 80 | TCP | HTTP (redirection) |
-| 443 | TCP | HTTPS |
-| 6443 | TCP | K3s API (admin seulement) |
+| Port | Protocole | Usage                     |
+| ---- | --------- | ------------------------- |
+| 22   | TCP       | SSH                       |
+| 80   | TCP       | HTTP (redirection)        |
+| 443  | TCP       | HTTPS                     |
+| 6443 | TCP       | K3s API (admin seulement) |
 
 ### 2.2 Préparation de la VM
 
@@ -334,6 +335,7 @@ Configurer un enregistrement DNS A chez votre fournisseur :
 ```
 
 Ou au minimum :
+
 ```
 login.atlas.chasset.net  →  <IP_VM>
 ecrin.atlas.chasset.net  →  <IP_VM>
@@ -436,9 +438,9 @@ kubectl get httproute -A
 
 #### URLs
 
-| Service | URL |
-|---------|-----|
-| ECRIN | https://ecrin.atlas.chasset.net |
+| Service  | URL                             |
+| -------- | ------------------------------- |
+| ECRIN    | https://ecrin.atlas.chasset.net |
 | Authelia | https://login.atlas.chasset.net |
 
 #### Vérifier les certificats TLS
@@ -467,6 +469,7 @@ curl -I http://ecrin.atlas.chasset.net/.well-known/acme-challenge/test
 ```
 
 **Causes fréquentes** :
+
 - DNS non propagé (attendre 5-10 min)
 - Port 80 bloqué par le firewall
 - Rate limit Let's Encrypt atteint
@@ -558,13 +561,13 @@ curl https://ecrin.atlas.chasset.net/health
 
 ### 3.3 Métriques de Succès
 
-| Critère | Local | Staging |
-|---------|-------|---------|
-| Temps de déploiement total | < 15 min | < 25 min |
-| Pods en Running | 100% | 100% |
-| Certificat TLS valide | Auto-signé OK | Let's Encrypt OK |
-| Authentification OIDC | Fonctionnelle | Fonctionnelle |
-| Temps de réponse ECRIN | < 500ms | < 1s |
+| Critère                    | Local         | Staging          |
+| -------------------------- | ------------- | ---------------- |
+| Temps de déploiement total | < 15 min      | < 25 min         |
+| Pods en Running            | 100%          | 100%             |
+| Certificat TLS valide      | Auto-signé OK | Let's Encrypt OK |
+| Authentification OIDC      | Fonctionnelle | Fonctionnelle    |
+| Temps de réponse ECRIN     | < 500ms       | < 1s             |
 
 ---
 
@@ -624,6 +627,6 @@ ansible-playbook -i inventories/local/hosts.yml playbooks/phase-05-services.yml 
 
 ## Historique des Modifications
 
-| Date | Version | Auteur | Description |
-|------|---------|--------|-------------|
-| 2026-02-05 | 1.0 | - | Création initiale |
+| Date       | Version | Auteur | Description       |
+| ---------- | ------- | ------ | ----------------- |
+| 2026-02-05 | 1.0     | -      | Création initiale |

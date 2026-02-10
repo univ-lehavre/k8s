@@ -22,4 +22,4 @@
           - Grafana: https://grafana.{{ domain }}
           - Hubble UI: https://hubble.{{ domain }}
 
-          Default Grafana credentials: admin / {{ grafana_admin_password | default('check secrets') }}
+          Default Grafana credentials: admin / (see secrets)

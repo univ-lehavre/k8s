@@ -172,7 +172,7 @@ data:
 {% for client in authelia_oidc_clients | default([]) %}
           - client_id: {{ client.id }}
             client_name: {{ client.description }}
-            client_secret: {{ client.secret }}
+            client_secret: '$plaintext${{ client.secret }}'
             public: false
             authorization_policy: {{ client.authorization_policy | default('one_factor') }}
             consent_mode: implicit
