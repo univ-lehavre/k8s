@@ -56,6 +56,25 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             || true
 
+  branch-up-to-date:
+    name: Branch up to date
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check branch is not behind main
+        run: |
+          git fetch origin main
+          BEHIND=$(git rev-list --count HEAD..origin/main)
+          if [ "$BEHIND" -gt 0 ]; then
+            echo "::error::Branch is $BEHIND commit(s) behind main. Rebase or merge main first."
+            exit 1
+          fi
+          echo "Branch is up to date with main."
+
   markdown-lint:
     name: Markdown Lint
     runs-on: ubuntu-latest
