@@ -220,6 +220,7 @@ ansible-playbook playbooks/site.yml -i inventories/production
 │
 ├── docs/
 │   ├── CONTRIBUTING.md                    # Guide du développeur (linting, hooks, CI)
+│   ├── deployment-priority.md             # Guide de déploiement priorisé pas à pas
 │   ├── ecrin-deployment-guide.md          # Guide de déploiement ECRIN
 │   └── audits/
 │       ├── 2026-02-03-code-documentation-coherence.md
