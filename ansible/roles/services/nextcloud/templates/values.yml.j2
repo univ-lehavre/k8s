@@ -3,7 +3,7 @@
 
 image:
   repository: nextcloud
-  tag: stable
+  tag: "{{ nextcloud_image_tag | default('29') }}"
 
 replicaCount: 1
 
@@ -18,8 +18,11 @@ resources:
 # Admin credentials
 nextcloud:
   host: {{ nextcloud_ingress_host }}
-  username: {{ nextcloud_admin_user }}
-  password: "{{ nextcloud_admin_password }}"
+  existingSecret:
+    enabled: true
+    secretName: nextcloud-admin-credentials
+    usernameKey: username
+    passwordKey: password
 
   configs:
     proxy.config.php: |-

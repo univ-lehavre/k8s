@@ -3,7 +3,7 @@
 
 image:
   repository: mattermost/mattermost-team-edition
-  tag: latest
+  tag: "{{ mattermost_image_tag | default('9.11') }}"
 
 resources:
   requests:
@@ -50,15 +50,15 @@ config:
     Secret: ""  # Configure via External Secrets
     Id: "{{ mattermost_oidc_client_id }}"
     Scope: openid profile email groups
-    AuthEndpoint: "https://auth.{{ domain }}/application/o/authorize/"
-    TokenEndpoint: "https://auth.{{ domain }}/application/o/token/"
-    UserApiEndpoint: "https://auth.{{ domain }}/application/o/userinfo/"
+    AuthEndpoint: "https://login.{{ domain }}/api/oidc/authorization"
+    TokenEndpoint: "https://login.{{ domain }}/api/oidc/token"
+    UserApiEndpoint: "https://login.{{ domain }}/api/oidc/userinfo"
     DiscoveryEndpoint: "{{ mattermost_oidc_discovery_endpoint }}"
     ButtonText: "{{ mattermost_oidc_button_text }}"
     ButtonColor: "#6DB33F"
 {% if mattermost_group_sync_enabled | default(true) %}
   # Group sync configuration for OIDC
-  # Maps Authelia/Authentik groups to Mattermost roles
+  # Maps Authelia groups to Mattermost roles
   GuestAccountsSettings:
     Enable: false
 {% endif %}

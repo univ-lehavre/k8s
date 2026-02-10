@@ -19,7 +19,7 @@
 
 - name: Create Gitea database in PostgreSQL
   kubernetes.core.k8s_exec:
-    namespace: "{{ namespaces.databases }}"
+    namespace: "{{ namespaces.postgresql }}"
     pod: postgresql-0
     command: |
       psql -U postgres -c "CREATE DATABASE {{ gitea_postgresql_database }};" || true

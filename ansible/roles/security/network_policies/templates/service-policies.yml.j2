@@ -10,7 +10,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: postgresql-ingress-{{ policy.service }}
-  namespace: {{ namespaces.databases }}
+  namespace: {{ namespaces.postgresql }}
 spec:
   description: "Allow {{ policy.service }} to access only {{ policy.database }} database"
   endpointSelector:
@@ -36,7 +36,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: postgresql-replication
-  namespace: {{ namespaces.databases }}
+  namespace: {{ namespaces.postgresql }}
 spec:
   description: "Allow PostgreSQL replication between replicas"
   endpointSelector:
@@ -57,7 +57,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: postgresql-metrics
-  namespace: {{ namespaces.databases }}
+  namespace: {{ namespaces.postgresql }}
 spec:
   description: "Allow Prometheus to scrape PostgreSQL metrics"
   endpointSelector:
@@ -79,7 +79,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: postgresql-ingress
-  namespace: {{ namespaces.databases }}
+  namespace: {{ namespaces.postgresql }}
 spec:
   endpointSelector:
     matchLabels:
@@ -112,7 +112,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: redis-ingress
-  namespace: {{ namespaces.databases }}
+  namespace: {{ namespaces.redis }}
 spec:
   endpointSelector:
     matchLabels:
@@ -257,7 +257,7 @@ spec:
   egress:
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.postgresql }}
       toPorts:
         - ports:
             - port: "5432"
@@ -275,11 +275,16 @@ spec:
   egress:
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.postgresql }}
       toPorts:
         - ports:
             - port: "5432"
               protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.redis }}
+      toPorts:
+        - ports:
             - port: "6379"
               protocol: TCP
     - toEndpoints:
@@ -302,11 +307,16 @@ spec:
   egress:
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.postgresql }}
       toPorts:
         - ports:
             - port: "5432"
               protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.redis }}
+      toPorts:
+        - ports:
             - port: "6379"
               protocol: TCP
 
@@ -324,7 +334,7 @@ spec:
   egress:
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.postgresql }}
       toPorts:
         - ports:
             - port: "5432"
@@ -367,7 +377,7 @@ spec:
               protocol: TCP
 
 ---
-# REDCap egress to PostgreSQL
+# REDCap egress to MariaDB
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -378,10 +388,10 @@ spec:
   egress:
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.mariadb }}
       toPorts:
         - ports:
-            - port: "5432"
+            - port: "3306"
               protocol: TCP
 
 ---
@@ -396,7 +406,7 @@ spec:
   egress:
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.postgresql }}
       toPorts:
         - ports:
             - port: "5432"
@@ -437,10 +447,15 @@ spec:
   egress:
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.databases }}
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.redis }}
       toPorts:
         - ports:
             - port: "6379"
               protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ namespaces.postgresql }}
+      toPorts:
+        - ports:
             - port: "5432"
               protocol: TCP

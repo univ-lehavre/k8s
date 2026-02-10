@@ -124,7 +124,7 @@ ansible-playbook playbooks/phase-07-monitoring.yml -i inventories/local --tags g
 | 2 | `k3s`, `cluster`, `infrastructure`, `cilium`, `longhorn`, `cert-manager`, `tls` |
 | 3 | `vault`, `secrets`, `external-secrets`, `platform` |
 | 4 | `databases`, `postgresql`, `redis` |
-| 5 | `services`, `authelia`, `mattermost`, `nextcloud`, `seaweedfs`, `redcap`, `flipt` |
+| 5 | `services`, `authelia`, `mattermost`, `nextcloud`, `seaweedfs`, `redcap`, `ecrin`, `onlyoffice`, `flipt` |
 | 6 | `devops`, `gitea`, `argocd`, `gitops` |
 | 7 | `monitoring`, `prometheus`, `grafana`, `hubble` |
 | 8 | `security`, `network-policies` |
@@ -143,6 +143,9 @@ After deployment, services are available at:
 | ArgoCD | `https://argocd.<domain>` |
 | Grafana | `https://grafana.<domain>` |
 | Hubble UI | `https://hubble.<domain>` |
+| REDCap | `https://redcap.<domain>` |
+| ECRIN | `https://ecrin.<domain>` |
+| Flipt | `https://flags.<domain>` |
 
 ## Directory Structure
 
@@ -249,4 +252,4 @@ cilium status
 
 ## License
 
-This project is proprietary. All rights reserved.
+MIT License

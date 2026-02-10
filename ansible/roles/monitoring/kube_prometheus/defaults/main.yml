@@ -51,7 +51,6 @@ grafana_admin_user: admin
 # Ingress settings
 grafana_ingress_enabled: true
 grafana_ingress_host: "grafana.{{ domain }}"
-grafana_ingress_class: cilium
 grafana_ingress_tls_secret: grafana-tls
 grafana_ingress_issuer: "{{ tls_issuer }}"
 
@@ -61,7 +60,7 @@ prometheus_ingress_host: "prometheus.{{ domain }}"
 alertmanager_ingress_enabled: false
 alertmanager_ingress_host: "alertmanager.{{ domain }}"
 
-# Authentication mode: 'oidc' (Authentik) or 'proxy' (Authelia headers)
+# Authentication mode: 'oidc' (Authelia) or 'proxy' (Authelia headers)
 grafana_auth_mode: proxy
 
 # Proxy auth settings (Authelia headers)
@@ -86,12 +85,12 @@ grafana_role_mapping:
   # Default role for authenticated users not in any specific group
   default_role: Viewer
 
-# OIDC settings (Authentik) - alternative to proxy auth
+# OIDC settings (Authelia) - alternative to proxy auth
 grafana_oidc_enabled: "{{ grafana_auth_mode == 'oidc' }}"
-grafana_oidc_name: Authentik
-grafana_oidc_auth_url: "https://auth.{{ domain }}/application/o/authorize/"
-grafana_oidc_token_url: "https://auth.{{ domain }}/application/o/token/"
-grafana_oidc_api_url: "https://auth.{{ domain }}/application/o/userinfo/"
+grafana_oidc_name: Authelia
+grafana_oidc_auth_url: "https://login.{{ domain }}/api/oidc/authorization"
+grafana_oidc_token_url: "https://login.{{ domain }}/api/oidc/token"
+grafana_oidc_api_url: "https://login.{{ domain }}/api/oidc/userinfo"
 grafana_oidc_client_id: grafana
 
 # Alertmanager settings

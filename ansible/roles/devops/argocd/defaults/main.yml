@@ -42,14 +42,13 @@ argocd_admin_password: "{{ secrets.argocd.admin_password | default(omit) }}"
 # Ingress settings
 argocd_ingress_enabled: true
 argocd_ingress_host: "argocd.{{ domain }}"
-argocd_ingress_class: cilium
 argocd_ingress_tls_secret: argocd-tls
 argocd_ingress_issuer: "{{ tls_issuer }}"
 
-# OIDC settings (Authentik)
+# OIDC settings (Authelia)
 argocd_oidc_enabled: true
-argocd_oidc_name: Authentik
-argocd_oidc_issuer: "https://auth.{{ domain }}/application/o/argocd/"
+argocd_oidc_name: Authelia
+argocd_oidc_issuer: "https://login.{{ domain }}"
 argocd_oidc_client_id: argocd
 argocd_oidc_requested_scopes:
   - openid
@@ -61,7 +60,7 @@ argocd_oidc_requested_scopes:
 argocd_rbac_default_policy: role:readonly
 argocd_rbac_scopes: "[groups]"
 
-# Role mapping from Authelia/Authentik groups to ArgoCD roles
+# Role mapping from Authelia groups to ArgoCD roles
 # admins → admin (full access)
 # devops → sync (can sync apps)
 # developers → readonly (view only)

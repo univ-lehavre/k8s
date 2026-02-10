@@ -23,7 +23,6 @@ ecrin_resources:
 # Ingress settings
 ecrin_ingress_enabled: true
 ecrin_ingress_host: "ecrin.{{ domain }}"
-ecrin_ingress_class: cilium
 ecrin_ingress_tls_secret: ecrin-tls
 ecrin_ingress_issuer: "{{ tls_issuer }}"
 

@@ -19,11 +19,11 @@
 
 - name: Create Mattermost database in PostgreSQL
   kubernetes.core.k8s_exec:
-    namespace: "{{ namespaces.databases }}"
+    namespace: "{{ namespaces.postgresql }}"
     pod: postgresql-0
     command: |
       psql -U postgres -c "CREATE DATABASE {{ mattermost_postgresql_database }};" || true
-      psql -U postgres -c "CREATE USER {{ mattermost_postgresql_user }} WITH PASSWORD '{{ postgresql_superuser_password }}';" || true
+      psql -U postgres -c "CREATE USER {{ mattermost_postgresql_user }} WITH PASSWORD '{{ database_passwords.mattermost }}';" || true
       psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE {{ mattermost_postgresql_database }} TO {{ mattermost_postgresql_user }};"
     env:
       - name: PGPASSWORD

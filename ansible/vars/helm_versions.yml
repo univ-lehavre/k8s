@@ -35,6 +35,9 @@ helm_versions:
   onlyoffice: "8.0.1"
   ecrin: "1.0.0"
   redcap: "14.0.0"
+  # Application image tags (for non-Helm deployments)
+  mattermost_image_tag: "9.11"
+  nextcloud_image_tag: "29"
 
   # DevOps
   gitea: "10.1.1"
@@ -108,3 +111,19 @@ helm_repositories:
   kyverno:
     name: kyverno
     url: https://kyverno.github.io/kyverno/
+
+  envoy_gateway:
+    name: envoy-gateway
+    url: https://gateway.envoyproxy.io/helm-charts
+
+  velero:
+    name: vmware-tanzu
+    url: https://vmware-tanzu.github.io/helm-charts
+
+  trivy:
+    name: aqua
+    url: https://aquasecurity.github.io/helm-charts/
+
+  flipt:
+    name: flipt
+    url: https://helm.flipt.io
