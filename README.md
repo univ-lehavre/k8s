@@ -1,5 +1,7 @@
 # ATLAS Platform - Kubernetes Infrastructure
 
+[![DOI](https://zenodo.org/badge/1148296093.svg)](https://doi.org/10.5281/zenodo.18588428)
+
 Plateforme Kubernetes automatisée pour le déploiement de microservices orientés recherche et collaboration. Déploiement via Ansible sur K3s (production) ou K3D (développement local).
 
 ## Architecture
