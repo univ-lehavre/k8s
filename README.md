@@ -219,11 +219,11 @@ ansible-playbook playbooks/site.yml -i inventories/production
 │       └── helm_versions.yml           # Versions centralisées
 │
 ├── docs/
+│   ├── CONTRIBUTING.md                    # Guide du développeur (linting, hooks, CI)
 │   ├── audits/
 │   │   ├── 2026-02-03-code-documentation-coherence.md
 │   │   ├── 2026-02-03-code-review.md
-│   │   ├── 2026-02-03-documentation-drift-audit.md
-│   │   └── 2026-02-03-linting-exceptions.md
+│   │   └── 2026-02-03-documentation-drift-audit.md
 │   └── roadmaps/
 │       ├── 2026-02-03-documentation-coherence-remediation.md
 │       └── 2026-02-05-ecrin-deployment-guide.md
