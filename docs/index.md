@@ -1,10 +1,38 @@
-# ATLAS Platform - Kubernetes Infrastructure
+---
+layout: home
 
-[![DOI](https://zenodo.org/badge/1148296093.svg)](https://doi.org/10.5281/zenodo.18588428)
+hero:
+  name: ATLAS Platform
+  text: Infrastructure Kubernetes
+  tagline: >-
+    Plateforme automatisee pour le deploiement de microservices
+    orientes recherche et collaboration
+  actions:
+    - theme: brand
+      text: Guide de deploiement
+      link: /deployment-priority
+    - theme: alt
+      text: Voir sur GitHub
+      link: https://github.com/univ-lehavre/k8s
 
-Plateforme Kubernetes automatisee pour le deploiement de microservices
-orientes recherche et collaboration.
-Deploiement via Ansible sur K3s (production) ou K3D (developpement local).
+features:
+  - title: Securite
+    details: >-
+      Authelia SSO/OIDC/MFA, Vault + External Secrets Operator,
+      Kyverno, Network Policies, certificats Let's Encrypt
+  - title: Deploiement
+    details: >-
+      9 phases ordonnees via Ansible, K3s en production,
+      K3D pour le developpement local, resolution automatique des dependances
+  - title: Observabilite
+    details: >-
+      Prometheus, Grafana, Hubble (Cilium),
+      dashboards et alertes preconfigures
+  - title: Collaboration
+    details: >-
+      Mattermost, Nextcloud, OnlyOffice, Gitea, ArgoCD,
+      REDCap, ECRIN, Flipt
+---
 
 ## Architecture
 
@@ -35,22 +63,6 @@ Deploiement via Ansible sur K3s (production) ou K3D (developpement local).
      |          Infrastructure Layer               |
      | K3s | Cilium | Longhorn | Cert-Mgr | Vault  |
      +---------------------------------------------+
-```
-
-## Quickstart
-
-```bash
-# Cloner et configurer
-git clone <repository-url> && cd k8s
-cp .env.example .env && vim .env
-pip install -r requirements.txt
-ansible-galaxy install -r ansible/requirements.yml
-
-# Deploiement local (K3D)
-ansible-playbook playbooks/site.yml -i inventories/local
-
-# Deploiement production
-ansible-playbook playbooks/site.yml -i inventories/production
 ```
 
 ## Services
@@ -92,15 +104,3 @@ ansible-playbook playbooks/site.yml -i inventories/production
 | Kyverno          | Audit        | Audit                 | Enforce               |
 | Network Policies | Non          | Oui                   | Oui                   |
 | Hardening        | Non          | Oui                   | Oui                   |
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [Guide de deploiement](docs/deployment-priority.md) | Deploiement par jalons avec dependances |
-| [Securite et authentification](docs/security-overview.md) | Secrets, certificats, forward auth, ACL |
-| [Contribuer](docs/CONTRIBUTING.md) | Linting, hooks, CI/CD |
-
-## License
-
-MIT License. Voir le fichier [LICENSE](LICENSE) pour plus de details.

@@ -22,7 +22,8 @@ MD033:
 MD040: false
 
 # First line should be a top-level heading (MD041)
-MD041: true
+# Disabled: VitePress pages start with YAML frontmatter
+MD041: false
 
 # No duplicate headings (MD024)
 MD024:
