@@ -25,7 +25,7 @@ ecrin_ingress_host: "ecrin.{{ domain }}"
 ecrin_ingress_tls_secret: ecrin-tls
 ecrin_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
 ecrin_forward_auth_enabled: true
 
 # OIDC settings (Keycloak or Authelia)

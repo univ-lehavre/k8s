@@ -10,11 +10,11 @@ Gestion des identites, fournisseurs SSO et methodes d'authentification par appli
 
 La plateforme utilise un fournisseur SSO conditionnel selon l'environnement :
 
-| Environnement | Fournisseur | URL | Description |
-|---------------|-------------|-----|-------------|
-| **Local** | Authelia | `login.<domain>` | Fichier YAML, comptes de test, pas de base externe |
-| **Staging** | Keycloak | `login.<domain>` | IAM complet, auto-enregistrement, console admin |
-| **Production** | Keycloak | `login.<domain>` | IAM complet, HA (2 replicas), MFA obligatoire |
+| Environnement  | Fournisseur | URL              | Description                                        |
+| -------------- | ----------- | ---------------- | -------------------------------------------------- |
+| **Local**      | Authelia    | `login.<domain>` | Fichier YAML, comptes de test, pas de base externe |
+| **Staging**    | Keycloak    | `login.<domain>` | IAM complet, auto-enregistrement, console admin    |
+| **Production** | Keycloak    | `login.<domain>` | IAM complet, HA (2 replicas), MFA obligatoire      |
 
 Le basculement est pilote par la variable `keycloak_enabled` :
 
@@ -51,11 +51,11 @@ Le basculement est pilote par la variable `keycloak_enabled` :
 
 ### Clients OIDC configures
 
-| Client | Application | Redirect URIs |
-|--------|-------------|---------------|
-| `ecrin` | ECRIN MDR Portal | `https://ecrin.<domain>/signin-oidc`, `/callback`, `/auth/callback` |
-| `mattermost` | Mattermost | `https://chat.<domain>/signup/gitlab/complete`, `/login/gitlab/complete` |
-| `nextcloud` | Nextcloud | `https://cloud.<domain>/apps/oidc_login/oidc` |
+| Client       | Application      | Redirect URIs                                                            |
+| ------------ | ---------------- | ------------------------------------------------------------------------ |
+| `ecrin`      | ECRIN MDR Portal | `https://ecrin.<domain>/signin-oidc`, `/callback`, `/auth/callback`      |
+| `mattermost` | Mattermost       | `https://chat.<domain>/signup/gitlab/complete`, `/login/gitlab/complete` |
+| `nextcloud`  | Nextcloud        | `https://cloud.<domain>/apps/oidc_login/oidc`                            |
 
 Les secrets clients sont generes automatiquement au deploiement et stockes dans Vault.
 
@@ -112,11 +112,11 @@ Les secrets clients sont generes automatiquement au deploiement et stockes dans 
 
 ### Comptes de test (local uniquement)
 
-| Utilisateur | Groupes | Email |
-|-------------|---------|-------|
-| `admin` | admins, devops | `admin@<domain>` |
-| `developer` | devops | `dev@<domain>` |
-| `researcher` | researchers | `researcher@<domain>` |
+| Utilisateur  | Groupes        | Email                 |
+| ------------ | -------------- | --------------------- |
+| `admin`      | admins, devops | `admin@<domain>`      |
+| `developer`  | devops         | `dev@<domain>`        |
+| `researcher` | researchers    | `researcher@<domain>` |
 
 ### Sessions
 
@@ -146,9 +146,9 @@ Les secrets clients sont generes automatiquement au deploiement et stockes dans 
 
 ## Second facteur (MFA)
 
-| Methode | Protocole | Usage | Disponibilite |
-|---------|-----------|-------|---------------|
-| TOTP | RFC 6238 | Application (Google Auth, Authy) — periode 30s | Keycloak + Authelia |
+| Methode  | Protocole      | Usage                                           | Disponibilite       |
+| -------- | -------------- | ----------------------------------------------- | ------------------- |
+| TOTP     | RFC 6238       | Application (Google Auth, Authy) — periode 30s  | Keycloak + Authelia |
 | WebAuthn | FIDO2/Passkeys | Clef physique (YubiKey) ou biometrie (Touch ID) | Keycloak + Authelia |
 
 ---
@@ -157,13 +157,13 @@ Les secrets clients sont generes automatiquement au deploiement et stockes dans 
 
 Identique sur Keycloak et Authelia :
 
-| Regle | Valeur |
-|-------|--------|
-| Longueur minimale | 12 caracteres |
-| Majuscule requise | Oui |
-| Chiffre requis | Oui |
-| Caractere special requis | Oui |
-| Hachage (Authelia) | Argon2id (m=64Mo, t=3, p=4) |
+| Regle                    | Valeur                      |
+| ------------------------ | --------------------------- |
+| Longueur minimale        | 12 caracteres               |
+| Majuscule requise        | Oui                         |
+| Chiffre requis           | Oui                         |
+| Caractere special requis | Oui                         |
+| Hachage (Authelia)       | Argon2id (m=64Mo, t=3, p=4) |
 
 ---
 
@@ -193,36 +193,36 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ### Services applicatifs
 
-| Service | URL | SecurityPolicy | OIDC applicatif | Proxy Auth | Details |
-|---------|-----|:-:|:-:|:-:|---------|
-| **Nextcloud** | `cloud.<domain>` | Oui | Oui | — | OIDC pour groupes et quotas |
-| **Mattermost** | `chat.<domain>` | Oui | Oui | — | OIDC via discovery endpoint (provider GitLab) |
-| **ECRIN** | `ecrin.<domain>` | Oui | Oui | — | OIDC authority + client secret |
-| **REDCap** | `redcap.<domain>` | Oui | — | — | Forward auth uniquement |
-| **OnlyOffice** | `office.<domain>` | Oui | — | — | Forward auth + JWT inter-service (Nextcloud) |
-| **Flipt** | `flags.<domain>` | Oui | — | — | Forward auth + token interne |
+| Service        | URL               | SecurityPolicy | OIDC applicatif | Proxy Auth | Details                                       |
+| -------------- | ----------------- | :------------: | :-------------: | :--------: | --------------------------------------------- |
+| **Nextcloud**  | `cloud.<domain>`  |      Oui       |       Oui       |     —      | OIDC pour groupes et quotas                   |
+| **Mattermost** | `chat.<domain>`   |      Oui       |       Oui       |     —      | OIDC via discovery endpoint (provider GitLab) |
+| **ECRIN**      | `ecrin.<domain>`  |      Oui       |       Oui       |     —      | OIDC authority + client secret                |
+| **REDCap**     | `redcap.<domain>` |      Oui       |        —        |     —      | Forward auth uniquement                       |
+| **OnlyOffice** | `office.<domain>` |      Oui       |        —        |     —      | Forward auth + JWT inter-service (Nextcloud)  |
+| **Flipt**      | `flags.<domain>`  |      Oui       |        —        |     —      | Forward auth + token interne                  |
 
 ### Outils DevOps
 
-| Service | URL | SecurityPolicy | OIDC applicatif | Proxy Auth | Details |
-|---------|-----|:-:|:-:|:-:|---------|
-| **ArgoCD** | `argocd.<domain>` | Oui | Oui | — | OIDC pour RBAC (groupes → roles) |
-| **Gitea** | `git.<domain>` | Oui | — | Oui | Headers `Remote-User/Email/Groups`, auto-register |
+| Service    | URL               | SecurityPolicy | OIDC applicatif | Proxy Auth | Details                                           |
+| ---------- | ----------------- | :------------: | :-------------: | :--------: | ------------------------------------------------- |
+| **ArgoCD** | `argocd.<domain>` |      Oui       |       Oui       |     —      | OIDC pour RBAC (groupes → roles)                  |
+| **Gitea**  | `git.<domain>`    |      Oui       |        —        |    Oui     | Headers `Remote-User/Email/Groups`, auto-register |
 
 ### Monitoring
 
-| Service | URL | SecurityPolicy | OIDC applicatif | Proxy Auth | Details |
-|---------|-----|:-:|:-:|:-:|---------|
-| **Grafana** | `grafana.<domain>` | Oui | — | Oui | Headers `Remote-User/Email/Groups`, auto-signup |
-| **Hubble UI** | `hubble.<domain>` | Oui | — | — | Forward auth uniquement |
+| Service       | URL                | SecurityPolicy | OIDC applicatif | Proxy Auth | Details                                         |
+| ------------- | ------------------ | :------------: | :-------------: | :--------: | ----------------------------------------------- |
+| **Grafana**   | `grafana.<domain>` |      Oui       |        —        |    Oui     | Headers `Remote-User/Email/Groups`, auto-signup |
+| **Hubble UI** | `hubble.<domain>`  |      Oui       |        —        |     —      | Forward auth uniquement                         |
 
 ### Plateforme
 
-| Service | URL | SecurityPolicy | Details |
-|---------|-----|:-:|---------|
-| **Keycloak** | `login.<domain>` | — | Fournisseur d'identite (pas de protection sur lui-meme) |
-| **Authelia** | `login.<domain>` | — | Fournisseur d'identite (local) |
-| **Vault** | `vault.<domain>` | Oui | Forward auth UI + token API |
+| Service      | URL              | SecurityPolicy | Details                                                 |
+| ------------ | ---------------- | :------------: | ------------------------------------------------------- |
+| **Keycloak** | `login.<domain>` |       —        | Fournisseur d'identite (pas de protection sur lui-meme) |
+| **Authelia** | `login.<domain>` |       —        | Fournisseur d'identite (local)                          |
+| **Vault**    | `vault.<domain>` |      Oui       | Forward auth UI + token API                             |
 
 ---
 
@@ -416,16 +416,16 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 Certaines routes sont exclues de la SecurityPolicy car elles necessitent un acces sans session navigateur (clients API, webhooks, protocoles machine-a-machine) :
 
-| Service | Chemins non proteges | Raison |
-|---------|---------------------|--------|
-| Mattermost | `/api/v4/`, `/plugins/`, `/hooks/` | Bots, webhooks, plugins |
-| Nextcloud | `/remote.php/dav/`, `/ocs/`, `/.well-known/` | Clients WebDAV/CalDAV avec app passwords |
-| REDCap | `/surveys` | Formulaires publics pour repondants externes |
-| OnlyOffice | `/coauthoring/` | Callbacks de co-edition depuis Nextcloud |
-| ArgoCD | `/api/webhook` | Webhooks Git depuis Gitea |
-| Gitea | `/api/v1/`, `/.well-known/` | Operations Git (clone, push), OIDC discovery |
-| Grafana | `/api/` | Acces API par token |
-| Vault | `/v1/sys/health`, `/v1/auth/`, `/v1/secret/`, `/v1/sys/` | API avec token (ESO, CLI) |
+| Service    | Chemins non proteges                                     | Raison                                       |
+| ---------- | -------------------------------------------------------- | -------------------------------------------- |
+| Mattermost | `/api/v4/`, `/plugins/`, `/hooks/`                       | Bots, webhooks, plugins                      |
+| Nextcloud  | `/remote.php/dav/`, `/ocs/`, `/.well-known/`             | Clients WebDAV/CalDAV avec app passwords     |
+| REDCap     | `/surveys`                                               | Formulaires publics pour repondants externes |
+| OnlyOffice | `/coauthoring/`                                          | Callbacks de co-edition depuis Nextcloud     |
+| ArgoCD     | `/api/webhook`                                           | Webhooks Git depuis Gitea                    |
+| Gitea      | `/api/v1/`, `/.well-known/`                              | Operations Git (clone, push), OIDC discovery |
+| Grafana    | `/api/`                                                  | Acces API par token                          |
+| Vault      | `/v1/sys/health`, `/v1/auth/`, `/v1/secret/`, `/v1/sys/` | API avec token (ESO, CLI)                    |
 
 Ces routes sont definies dans des HTTPRoutes separees, sans `SecurityPolicy` attachee.
 
@@ -502,19 +502,19 @@ Ces routes sont definies dans des HTTPRoutes separees, sans `SecurityPolicy` att
 
 Chaque service dispose d'une variable pour desactiver l'authentification :
 
-| Variable | Fichier |
-|----------|---------|
-| `vault_forward_auth_enabled` | `roles/platform/vault/defaults/main.yml` |
-| `argocd_forward_auth_enabled` | `roles/devops/argocd/defaults/main.yml` |
-| `gitea_forward_auth_enabled` | `roles/devops/gitea/defaults/main.yml` |
-| `grafana_forward_auth_enabled` | `roles/monitoring/kube_prometheus/defaults/main.yml` |
-| `hubble_ui_forward_auth_enabled` | `roles/monitoring/hubble_ui/defaults/main.yml` |
-| `redcap_forward_auth_enabled` | `roles/services/redcap/defaults/main.yml` |
-| `nextcloud_forward_auth_enabled` | `roles/services/nextcloud/defaults/main.yml` |
-| `mattermost_forward_auth_enabled` | `roles/services/mattermost/defaults/main.yml` |
-| `ecrin_forward_auth_enabled` | `roles/services/ecrin/defaults/main.yml` |
-| `flipt_forward_auth_enabled` | `roles/services/flipt/defaults/main.yml` |
-| `onlyoffice_forward_auth_enabled` | `roles/services/onlyoffice/defaults/main.yml` |
+| Variable                          | Fichier                                              |
+| --------------------------------- | ---------------------------------------------------- |
+| `vault_forward_auth_enabled`      | `roles/platform/vault/defaults/main.yml`             |
+| `argocd_forward_auth_enabled`     | `roles/devops/argocd/defaults/main.yml`              |
+| `gitea_forward_auth_enabled`      | `roles/devops/gitea/defaults/main.yml`               |
+| `grafana_forward_auth_enabled`    | `roles/monitoring/kube_prometheus/defaults/main.yml` |
+| `hubble_ui_forward_auth_enabled`  | `roles/monitoring/hubble_ui/defaults/main.yml`       |
+| `redcap_forward_auth_enabled`     | `roles/services/redcap/defaults/main.yml`            |
+| `nextcloud_forward_auth_enabled`  | `roles/services/nextcloud/defaults/main.yml`         |
+| `mattermost_forward_auth_enabled` | `roles/services/mattermost/defaults/main.yml`        |
+| `ecrin_forward_auth_enabled`      | `roles/services/ecrin/defaults/main.yml`             |
+| `flipt_forward_auth_enabled`      | `roles/services/flipt/defaults/main.yml`             |
+| `onlyoffice_forward_auth_enabled` | `roles/services/onlyoffice/defaults/main.yml`        |
 
 ```bash
 # Desactiver le forward auth pour un service

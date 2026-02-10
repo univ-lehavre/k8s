@@ -68,7 +68,7 @@ gitea:
       DEFAULT_ALLOW_CREATE_ORGANIZATION: false
 
 {% if gitea_proxy_auth_enabled | default(false) %}
-    # Reverse proxy authentication via Authelia headers
+    # Reverse proxy authentication via SSO provider headers
     service:
       ENABLE_REVERSE_PROXY_AUTHENTICATION: true
       ENABLE_REVERSE_PROXY_AUTO_REGISTRATION: {{ gitea_proxy_auto_register | lower }}

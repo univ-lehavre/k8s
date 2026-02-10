@@ -35,7 +35,7 @@ mattermost_ingress_host: "chat.{{ domain }}"
 mattermost_ingress_tls_secret: mattermost-tls
 mattermost_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
 mattermost_forward_auth_enabled: true
 
 # OIDC settings (Keycloak or Authelia)

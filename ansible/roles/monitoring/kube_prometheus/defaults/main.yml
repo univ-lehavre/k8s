@@ -53,7 +53,7 @@ grafana_ingress_host: "grafana.{{ domain }}"
 grafana_ingress_tls_secret: grafana-tls
 grafana_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
 grafana_forward_auth_enabled: true
 
 prometheus_ingress_enabled: false
@@ -62,18 +62,18 @@ prometheus_ingress_host: "prometheus.{{ domain }}"
 alertmanager_ingress_enabled: false
 alertmanager_ingress_host: "alertmanager.{{ domain }}"
 
-# Authentication mode: 'oidc' (Authelia) or 'proxy' (Authelia headers)
+# Authentication mode: 'oidc' or 'proxy' (SSO provider headers)
 grafana_auth_mode: proxy
 
-# Proxy auth settings (Authelia headers)
-# Maps Authelia groups to Grafana roles
+# Proxy auth settings (SSO provider headers)
+# Maps SSO groups to Grafana roles
 grafana_proxy_auth_enabled: "{{ grafana_auth_mode == 'proxy' }}"
 grafana_proxy_header_name: Remote-User
 grafana_proxy_header_email: Remote-Email
 grafana_proxy_header_groups: Remote-Groups
 grafana_proxy_auto_sign_up: true
 
-# Role mapping from Authelia groups
+# Role mapping from SSO groups
 # admins → Admin, devops → Editor, others → Viewer
 grafana_role_mapping:
   admin_groups:
@@ -87,7 +87,7 @@ grafana_role_mapping:
   # Default role for authenticated users not in any specific group
   default_role: Viewer
 
-# OIDC settings (Authelia) - alternative to proxy auth
+# OIDC settings (Keycloak/Authelia) - alternative to proxy auth
 grafana_oidc_enabled: "{{ grafana_auth_mode == 'oidc' }}"
 grafana_oidc_name: Authelia
 grafana_oidc_auth_url: "https://login.{{ domain }}/api/oidc/authorization"

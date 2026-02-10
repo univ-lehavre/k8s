@@ -42,7 +42,7 @@ nextcloud_ingress_host: "cloud.{{ domain }}"
 nextcloud_ingress_tls_secret: nextcloud-tls
 nextcloud_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
 nextcloud_forward_auth_enabled: true
 
 # S3 primary storage (SeaweedFS)
@@ -67,7 +67,7 @@ nextcloud_oidc_client_id: nextcloud
 # Group mapping from OIDC provider to Nextcloud groups
 # Groups are synced automatically via OIDC claims
 nextcloud_group_mapping:
-  # Authelia group → Nextcloud group
+  # SSO group → Nextcloud group
   admins: admin
   devops: staff
   researchers: researchers

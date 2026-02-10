@@ -10,12 +10,12 @@ Regles d'acces par groupe, roles applicatifs, quotas et politique de securite pa
 
 Quatre groupes definis de maniere identique dans Keycloak et Authelia :
 
-| Groupe | Vocation | Affectation |
-|--------|----------|-------------|
-| `admins` | Administration plateforme | Manuelle |
-| `devops` | Operations, deploiement, CI/CD | Manuelle |
-| `researchers` | Chercheurs, utilisateurs REDCap/ECRIN | Manuelle |
-| `users` | Utilisateurs standard | Automatique (defaut a l'inscription Keycloak) |
+| Groupe        | Vocation                              | Affectation                                   |
+| ------------- | ------------------------------------- | --------------------------------------------- |
+| `admins`      | Administration plateforme             | Manuelle                                      |
+| `devops`      | Operations, deploiement, CI/CD        | Manuelle                                      |
+| `researchers` | Chercheurs, utilisateurs REDCap/ECRIN | Manuelle                                      |
+| `users`       | Utilisateurs standard                 | Automatique (defaut a l'inscription Keycloak) |
 
 Un utilisateur peut appartenir a plusieurs groupes.
 
@@ -75,21 +75,21 @@ Un utilisateur peut appartenir a plusieurs groupes.
 
 Definies dans `roles/platform/authelia/defaults/main.yml` :
 
-| Domaine | Politique | Groupes | Ressources exclues |
-|---------|-----------|---------|-------------------|
-| `login.<domain>` | two_factor | admins | — |
-| `vault.<domain>` | two_factor | admins, devops | — |
-| `redcap.<domain>` | bypass | — | `^/surveys([/?].*)?$` |
-| `redcap.<domain>` | two_factor | researchers, admins | — |
-| `argocd.<domain>` | two_factor | devops, admins | — |
-| `hubble.<domain>` | one_factor | devops, admins | — |
-| `ecrin.<domain>` | one_factor | researchers, admins | — |
-| `flags.<domain>` | one_factor | devops, admins | — |
-| `grafana.<domain>` | one_factor | *(tous)* | — |
-| `git.<domain>` | one_factor | *(tous)* | — |
-| `cloud.<domain>` | one_factor | *(tous)* | — |
-| `chat.<domain>` | one_factor | *(tous)* | — |
-| `office.<domain>` | one_factor | *(tous)* | — |
+| Domaine            | Politique  | Groupes             | Ressources exclues    |
+| ------------------ | ---------- | ------------------- | --------------------- |
+| `login.<domain>`   | two_factor | admins              | —                     |
+| `vault.<domain>`   | two_factor | admins, devops      | —                     |
+| `redcap.<domain>`  | bypass     | —                   | `^/surveys([/?].*)?$` |
+| `redcap.<domain>`  | two_factor | researchers, admins | —                     |
+| `argocd.<domain>`  | two_factor | devops, admins      | —                     |
+| `hubble.<domain>`  | one_factor | devops, admins      | —                     |
+| `ecrin.<domain>`   | one_factor | researchers, admins | —                     |
+| `flags.<domain>`   | one_factor | devops, admins      | —                     |
+| `grafana.<domain>` | one_factor | _(tous)_            | —                     |
+| `git.<domain>`     | one_factor | _(tous)_            | —                     |
+| `cloud.<domain>`   | one_factor | _(tous)_            | —                     |
+| `chat.<domain>`    | one_factor | _(tous)_            | —                     |
+| `office.<domain>`  | one_factor | _(tous)_            | —                     |
 
 Les regles sont evaluees dans l'ordre. La premiere regle correspondante s'applique.
 
@@ -102,13 +102,13 @@ des roles internes mappes depuis les groupes OIDC.
 
 ### ArgoCD
 
-| Groupe OIDC | Role ArgoCD | Permissions |
-|-------------|-------------|-------------|
-| `admins` | `role:admin` | Acces complet (CRUD applications, clusters, projets) |
-| `devops` | `role:admin` | Acces complet |
-| `developers` | `role:developer` | Voir et synchroniser les applications, consulter les logs |
-| `researchers` | `role:readonly` | Lecture seule |
-| *(autres)* | `role:readonly` | Lecture seule (politique par defaut) |
+| Groupe OIDC   | Role ArgoCD      | Permissions                                               |
+| ------------- | ---------------- | --------------------------------------------------------- |
+| `admins`      | `role:admin`     | Acces complet (CRUD applications, clusters, projets)      |
+| `devops`      | `role:admin`     | Acces complet                                             |
+| `developers`  | `role:developer` | Voir et synchroniser les applications, consulter les logs |
+| `researchers` | `role:readonly`  | Lecture seule                                             |
+| _(autres)_    | `role:readonly`  | Lecture seule (politique par defaut)                      |
 
 ```text
   Configuration : roles/devops/argocd/defaults/main.yml
@@ -126,11 +126,11 @@ des roles internes mappes depuis les groupes OIDC.
 
 ### Mattermost
 
-| Groupe OIDC | Role Mattermost | Permissions |
-|-------------|-----------------|-------------|
-| `admins` | System Admin | Administration complete du serveur |
-| `devops` | Team Admin | Gestion des equipes et canaux |
-| *(autres)* | Team User | Participation aux canaux |
+| Groupe OIDC | Role Mattermost | Permissions                        |
+| ----------- | --------------- | ---------------------------------- |
+| `admins`    | System Admin    | Administration complete du serveur |
+| `devops`    | Team Admin      | Gestion des equipes et canaux      |
+| _(autres)_  | Team User       | Participation aux canaux           |
 
 ```text
   Configuration : roles/services/mattermost/defaults/main.yml
@@ -147,12 +147,12 @@ L'equipe par defaut (`atlas`) est creee pour tous les utilisateurs.
 
 ### Nextcloud
 
-| Groupe OIDC | Groupe Nextcloud | Droits specifiques |
-|-------------|------------------|--------------------|
-| `admins` | admin | Administration Nextcloud, quota illimite |
-| `devops` | staff | Quota illimite |
-| `researchers` | researchers | Quota 100 Go |
-| `users` | users | Quota 10 Go |
+| Groupe OIDC   | Groupe Nextcloud | Droits specifiques                       |
+| ------------- | ---------------- | ---------------------------------------- |
+| `admins`      | admin            | Administration Nextcloud, quota illimite |
+| `devops`      | staff            | Quota illimite                           |
+| `researchers` | researchers      | Quota 100 Go                             |
+| `users`       | users            | Quota 10 Go                              |
 
 ```text
   Configuration : roles/services/nextcloud/defaults/main.yml
@@ -173,12 +173,12 @@ L'equipe par defaut (`atlas`) est creee pour tous les utilisateurs.
 
 ### Gitea
 
-| Groupe OIDC | Role Gitea | Permissions |
-|-------------|------------|-------------|
-| `admins` | Site Admin | Administration complete (utilisateurs, orgs, repos) |
-| `devops` | Org Creator | Peut creer des organisations |
-| `admins` | Org Creator | Peut creer des organisations |
-| *(autres)* | Regular User | Peut creer des repos personnels |
+| Groupe OIDC | Role Gitea   | Permissions                                         |
+| ----------- | ------------ | --------------------------------------------------- |
+| `admins`    | Site Admin   | Administration complete (utilisateurs, orgs, repos) |
+| `devops`    | Org Creator  | Peut creer des organisations                        |
+| `admins`    | Org Creator  | Peut creer des organisations                        |
+| _(autres)_  | Regular User | Peut creer des repos personnels                     |
 
 ```text
   Configuration : roles/devops/gitea/defaults/main.yml
@@ -193,14 +193,14 @@ acces via les headers proxy auth.
 
 ### Grafana
 
-| Groupe OIDC | Role Grafana | Permissions |
-|-------------|--------------|-------------|
-| `admins` | Admin | Configuration, datasources, alertes, utilisateurs |
-| `devops` | Editor | Creation/modification de dashboards |
-| `developers` | Editor | Creation/modification de dashboards |
-| `researchers` | Viewer | Consultation des dashboards |
-| `users` | Viewer | Consultation des dashboards |
-| *(autres)* | Viewer | Role par defaut |
+| Groupe OIDC   | Role Grafana | Permissions                                       |
+| ------------- | ------------ | ------------------------------------------------- |
+| `admins`      | Admin        | Configuration, datasources, alertes, utilisateurs |
+| `devops`      | Editor       | Creation/modification de dashboards               |
+| `developers`  | Editor       | Creation/modification de dashboards               |
+| `researchers` | Viewer       | Consultation des dashboards                       |
+| `users`       | Viewer       | Consultation des dashboards                       |
+| _(autres)_    | Viewer       | Role par defaut                                   |
 
 ```text
   Configuration : roles/monitoring/kube_prometheus/defaults/main.yml
@@ -309,7 +309,7 @@ authelia_access_rules:
     subject:
       - "group:devops"
       - "group:admins"
-      - "group:researchers"  # ajoute
+      - "group:researchers" # ajoute
 ```
 
 ### Ajouter un nouveau service
@@ -326,8 +326,8 @@ authelia_access_rules:
 nextcloud_group_quotas:
   admin: 0
   staff: 0
-  researchers: 214748364800  # 200 Go
-  users: 21474836480         # 20 Go
+  researchers: 214748364800 # 200 Go
+  users: 21474836480 # 20 Go
 ```
 
 ### Modifier les roles ArgoCD

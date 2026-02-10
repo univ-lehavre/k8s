@@ -41,10 +41,10 @@ Architecture reseau, routage, communication inter-services, politiques reseau et
 
 ### Listeners
 
-| Listener | Port | Protocole | Hostname | Comportement |
-|----------|------|-----------|----------|-------------|
-| HTTP | 80 | HTTP | `*.<domain>` | Redirection 301 vers HTTPS |
-| HTTPS | 443 | HTTPS | `*.<domain>` | Terminaison TLS, routage vers backends |
+| Listener | Port | Protocole | Hostname     | Comportement                           |
+| -------- | ---- | --------- | ------------ | -------------------------------------- |
+| HTTP     | 80   | HTTP      | `*.<domain>` | Redirection 301 vers HTTPS             |
+| HTTPS    | 443  | HTTPS     | `*.<domain>` | Terminaison TLS, routage vers backends |
 
 ### Certificat TLS
 
@@ -78,43 +78,43 @@ applicative (tokens, HMAC, app passwords).
 
 ### Services applicatifs
 
-| Service | Hostname | Routes protegees | Routes libres | Backend | Port |
-|---------|----------|-----------------|---------------|---------|------|
-| **Nextcloud** | `cloud.<domain>` | `/` | `/remote.php/dav/`, `/ocs/`, `/.well-known/` | nextcloud | 8080 |
-| **Mattermost** | `chat.<domain>` | `/` | `/api/v4/`, `/plugins/`, `/hooks/` | mattermost-team-edition | 8065 |
-| **ECRIN** | `ecrin.<domain>` | `/` | — | ecrin | 80 |
-| **REDCap** | `redcap.<domain>` | `/` | `/surveys` | redcap | 80 |
-| **OnlyOffice** | `office.<domain>` | `/` | `/coauthoring/` | onlyoffice-documentserver | 80 |
-| **Flipt** | `flags.<domain>` | `/` | — | flipt | 8080 |
+| Service        | Hostname          | Routes protegees | Routes libres                                | Backend                   | Port |
+| -------------- | ----------------- | ---------------- | -------------------------------------------- | ------------------------- | ---- |
+| **Nextcloud**  | `cloud.<domain>`  | `/`              | `/remote.php/dav/`, `/ocs/`, `/.well-known/` | nextcloud                 | 8080 |
+| **Mattermost** | `chat.<domain>`   | `/`              | `/api/v4/`, `/plugins/`, `/hooks/`           | mattermost-team-edition   | 8065 |
+| **ECRIN**      | `ecrin.<domain>`  | `/`              | —                                            | ecrin                     | 80   |
+| **REDCap**     | `redcap.<domain>` | `/`              | `/surveys`                                   | redcap                    | 80   |
+| **OnlyOffice** | `office.<domain>` | `/`              | `/coauthoring/`                              | onlyoffice-documentserver | 80   |
+| **Flipt**      | `flags.<domain>`  | `/`              | —                                            | flipt                     | 8080 |
 
 ### Outils DevOps
 
-| Service | Hostname | Routes protegees | Routes libres | Backend | Port |
-|---------|----------|-----------------|---------------|---------|------|
-| **ArgoCD** | `argocd.<domain>` | `/` | `/api/webhook` | argocd-server | 80 |
-| **Gitea** | `git.<domain>` | `/` | `/api/v1/`, `/.well-known/` | gitea-http | 3000 |
+| Service    | Hostname          | Routes protegees | Routes libres               | Backend       | Port |
+| ---------- | ----------------- | ---------------- | --------------------------- | ------------- | ---- |
+| **ArgoCD** | `argocd.<domain>` | `/`              | `/api/webhook`              | argocd-server | 80   |
+| **Gitea**  | `git.<domain>`    | `/`              | `/api/v1/`, `/.well-known/` | gitea-http    | 3000 |
 
 ### Monitoring
 
-| Service | Hostname | Routes protegees | Routes libres | Backend | Port |
-|---------|----------|-----------------|---------------|---------|------|
-| **Grafana** | `grafana.<domain>` | `/` | `/api/` | grafana | 3000 |
-| **Hubble UI** | `hubble.<domain>` | `/` | — | hubble-ui | 80 |
+| Service       | Hostname           | Routes protegees | Routes libres | Backend   | Port |
+| ------------- | ------------------ | ---------------- | ------------- | --------- | ---- |
+| **Grafana**   | `grafana.<domain>` | `/`              | `/api/`       | grafana   | 3000 |
+| **Hubble UI** | `hubble.<domain>`  | `/`              | —             | hubble-ui | 80   |
 
 ### Plateforme
 
-| Service | Hostname | Routes | Backend | Port |
-|---------|----------|--------|---------|------|
-| **Keycloak** | `login.<domain>` | `/` (non protege) | keycloak-http | 8080 |
-| **Authelia** | `login.<domain>` | `/` (non protege) | authelia | 9091 |
-| **Vault** | `vault.<domain>` | `/` (protege), `/v1/*` (libre) | vault | 8200 |
+| Service      | Hostname         | Routes                         | Backend       | Port |
+| ------------ | ---------------- | ------------------------------ | ------------- | ---- |
+| **Keycloak** | `login.<domain>` | `/` (non protege)              | keycloak-http | 8080 |
+| **Authelia** | `login.<domain>` | `/` (non protege)              | authelia      | 9091 |
+| **Vault**    | `vault.<domain>` | `/` (protege), `/v1/*` (libre) | vault         | 8200 |
 
 ### Timeouts specifiques
 
-| Service | Timeout | Raison |
-|---------|---------|--------|
+| Service   | Timeout       | Raison                        |
+| --------- | ------------- | ----------------------------- |
 | Nextcloud | 600s (10 min) | Upload de fichiers volumineux |
-| Gitea | 300s (5 min) | Push de gros repositories |
+| Gitea     | 300s (5 min)  | Push de gros repositories     |
 
 ---
 
@@ -148,14 +148,14 @@ applicative (tokens, HMAC, app passwords).
 
 ### Detail des communications service-a-service
 
-| Source | Destination | Protocole | Port | Usage |
-|--------|-------------|-----------|------|-------|
-| Nextcloud | OnlyOffice | HTTPS (public URL) | 443 | Edition collaborative (WOPI + JWT) |
-| OnlyOffice | Nextcloud | HTTPS (callback) | 443 | Callbacks co-edition via `/coauthoring/` |
-| ArgoCD | Gitea | HTTP / SSH | 3000, 22 | Synchronisation repositories Git |
-| Nextcloud | SeaweedFS | HTTP (S3) | 8333 | Stockage objet primaire |
-| ESO | Vault | HTTP | 8200 | Synchronisation secrets Vault → K8s |
-| ECRIN | REDCap (externe) | HTTPS | 443 | Integration REDCap (URL configurable) |
+| Source     | Destination      | Protocole          | Port     | Usage                                    |
+| ---------- | ---------------- | ------------------ | -------- | ---------------------------------------- |
+| Nextcloud  | OnlyOffice       | HTTPS (public URL) | 443      | Edition collaborative (WOPI + JWT)       |
+| OnlyOffice | Nextcloud        | HTTPS (callback)   | 443      | Callbacks co-edition via `/coauthoring/` |
+| ArgoCD     | Gitea            | HTTP / SSH         | 3000, 22 | Synchronisation repositories Git         |
+| Nextcloud  | SeaweedFS        | HTTP (S3)          | 8333     | Stockage objet primaire                  |
+| ESO        | Vault            | HTTP               | 8200     | Synchronisation secrets Vault → K8s      |
+| ECRIN      | REDCap (externe) | HTTPS              | 443      | Integration REDCap (URL configurable)    |
 
 ---
 
@@ -187,33 +187,33 @@ applicative (tokens, HMAC, app passwords).
   └─────────────────────────────────────────────────────────────────┘
 ```
 
-| Service | Base | Utilisateur | Privileges | TLS |
-|---------|------|-------------|------------|-----|
-| Vault | vault | vault_user | ALL PRIVILEGES (migrations) | Oui |
-| Keycloak | keycloak | keycloak_user | ALL PRIVILEGES (migrations) | Oui |
-| Mattermost | mattermost | mattermost_user | CRUD | Oui |
-| Nextcloud | nextcloud | nextcloud_user | CRUD | Oui |
-| Gitea | gitea | gitea_user | CRUD | Oui |
-| Flipt | flipt | flipt_user | CRUD | Oui |
-| Authelia | authelia | authelia_user | CRUD | Oui |
+| Service    | Base       | Utilisateur     | Privileges                  | TLS |
+| ---------- | ---------- | --------------- | --------------------------- | --- |
+| Vault      | vault      | vault_user      | ALL PRIVILEGES (migrations) | Oui |
+| Keycloak   | keycloak   | keycloak_user   | ALL PRIVILEGES (migrations) | Oui |
+| Mattermost | mattermost | mattermost_user | CRUD                        | Oui |
+| Nextcloud  | nextcloud  | nextcloud_user  | CRUD                        | Oui |
+| Gitea      | gitea      | gitea_user      | CRUD                        | Oui |
+| Flipt      | flipt      | flipt_user      | CRUD                        | Oui |
+| Authelia   | authelia   | authelia_user   | CRUD                        | Oui |
 
 ### MariaDB
 
 **DNS** : `mariadb.mariadb.svc.cluster.local:3306`
 
-| Service | Base | Utilisateur | TLS |
-|---------|------|-------------|-----|
-| REDCap | redcap | redcap_user | Oui |
+| Service | Base   | Utilisateur | TLS |
+| ------- | ------ | ----------- | --- |
+| REDCap  | redcap | redcap_user | Oui |
 
 ### Redis
 
 **DNS** : `redis-master.redis.svc.cluster.local:6379`
 
-| Service | Usage | Database |
-|---------|-------|----------|
-| Authelia | Sessions | — |
-| Nextcloud | Sessions, cache | — |
-| Gitea | Cache (`/0`), sessions (`/1`), queue (`/2`) | 0, 1, 2 |
+| Service   | Usage                                       | Database |
+| --------- | ------------------------------------------- | -------- |
+| Authelia  | Sessions                                    | —        |
+| Nextcloud | Sessions, cache                             | —        |
+| Gitea     | Cache (`/0`), sessions (`/1`), queue (`/2`) | 0, 1, 2  |
 
 ---
 
@@ -260,39 +260,39 @@ onlyoffice, seaweedfs, redcap, ecrin, flipt, gitea, argocd, monitoring
 
 ### Politiques d'ingress (entrant)
 
-| Namespace | Source autorisee | Port(s) | Raison |
-|-----------|-----------------|---------|--------|
-| authelia | envoy-gateway-system | 9091 | Portail login + ext-authz |
-| keycloak | envoy-gateway-system | 8080 | Console admin + OIDC |
-| vault | envoy-gateway-system | 8200 | UI Vault |
-| vault | external-secrets | 8200 | ESO → Vault API |
-| mattermost | envoy-gateway-system | 8065 | Trafic web |
-| nextcloud | envoy-gateway-system | 8080 | Trafic web |
-| gitea | envoy-gateway-system | 3000, 22 | HTTP + SSH |
-| argocd | envoy-gateway-system | 80, 443 | Trafic web |
-| redis | authelia, nextcloud, gitea | 6379 | Sessions, cache |
-| seaweedfs | nextcloud | 8333, 8888 | S3 API + Filer |
-| postgresql | *services applicatifs* | 5432 | Connexions BDD (L7) |
-| mariadb | redcap | 3306 | Connexion BDD (L7) |
+| Namespace  | Source autorisee           | Port(s)    | Raison                    |
+| ---------- | -------------------------- | ---------- | ------------------------- |
+| authelia   | envoy-gateway-system       | 9091       | Portail login + ext-authz |
+| keycloak   | envoy-gateway-system       | 8080       | Console admin + OIDC      |
+| vault      | envoy-gateway-system       | 8200       | UI Vault                  |
+| vault      | external-secrets           | 8200       | ESO → Vault API           |
+| mattermost | envoy-gateway-system       | 8065       | Trafic web                |
+| nextcloud  | envoy-gateway-system       | 8080       | Trafic web                |
+| gitea      | envoy-gateway-system       | 3000, 22   | HTTP + SSH                |
+| argocd     | envoy-gateway-system       | 80, 443    | Trafic web                |
+| redis      | authelia, nextcloud, gitea | 6379       | Sessions, cache           |
+| seaweedfs  | nextcloud                  | 8333, 8888 | S3 API + Filer            |
+| postgresql | _services applicatifs_     | 5432       | Connexions BDD (L7)       |
+| mariadb    | redcap                     | 3306       | Connexion BDD (L7)        |
 
 ### Politiques d'egress (sortant)
 
-| Namespace | Destination | Port(s) | Raison |
-|-----------|-------------|---------|--------|
-| authelia | redis | 6379 | Sessions |
-| authelia | postgresql | 5432 | Stockage |
-| mattermost | postgresql | 5432 | BDD |
-| nextcloud | postgresql | 5432 | BDD |
-| nextcloud | redis | 6379 | Cache/sessions |
-| nextcloud | seaweedfs | 8333 | Stockage objet |
-| gitea | postgresql | 5432 | BDD |
-| gitea | redis | 6379 | Cache/sessions/queue |
-| vault | postgresql | 5432 | BDD |
-| flipt | postgresql | 5432 | BDD |
-| keycloak | postgresql | 5432 | BDD |
-| redcap | mariadb | 3306 | BDD |
-| argocd | gitea | 3000, 22 | Git sync |
-| argocd | 0.0.0.0/0 | 443, 22 | Repos Git externes |
+| Namespace  | Destination | Port(s)  | Raison               |
+| ---------- | ----------- | -------- | -------------------- |
+| authelia   | redis       | 6379     | Sessions             |
+| authelia   | postgresql  | 5432     | Stockage             |
+| mattermost | postgresql  | 5432     | BDD                  |
+| nextcloud  | postgresql  | 5432     | BDD                  |
+| nextcloud  | redis       | 6379     | Cache/sessions       |
+| nextcloud  | seaweedfs   | 8333     | Stockage objet       |
+| gitea      | postgresql  | 5432     | BDD                  |
+| gitea      | redis       | 6379     | Cache/sessions/queue |
+| vault      | postgresql  | 5432     | BDD                  |
+| flipt      | postgresql  | 5432     | BDD                  |
+| keycloak   | postgresql  | 5432     | BDD                  |
+| redcap     | mariadb     | 3306     | BDD                  |
+| argocd     | gitea       | 3000, 22 | Git sync             |
+| argocd     | 0.0.0.0/0   | 443, 22  | Repos Git externes   |
 
 ### Isolation L7 PostgreSQL
 
@@ -348,10 +348,10 @@ Active uniquement en staging/production (`network_policy_l7_enabled`).
 
 ### TLS interne (bases de donnees)
 
-| Service | DNS SAN | Secret |
-|---------|---------|--------|
-| PostgreSQL | `postgresql.postgresql.svc.cluster.local`, `*.postgresql-hl.*` | postgresql-tls |
-| MariaDB | `mariadb.mariadb.svc.cluster.local`, `mariadb-primary.*`, `mariadb-secondary.*` | mariadb-tls |
+| Service    | DNS SAN                                                                         | Secret         |
+| ---------- | ------------------------------------------------------------------------------- | -------------- |
+| PostgreSQL | `postgresql.postgresql.svc.cluster.local`, `*.postgresql-hl.*`                  | postgresql-tls |
+| MariaDB    | `mariadb.mariadb.svc.cluster.local`, `mariadb-primary.*`, `mariadb-secondary.*` | mariadb-tls    |
 
 ---
 
@@ -361,46 +361,46 @@ Reference complete des services Kubernetes et leurs coordonnees reseau :
 
 ### Plateforme
 
-| Service | DNS interne | Port | Namespace |
-|---------|-------------|------|-----------|
-| Keycloak | `keycloak-http.keycloak.svc.cluster.local` | 8080 | keycloak |
-| Authelia | `authelia.authelia.svc.cluster.local` | 9091 | authelia |
-| Vault | `vault.vault.svc.cluster.local` | 8200 | vault |
+| Service  | DNS interne                                | Port | Namespace |
+| -------- | ------------------------------------------ | ---- | --------- |
+| Keycloak | `keycloak-http.keycloak.svc.cluster.local` | 8080 | keycloak  |
+| Authelia | `authelia.authelia.svc.cluster.local`      | 9091 | authelia  |
+| Vault    | `vault.vault.svc.cluster.local`            | 8200 | vault     |
 
 ### Donnees
 
-| Service | DNS interne | Port | Namespace |
-|---------|-------------|------|-----------|
-| PostgreSQL | `postgresql.postgresql.svc.cluster.local` | 5432 | postgresql |
-| PostgreSQL HA | `postgresql-postgresql-ha-pgpool.postgresql.svc.cluster.local` | 5432 | postgresql |
-| MariaDB | `mariadb.mariadb.svc.cluster.local` | 3306 | mariadb |
-| Redis | `redis-master.redis.svc.cluster.local` | 6379 | redis |
-| SeaweedFS S3 | `seaweedfs-s3.seaweedfs.svc.cluster.local` | 8333 | seaweedfs |
-| SeaweedFS Filer | `seaweedfs-filer.seaweedfs.svc.cluster.local` | 8888 | seaweedfs |
+| Service         | DNS interne                                                    | Port | Namespace  |
+| --------------- | -------------------------------------------------------------- | ---- | ---------- |
+| PostgreSQL      | `postgresql.postgresql.svc.cluster.local`                      | 5432 | postgresql |
+| PostgreSQL HA   | `postgresql-postgresql-ha-pgpool.postgresql.svc.cluster.local` | 5432 | postgresql |
+| MariaDB         | `mariadb.mariadb.svc.cluster.local`                            | 3306 | mariadb    |
+| Redis           | `redis-master.redis.svc.cluster.local`                         | 6379 | redis      |
+| SeaweedFS S3    | `seaweedfs-s3.seaweedfs.svc.cluster.local`                     | 8333 | seaweedfs  |
+| SeaweedFS Filer | `seaweedfs-filer.seaweedfs.svc.cluster.local`                  | 8888 | seaweedfs  |
 
 ### Applications
 
-| Service | DNS interne | Port | Namespace |
-|---------|-------------|------|-----------|
-| Nextcloud | `nextcloud.nextcloud.svc.cluster.local` | 8080 | nextcloud |
-| Mattermost | `mattermost-team-edition.mattermost.svc.cluster.local` | 8065 | mattermost |
-| OnlyOffice | `onlyoffice-documentserver.onlyoffice.svc.cluster.local` | 80 | onlyoffice |
-| REDCap | `redcap.redcap.svc.cluster.local` | 80 | redcap |
-| ECRIN | `ecrin.ecrin.svc.cluster.local` | 80 | ecrin |
-| Flipt | `flipt.flipt.svc.cluster.local` | 8080 | flipt |
+| Service    | DNS interne                                              | Port | Namespace  |
+| ---------- | -------------------------------------------------------- | ---- | ---------- |
+| Nextcloud  | `nextcloud.nextcloud.svc.cluster.local`                  | 8080 | nextcloud  |
+| Mattermost | `mattermost-team-edition.mattermost.svc.cluster.local`   | 8065 | mattermost |
+| OnlyOffice | `onlyoffice-documentserver.onlyoffice.svc.cluster.local` | 80   | onlyoffice |
+| REDCap     | `redcap.redcap.svc.cluster.local`                        | 80   | redcap     |
+| ECRIN      | `ecrin.ecrin.svc.cluster.local`                          | 80   | ecrin      |
+| Flipt      | `flipt.flipt.svc.cluster.local`                          | 8080 | flipt      |
 
 ### DevOps
 
-| Service | DNS interne | Port | Namespace |
-|---------|-------------|------|-----------|
-| Gitea HTTP | `gitea-http.gitea.svc.cluster.local` | 3000 | gitea |
-| Gitea SSH | `gitea-http.gitea.svc.cluster.local` | 22 | gitea |
-| ArgoCD | `argocd-server.argocd.svc.cluster.local` | 80 | argocd |
+| Service    | DNS interne                              | Port | Namespace |
+| ---------- | ---------------------------------------- | ---- | --------- |
+| Gitea HTTP | `gitea-http.gitea.svc.cluster.local`     | 3000 | gitea     |
+| Gitea SSH  | `gitea-http.gitea.svc.cluster.local`     | 22   | gitea     |
+| ArgoCD     | `argocd-server.argocd.svc.cluster.local` | 80   | argocd    |
 
 ### Monitoring
 
-| Service | DNS interne | Port | Namespace |
-|---------|-------------|------|-----------|
-| Grafana | `grafana.monitoring.svc.cluster.local` | 3000 | monitoring |
-| Prometheus | `prometheus.monitoring.svc.cluster.local` | 9090 | monitoring |
-| Hubble UI | `hubble-ui.kube-system.svc.cluster.local` | 80 | kube-system |
+| Service    | DNS interne                               | Port | Namespace   |
+| ---------- | ----------------------------------------- | ---- | ----------- |
+| Grafana    | `grafana.monitoring.svc.cluster.local`    | 3000 | monitoring  |
+| Prometheus | `prometheus.monitoring.svc.cluster.local` | 9090 | monitoring  |
+| Hubble UI  | `hubble-ui.kube-system.svc.cluster.local` | 80   | kube-system |

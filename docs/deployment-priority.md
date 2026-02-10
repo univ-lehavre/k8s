@@ -142,7 +142,7 @@ ansible-playbook playbooks/phase-05-services.yml --tags mattermost
 ### Critere de validation
 
 - [ ] `https://chat.<domain>` → page de connexion
-- [ ] Connexion via Authelia (bouton "Login with Authelia")
+- [ ] Connexion via SSO (bouton "Login with Keycloak/Authelia")
 - [ ] Creation d'un canal, envoi d'un message
 
 ### Resultat
@@ -296,11 +296,11 @@ ansible-playbook playbooks/phase-07-monitoring.yml
 | Kube Prometheus Stack | 56.21.1            | `monitoring`  | `https://grafana.<domain>` | Authelia (proxy auth), Envoy GW, Longhorn |
 | Hubble UI             | inclus dans Cilium | `kube-system` | `https://hubble.<domain>`  | Cilium (Deployment), Authelia, Envoy GW   |
 
-Le stack Prometheus inclut : Prometheus (collecte, 50Gi, retention 15j), Grafana (dashboards, proxy auth Authelia), Alertmanager (alertes).
+Le stack Prometheus inclut : Prometheus (collecte, 50Gi, retention 15j), Grafana (dashboards, proxy auth SSO), Alertmanager (alertes).
 
-**Grafana** utilise Authelia en proxy auth : les headers `Remote-User`, `Remote-Email`, `Remote-Groups` sont mappes vers les roles Grafana (admins→Admin, devops→Editor, users→Viewer).
+**Grafana** utilise le SSO en proxy auth : les headers `Remote-User`, `Remote-Email`, `Remote-Groups` sont mappes vers les roles Grafana (admins→Admin, devops→Editor, users→Viewer).
 
-**Hubble UI** est deploye par Cilium ; ce role ne cree que l'HTTPRoute et la SecurityPolicy (forward auth Authelia).
+**Hubble UI** est deploye par Cilium ; ce role ne cree que l'HTTPRoute et la SecurityPolicy (forward auth SSO).
 
 ### Critere de validation
 

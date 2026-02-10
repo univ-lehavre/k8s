@@ -58,7 +58,7 @@ config:
     ButtonColor: "#6DB33F"
 {% if mattermost_group_sync_enabled | default(true) %}
   # Group sync configuration for OIDC
-  # Maps Authelia groups to Mattermost roles
+  # Maps SSO groups to Mattermost roles
   GuestAccountsSettings:
     Enable: false
 {% endif %}
