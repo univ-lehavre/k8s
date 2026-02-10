@@ -114,7 +114,43 @@ L'isolation L7 Cilium garantit que chaque service ne peut acceder qu'a **sa prop
 
 ## Rotation des secrets
 
-### Mecanisme automatique (production)
+### Ce qui tourne, ce qui ne tourne pas
+
+```text
+  Secret                          Rotation    Mecanisme            Frequence
+  ──────────────────────────────────────────────────────────────────────────────
+
+  SECRETS DYNAMIQUES (rotation automatique)
+  ──────────────────────────────────────────
+  Certificats TLS (Let's Encrypt) Auto        Cert-Manager          90j (renew a 60j)
+  Clefs WireGuard (inter-noeud)   Auto        Cilium                Transparente
+  Sessions Keycloak               Auto        Keycloak (interne)    Transparente
+  OIDC signing keys               Auto        Keycloak key rotation Configurable
+
+  SECRETS STATIQUES (rotation via ESO polling)
+  ─────────────────────────────────────────────
+  Credentials BDD (PostgreSQL)    ESO poll    Vault KV v2 → ESO     24h refresh
+  Credentials BDD (MariaDB)       ESO poll    Vault KV v2 → ESO     24h refresh
+  Credentials BDD (Redis)         ESO poll    Vault KV v2 → ESO     24h refresh
+  Mots de passe admin services    ESO poll    Vault KV v2 → ESO     7j refresh
+  Clefs OIDC clients              ESO poll    Vault KV v2 → ESO     7j refresh
+
+  SECRETS FIXES (jamais rotes automatiquement)
+  ─────────────────────────────────────────────
+  Vault root token                Jamais      Genere a l'init       Manuel (revoke/regen)
+  Vault unseal keys (Shamir)      Jamais      Genere a l'init       Rekey manuel
+  etcd encryption key             Jamais      Variable env           Manuel (procedure)
+  Longhorn crypto key (LUKS)      Jamais      Variable env           Impossible (re-encrypt)
+  K3s cluster token               Jamais      Variable env           Manuel (rotate-token)
+  POSTGRES_SUPERUSER_PASSWORD     Jamais      Variable env           Manuel (ALTER ROLE)
+```
+
+> **Important** : « ESO poll » signifie qu'ESO interroge Vault selon le `refreshInterval`
+> et met a jour le K8s Secret si la valeur a change dans Vault. Mais **la valeur elle-meme
+> ne change que si quelqu'un (ou un processus) la met a jour dans Vault**. Aujourd'hui,
+> aucun processus automatique ne fait cette mise a jour — la rotation reelle est manuelle.
+
+### Mecanisme actuel (production)
 
 ```text
   ┌──────────┐    refreshInterval    ┌──────────────────┐     ┌────────────┐
@@ -127,7 +163,9 @@ L'isolation L7 Cilium garantit que chaque service ne peut acceder qu'a **sa prop
                                                               manuel requis
 ```
 
-### Frequences de rotation
+Le label `security.atlas/rotation-enabled: "true"` identifie les secrets concernes.
+
+### Frequences de synchronisation ESO
 
 | Categorie | Refresh interval | Secrets concernes |
 |-----------|-----------------|-------------------|
@@ -135,9 +173,194 @@ L'isolation L7 Cilium garantit que chaque service ne peut acceder qu'a **sa prop
 | Secrets plateforme | **7 jours** | Keycloak OIDC keys |
 | Mots de passe admin | **7 jours** | Mattermost, Nextcloud, Gitea, ArgoCD, Grafana |
 
-> **Note** : la rotation met a jour le Kubernetes Secret mais les pods doivent etre
-> redemares manuellement pour prendre en compte les nouveaux secrets.
-> Un label `security.atlas/rotation-enabled: "true"` identifie les secrets concernes.
+> **Note** : ces intervalles controlent la frequence de **synchronisation** Vault → K8s,
+> pas la frequence de **rotation** des secrets eux-memes (qui est manuelle aujourd'hui).
+
+---
+
+## Evolution : Vault Database Secrets Engine
+
+### Probleme actuel
+
+Les credentials BDD sont **statiques** : generes une fois au deploiement, stockes dans
+Vault KV v2, et jamais rotes automatiquement. Si un password est compromis, il reste
+valide indefiniment.
+
+```text
+  Aujourd'hui (statique) :
+
+  .env (bootstrap)
+       │
+       ▼
+  Ansible ──► vault kv put secret/databases/postgresql keycloak-password=XXX
+                                    │
+                                    ▼
+                           ExternalSecret (poll 24h)
+                                    │
+                                    ▼
+                             K8s Secret ──► Pod
+                             (password fixe, jamais rote)
+```
+
+### Solution : credentials ephemeres
+
+Le [Vault Database Secrets Engine](https://developer.hashicorp.com/vault/docs/secrets/databases)
+genere des credentials PostgreSQL **temporaires** avec un TTL. Vault cree un role
+PostgreSQL a la volee, le pod l'utilise, et Vault le revoque a expiration.
+
+```text
+  Avec Database Secrets Engine (dynamique) :
+
+  Pod ──► ESO ──► Vault database/creds/mattermost-role
+                       │
+                       ▼
+                  Vault se connecte a PostgreSQL avec le superuser
+                       │
+                       ▼
+                  CREATE ROLE temp_mattermost_a7f3 WITH PASSWORD '...'
+                  GRANT SELECT, INSERT, UPDATE, DELETE ON mattermost.*
+                       │
+                       ▼
+                  Retourne username + password (TTL 1h, renew jusqu'a 24h)
+                       │
+                       ▼
+                  K8s Secret ──► Pod (credentials temporaires)
+                       │
+                       ▼
+                  A expiration : DROP ROLE temp_mattermost_a7f3
+```
+
+### Ce que ca change
+
+```text
+  Secret                          Avant (KV v2)        Apres (Database Engine)
+  ──────────────────────────────────────────────────────────────────────────────
+
+  VAULT_DB_PASSWORD               .env (statique)      Supprime
+  KEYCLOAK_DB_PASSWORD            .env (statique)      Supprime
+  MATTERMOST_DB_PASSWORD          .env (statique)      Supprime
+  NEXTCLOUD_DB_PASSWORD           .env (statique)      Supprime
+  GITEA_DB_PASSWORD               .env (statique)      Supprime
+  REDCAP_DB_PASSWORD              .env (statique)      Supprime
+  FLIPT_DB_PASSWORD               .env (statique)      Supprime
+  ──────────────────────────────────────────────────────────────────────────────
+  Total : -7 variables dans .env
+
+  POSTGRES_SUPERUSER_PASSWORD     .env (statique)      .env (statique) — INCHANGE
+                                                       Vault en a besoin pour creer
+                                                       les roles temporaires
+```
+
+### Configuration Vault necessaire
+
+```text
+  1. Activer le secrets engine
+
+     vault secrets enable database
+
+  2. Configurer la connexion PostgreSQL
+
+     vault write database/config/postgresql \
+       plugin_name=postgresql-database-plugin \
+       connection_url="postgresql://{{username}}:{{password}}@postgresql-ha-pgpool.postgresql:5432/postgres?sslmode=require" \
+       allowed_roles="*" \
+       username="postgres" \
+       password="$POSTGRES_SUPERUSER_PASSWORD"
+
+  3. Creer un role par service (exemple : Mattermost)
+
+     vault write database/roles/mattermost \
+       db_name=postgresql \
+       creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; \
+         GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
+       revocation_statements="DROP ROLE IF EXISTS \"{{name}}\";" \
+       default_ttl=1h \
+       max_ttl=24h
+
+  4. Vault policy (par service)
+
+     path "database/creds/mattermost" {
+       capabilities = ["read"]
+     }
+```
+
+### Roles et privileges (identiques a aujourd'hui)
+
+| Role Vault | Base | Privileges SQL | TTL |
+|------------|------|---------------|-----|
+| `vault` | vault | ALL PRIVILEGES (schema owner) | 1h / max 24h |
+| `keycloak` | keycloak | ALL PRIVILEGES (schema owner) | 1h / max 24h |
+| `mattermost` | mattermost | SELECT, INSERT, UPDATE, DELETE | 1h / max 24h |
+| `nextcloud` | nextcloud | SELECT, INSERT, UPDATE, DELETE | 1h / max 24h |
+| `gitea` | gitea | SELECT, INSERT, UPDATE, DELETE | 1h / max 24h |
+| `flipt` | flipt | SELECT, INSERT, UPDATE, DELETE | 1h / max 24h |
+| `redcap` | redcap | SELECT, INSERT, UPDATE, DELETE | 1h / max 24h |
+
+### Impact sur ExternalSecret
+
+```yaml
+# Avant (KV v2 — statique)
+spec:
+  secretStoreRef:
+    name: vault-backend
+  data:
+    - secretKey: password
+      remoteRef:
+        key: secret/databases/postgresql
+        property: mattermost-password
+
+# Apres (Database Engine — dynamique)
+spec:
+  secretStoreRef:
+    name: vault-backend
+  dataFrom:
+    - extract:
+        key: database/creds/mattermost
+  # Retourne automatiquement : username + password
+  # Refresh = TTL/2 pour renouveler avant expiration
+  refreshInterval: 30m
+```
+
+### Pre-requis et contraintes
+
+- **Vault doit etre unseal et accessible** pour que les pods demarrent (dependance forte)
+- Les applications doivent tolerer un **changement de username** (pas juste de password)
+- Le `refreshInterval` ESO doit etre < TTL/2 pour eviter l'expiration en vol
+- PostgreSQL `max_connections` doit etre suffisant pour les roles temporaires cumules
+- MariaDB/Redis ne supportent pas le Database Secrets Engine — restent en KV v2
+
+### Tableau de rotation final (apres migration)
+
+```text
+  Secret                          Rotation    Frequence        Mecanisme
+  ──────────────────────────────────────────────────────────────────────────────
+
+  ROTATION AUTOMATIQUE
+  ────────────────────
+  Credentials BDD PostgreSQL      Auto        TTL 1h (max 24h) Vault Database Engine
+  Certificats TLS                 Auto        90j              Cert-Manager
+  Clefs WireGuard                 Auto        Transparente     Cilium
+  Sessions Keycloak               Auto        Transparente     Keycloak
+  OIDC signing keys               Auto        Configurable     Keycloak
+
+  SYNCHRONISATION PERIODIQUE (valeur statique dans Vault)
+  ───────────────────────────────────────────────────────
+  Redis password                  ESO poll    24h              KV v2 (pas de DB engine)
+  MariaDB passwords (REDCap)      ESO poll    24h              KV v2 (pas de DB engine)
+  Mots de passe admin services    ESO poll    7j               KV v2
+  OIDC client secrets             ESO poll    7j               KV v2
+
+  JAMAIS ROTES AUTOMATIQUEMENT
+  ────────────────────────────
+  Vault root token                Manuel      —                vault token revoke + regen
+  Vault unseal keys               Manuel      —                vault operator rekey
+  etcd encryption key             Manuel      —                Procedure 4 etapes
+  Longhorn crypto key             Jamais      —                Non rotable (LUKS)
+  K3s cluster token               Manuel      —                k3s token rotate
+  PostgreSQL superuser            Manuel      —                ALTER ROLE (Vault en depend)
+  SMTP credentials (Brevo)        Manuel      —                Externe (provider)
+  SeaweedFS S3 keys               Manuel      —                Externe (SeaweedFS admin)
+```
 
 ---
 
