@@ -201,18 +201,80 @@ atlas_components:
 
   kube_prometheus:
     role: monitoring/kube_prometheus
-    deps: [cilium]
+    deps: [authelia, envoy_gateway, longhorn]
     health:
       api: apps/v1
       kind: Deployment
-      name: kube-prometheus-grafana
+      name: kube-prometheus-stack-grafana
       namespace: monitoring
 
   hubble_ui:
     role: monitoring/hubble_ui
-    deps: [cilium]
+    deps: [cilium, authelia, envoy_gateway]
     health:
       api: apps/v1
       kind: Deployment
       name: hubble-ui
       namespace: kube-system
+
+  # --- Sécurité applicative ---
+
+  kyverno:
+    role: security/kyverno
+    deps: [k3s]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: kyverno-admission-controller
+      namespace: kyverno
+
+  network_policies:
+    role: security/network_policies
+    deps: [cilium]
+    health:
+      api: networking.k8s.io/v1
+      kind: NetworkPolicy
+      namespace: authelia
+
+  pod_security:
+    role: security/pod_security
+    deps: [k3s]
+    health:
+      api: v1
+      kind: Namespace
+      name: mattermost
+
+  rate_limiting:
+    role: security/rate_limiting
+    deps: [cilium, envoy_gateway]
+    health:
+      api: v1
+      kind: ConfigMap
+      name: cilium-rate-limiting-config
+      namespace: kube-system
+
+  secret_rotation:
+    role: security/secret_rotation
+    deps: [vault, external_secrets]
+    health:
+      api: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      namespace: authelia
+
+  image_scanning:
+    role: security/image_scanning
+    deps: [kube_prometheus]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: trivy-operator
+      namespace: trivy-system
+
+  backup_offsite:
+    role: security/backup_offsite
+    deps: [longhorn]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: velero
+      namespace: velero
