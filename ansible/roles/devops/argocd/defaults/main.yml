@@ -1,4 +1,3 @@
----
 # ArgoCD defaults
 
 # Namespace
@@ -44,6 +43,9 @@ argocd_ingress_enabled: true
 argocd_ingress_host: "argocd.{{ domain }}"
 argocd_ingress_tls_secret: argocd-tls
 argocd_ingress_issuer: "{{ tls_issuer }}"
+
+# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+argocd_forward_auth_enabled: true
 
 # OIDC settings (Authelia)
 argocd_oidc_enabled: true

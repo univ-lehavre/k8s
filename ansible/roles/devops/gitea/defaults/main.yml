@@ -1,4 +1,3 @@
----
 # Gitea defaults
 
 # Namespace
@@ -48,6 +47,9 @@ gitea_ingress_issuer: "{{ tls_issuer }}"
 gitea_ssh_enabled: true
 gitea_ssh_port: 22
 gitea_ssh_nodeport: 30022
+
+# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+gitea_forward_auth_enabled: true
 
 # Authentication mode: 'oidc' or 'proxy' (Authelia headers)
 gitea_auth_mode: proxy

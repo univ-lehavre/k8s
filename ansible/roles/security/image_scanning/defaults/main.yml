@@ -1,4 +1,3 @@
----
 # Image Scanning defaults (Trivy Operator)
 
 image_scanning_enabled: "{{ env != 'local' }}"

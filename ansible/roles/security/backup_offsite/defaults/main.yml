@@ -1,4 +1,3 @@
----
 # Off-site Encrypted Backup defaults
 
 backup_offsite_enabled: "{{ env == 'production' }}"

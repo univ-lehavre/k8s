@@ -1,4 +1,3 @@
----
 # K3s worker-specific configuration
 k3s_role: agent
 

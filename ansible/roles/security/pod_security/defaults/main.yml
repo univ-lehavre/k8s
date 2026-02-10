@@ -1,4 +1,3 @@
----
 # Pod Security Standards defaults
 
 pod_security_enabled: "{{ env != 'local' }}"

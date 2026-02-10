@@ -1,4 +1,3 @@
----
 # Create database and user in MariaDB
 # This task file is included by services that need a MariaDB database
 #

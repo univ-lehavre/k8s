@@ -1,4 +1,3 @@
----
 # Nextcloud defaults
 
 # Namespace
@@ -42,6 +41,9 @@ nextcloud_ingress_enabled: true
 nextcloud_ingress_host: "cloud.{{ domain }}"
 nextcloud_ingress_tls_secret: nextcloud-tls
 nextcloud_ingress_issuer: "{{ tls_issuer }}"
+
+# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+nextcloud_forward_auth_enabled: true
 
 # S3 primary storage (SeaweedFS)
 nextcloud_s3_enabled: true

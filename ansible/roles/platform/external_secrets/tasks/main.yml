@@ -1,4 +1,3 @@
----
 # External Secrets Operator tasks
 
 - name: Create External Secrets namespace

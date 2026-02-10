@@ -1,4 +1,3 @@
----
 # Envoy Gateway deployment tasks
 # Deploys Gateway API implementation with support for forward auth
 
@@ -45,8 +44,7 @@
     namespace: "{{ envoy_gateway_namespace }}"
   register: eg_deployment
   until: >
-    eg_deployment.resources | length > 0 and
-    eg_deployment.resources[0].status.readyReplicas | default(0) >= 1
+    eg_deployment.resources | length > 0 and eg_deployment.resources[0].status.readyReplicas | default(0) >= 1
   retries: 30
   delay: 10
 
@@ -68,10 +66,13 @@
     name: "{{ gateway_name }}"
     namespace: "{{ envoy_gateway_namespace }}"
   register: gateway_status
-  until: >
+  until: >-
     gateway_status.resources | length > 0 and
     gateway_status.resources[0].status is defined and
-    gateway_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Accepted') | selectattr('status', 'equalto', 'True') | list | length > 0
+    gateway_status.resources[0].status.conditions
+    | selectattr('type', 'equalto', 'Accepted')
+    | selectattr('status', 'equalto', 'True')
+    | list | length > 0
   retries: 30
   delay: 10
 

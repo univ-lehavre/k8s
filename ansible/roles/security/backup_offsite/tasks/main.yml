@@ -1,4 +1,3 @@
----
 # Off-site Encrypted Backup via Velero
 
 - name: Skip off-site backup for non-production environments

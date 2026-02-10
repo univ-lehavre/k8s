@@ -1,4 +1,3 @@
----
 # Flipt Feature Flags defaults
 
 # Namespace
@@ -33,6 +32,9 @@ flipt_ingress_enabled: true
 flipt_ingress_host: "flags.{{ domain }}"
 flipt_ingress_tls_secret: flipt-tls
 flipt_ingress_issuer: "{{ tls_issuer }}"
+
+# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+flipt_forward_auth_enabled: true
 
 # Authentication
 flipt_auth_enabled: true

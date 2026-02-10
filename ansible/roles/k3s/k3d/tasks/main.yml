@@ -1,4 +1,3 @@
----
 - name: Check if K3D is installed
   ansible.builtin.command: k3d version
   register: k3d_check
@@ -24,7 +23,7 @@
     k3d_cluster_exists: "{{ k3d_cluster_name in (k3d_clusters.stdout | from_json | map(attribute='name') | list) }}"
 
 - name: Create K3D cluster
-  ansible.builtin.command: >
+  ansible.builtin.command: >-
     k3d cluster create {{ k3d_cluster_name }}
     --image {{ k3d_image }}
     --api-port {{ k3d_api_port }}
@@ -35,8 +34,7 @@
     {% for arg in k3d_k3s_server_args %}
     --k3s-arg "{{ arg }}@server:*"
     {% endfor %}
-    --wait
-    --timeout {{ k3d_wait_timeout }}s
+    --wait --timeout {{ k3d_wait_timeout }}s
   when: not k3d_cluster_exists
   register: k3d_create
   changed_when: k3d_create.rc == 0

@@ -1,4 +1,3 @@
----
 - name: Check if running on macOS
   ansible.builtin.set_fact:
     is_macos: "{{ ansible_os_family == 'Darwin' }}"

@@ -1,4 +1,3 @@
----
 # Redis tasks
 
 - name: Create Redis namespace

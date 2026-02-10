@@ -1,4 +1,3 @@
----
 # MariaDB tasks
 # Deploys MariaDB for services requiring MySQL compatibility (e.g., REDCap)
 

@@ -1,0 +1,279 @@
+# ATLAS Platform — Graphe de dépendances des composants
+#
+# Source unique de vérité pour les dépendances inter-composants.
+# Utilisé par playbooks/deploy.yml pour la résolution automatique.
+#
+# Chaque composant déclare :
+#   role   — chemin du rôle Ansible
+#   deps   — liste des composants prérequis
+#   health — comment vérifier que le composant est opérationnel (API K8s)
+
+atlas_components:
+
+  # --- Infrastructure ---
+
+  k3s:
+    role: "k3s/{{ k3s_type }}"
+    deps: []
+    health:
+      api: v1
+      kind: Node
+
+  cilium:
+    role: infrastructure/cilium
+    deps: [k3s]
+    health:
+      api: apps/v1
+      kind: DaemonSet
+      name: cilium
+      namespace: kube-system
+
+  envoy_gateway:
+    role: infrastructure/envoy_gateway
+    deps: [cilium]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: envoy-gateway
+      namespace: envoy-gateway-system
+
+  longhorn:
+    role: infrastructure/longhorn
+    deps: [cilium]
+    health:
+      api: apps/v1
+      kind: DaemonSet
+      name: longhorn-manager
+      namespace: longhorn-system
+
+  cert_manager:
+    role: infrastructure/cert_manager
+    deps: [cilium]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: cert-manager
+      namespace: cert-manager
+
+  # --- Plateforme ---
+
+  vault:
+    role: platform/vault
+    deps: [envoy_gateway, cert_manager, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: vault
+      namespace: vault
+
+  external_secrets:
+    role: platform/external_secrets
+    deps: [vault]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: external-secrets
+      namespace: external-secrets
+
+  postgresql:
+    role: platform/postgresql
+    deps: [vault, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: postgresql
+      namespace: postgresql
+
+  redis:
+    role: platform/redis
+    deps: [vault, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: redis-master
+      namespace: redis
+
+  mariadb:
+    role: platform/mariadb
+    deps: [vault, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: mariadb
+      namespace: mariadb
+
+  authelia:
+    role: platform/authelia
+    deps: [postgresql, redis, external_secrets]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: authelia
+      namespace: authelia
+
+  # --- Services ---
+
+  seaweedfs:
+    role: services/seaweedfs
+    deps: [vault, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: seaweedfs-master
+      namespace: seaweedfs
+
+  mattermost:
+    role: services/mattermost
+    deps: [authelia, postgresql]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: mattermost-team-edition
+      namespace: mattermost
+
+  nextcloud:
+    role: services/nextcloud
+    deps: [authelia, postgresql, seaweedfs]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: nextcloud
+      namespace: nextcloud
+
+  onlyoffice:
+    role: services/onlyoffice
+    deps: [authelia]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: onlyoffice
+      namespace: onlyoffice
+
+  redcap:
+    role: services/redcap
+    deps: [authelia, mariadb]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: redcap
+      namespace: redcap
+
+  ecrin:
+    role: services/ecrin
+    deps: [authelia]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: atlas-ecrin
+      namespace: ecrin
+
+  flipt:
+    role: services/flipt
+    deps: [authelia, postgresql]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: flipt
+      namespace: flipt
+
+  # --- DevOps ---
+
+  gitea:
+    role: devops/gitea
+    deps: [authelia, postgresql]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: gitea
+      namespace: gitea
+
+  argocd:
+    role: devops/argocd
+    deps: [authelia]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: argocd-server
+      namespace: argocd
+
+  # --- Monitoring ---
+
+  kube_prometheus:
+    role: monitoring/kube_prometheus
+    deps: [authelia, envoy_gateway, longhorn]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: kube-prometheus-stack-grafana
+      namespace: monitoring
+
+  hubble_ui:
+    role: monitoring/hubble_ui
+    deps: [cilium, authelia, envoy_gateway]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: hubble-ui
+      namespace: kube-system
+
+  # --- Sécurité applicative ---
+
+  kyverno:
+    role: security/kyverno
+    deps: [k3s]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: kyverno-admission-controller
+      namespace: kyverno
+
+  network_policies:
+    role: security/network_policies
+    deps: [cilium]
+    health:
+      api: networking.k8s.io/v1
+      kind: NetworkPolicy
+      namespace: authelia
+
+  pod_security:
+    role: security/pod_security
+    deps: [k3s]
+    health:
+      api: v1
+      kind: Namespace
+      name: mattermost
+
+  rate_limiting:
+    role: security/rate_limiting
+    deps: [cilium, envoy_gateway]
+    health:
+      api: v1
+      kind: ConfigMap
+      name: cilium-rate-limiting-config
+      namespace: kube-system
+
+  secret_rotation:
+    role: security/secret_rotation
+    deps: [vault, external_secrets]
+    health:
+      api: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      namespace: authelia
+
+  image_scanning:
+    role: security/image_scanning
+    deps: [kube_prometheus]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: trivy-operator
+      namespace: trivy-system
+
+  backup_offsite:
+    role: security/backup_offsite
+    deps: [longhorn]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: velero
+      namespace: velero

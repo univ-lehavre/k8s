@@ -1,4 +1,3 @@
----
 # PostgreSQL HA tasks
 
 - name: Create PostgreSQL namespace

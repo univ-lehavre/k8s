@@ -1,4 +1,3 @@
----
 - name: Install UFW
   ansible.builtin.apt:
     name: ufw
@@ -59,9 +58,9 @@
     from_ip: "{{ k3s_cluster_cidr }}"
     comment: "{{ item.comment }} - cluster only"
   loop:
-    - { port: 4240, proto: tcp, comment: "Cilium health check" }
-    - { port: 4244, proto: tcp, comment: "Cilium Hubble" }
-    - { port: 51871, proto: udp, comment: "Cilium WireGuard" }
+    - {port: 4240, proto: tcp, comment: "Cilium health check"}
+    - {port: 4244, proto: tcp, comment: "Cilium Hubble"}
+    - {port: 51871, proto: udp, comment: "Cilium WireGuard"}
   when: "'k3s_cluster' in group_names"
 
 - name: Enable UFW

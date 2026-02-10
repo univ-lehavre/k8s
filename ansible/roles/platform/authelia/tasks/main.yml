@@ -1,4 +1,3 @@
----
 # Authelia deployment tasks
 # Deploys forward auth service with centralized access control
 
@@ -20,23 +19,107 @@
     repo_url: "{{ helm_repositories.authelia.url }}"
     state: present
 
-- name: Generate OIDC RSA private key (if not provided)
+# --- Vault-backed secrets management ---
+# When Vault is available: generate once, store in Vault, sync via ESO
+# When Vault is unavailable (local dev): create K8s Secret directly
+
+- name: Check if Authelia secrets exist in Vault
+  kubernetes.core.k8s_exec:
+    namespace: "{{ namespaces.vault | default('vault') }}"
+    pod: vault-0
+    command: vault kv get -format=json {{ authelia_vault_path }}
+  environment:
+    VAULT_TOKEN: "{{ secrets.vault.root_token }}"
+  register: _vault_authelia_check
+  failed_when: false
+  changed_when: false
+  when: authelia_vault_enabled | bool
+  no_log: true
+
+- name: Generate and store Authelia secrets in Vault
+  when:
+    - authelia_vault_enabled | bool
+    - _vault_authelia_check.rc | default(1) != 0
+  block:
+    - name: Generate OIDC RSA private key
+      ansible.builtin.command:
+        cmd: openssl genrsa 4096
+      register: _authelia_oidc_key_generated
+      changed_when: false
+      when: authelia_oidc_enabled | default(false)
+      no_log: true
+
+    - name: Generate random secrets
+      ansible.builtin.set_fact:
+        _authelia_generated_secrets:
+          jwt_token: "{{ lookup('password', '/dev/null length=64 chars=ascii_letters,digits') }}"
+          session_secret: "{{ lookup('password', '/dev/null length=64 chars=ascii_letters,digits') }}"
+          storage_encryption_key: "{{ lookup('password', '/dev/null length=64 chars=ascii_letters,digits') }}"
+          oidc_hmac_secret: "{{ lookup('password', '/dev/null length=64 chars=ascii_letters,digits') }}"
+          oidc_private_key: "{{ _authelia_oidc_key_generated.stdout | default('') }}"
+      no_log: true
+
+    - name: Store Authelia secrets in Vault
+      kubernetes.core.k8s_exec:
+        namespace: "{{ namespaces.vault | default('vault') }}"
+        pod: vault-0
+        command: >-
+          vault kv put {{ authelia_vault_path }}
+          jwt-token='{{ _authelia_generated_secrets.jwt_token }}'
+          session-secret='{{ _authelia_generated_secrets.session_secret }}'
+          storage-encryption-key='{{ _authelia_generated_secrets.storage_encryption_key }}'
+          oidc-hmac-secret='{{ _authelia_generated_secrets.oidc_hmac_secret }}'
+          oidc-private-key='{{ _authelia_generated_secrets.oidc_private_key }}'
+      environment:
+        VAULT_TOKEN: "{{ secrets.vault.root_token }}"
+      no_log: true
+
+- name: Create ExternalSecret for Authelia
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'external-secret.yml.j2') | from_yaml }}"
+  when: authelia_vault_enabled | bool
+
+- name: Wait for ExternalSecret to sync
+  kubernetes.core.k8s_info:
+    api_version: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    name: authelia-secrets
+    namespace: "{{ authelia_namespace }}"
+  register: _authelia_es_status
+  until: >-
+    _authelia_es_status.resources | length > 0 and
+    _authelia_es_status.resources[0].status.conditions
+    | default([])
+    | selectattr('type', 'equalto', 'Ready')
+    | selectattr('status', 'equalto', 'True')
+    | list | length > 0
+  retries: 12
+  delay: 5
+  when: authelia_vault_enabled | bool
+
+# --- Fallback: direct K8s Secret (local dev without Vault) ---
+
+- name: Generate OIDC RSA private key (fallback)
   ansible.builtin.command:
     cmd: openssl genrsa 4096
-  register: oidc_private_key_generated
+  register: _oidc_private_key_fallback
   changed_when: false
   when:
+    - not (authelia_vault_enabled | bool)
     - authelia_oidc_enabled | default(false)
     - authelia_oidc_private_key is not defined
   no_log: true
 
-- name: Set OIDC private key fact
+- name: Set OIDC private key fact (fallback)
   ansible.builtin.set_fact:
-    _authelia_oidc_private_key: "{{ authelia_oidc_private_key | default(oidc_private_key_generated.stdout | default('')) }}"
-  when: authelia_oidc_enabled | default(false)
+    _authelia_oidc_private_key: "{{ authelia_oidc_private_key | default(_oidc_private_key_fallback.stdout | default('')) }}"
+  when:
+    - not (authelia_vault_enabled | bool)
+    - authelia_oidc_enabled | default(false)
   no_log: true
 
-- name: Create Authelia secrets
+- name: Create Authelia secrets (fallback without Vault)
   kubernetes.core.k8s:
     state: present
     definition:
@@ -53,10 +136,15 @@
             'SESSION_SECRET': authelia_session_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')),
             'STORAGE_ENCRYPTION_KEY': authelia_storage_key | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits'))
           }
-          | combine({'OIDC_HMAC_SECRET': authelia_oidc_hmac_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')), 'OIDC_PRIVATE_KEY': _authelia_oidc_private_key} if authelia_oidc_enabled | default(false) else {})
+          | combine({
+            'OIDC_HMAC_SECRET': authelia_oidc_hmac_secret
+              | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')),
+            'OIDC_PRIVATE_KEY': _authelia_oidc_private_key
+          } if authelia_oidc_enabled | default(false) else {})
           | combine({'REDIS_PASSWORD': redis_password | default('')} if authelia_redis_enabled else {})
           | combine({'STORAGE_POSTGRES_PASSWORD': authelia_postgresql_password | default('')} if authelia_storage_backend == 'postgres' else {})
         }}
+  when: not (authelia_vault_enabled | bool)
 
 - name: Create Authelia configuration ConfigMap
   kubernetes.core.k8s:
@@ -88,8 +176,7 @@
     namespace: "{{ authelia_namespace }}"
   register: authelia_deployment
   until: >
-    authelia_deployment.resources | length > 0 and
-    authelia_deployment.resources[0].status.readyReplicas | default(0) >= 1
+    authelia_deployment.resources | length > 0 and authelia_deployment.resources[0].status.readyReplicas | default(0) >= 1
   retries: 30
   delay: 10
 

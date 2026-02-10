@@ -1,4 +1,3 @@
----
 # Secret Rotation defaults via External Secrets Operator
 
 secret_rotation_enabled: "{{ env == 'production' }}"
@@ -23,6 +22,18 @@ secret_rotation_secrets:
     rotation_interval: 24h
     keys:
       - redis-password
+
+  # Platform credentials
+  - name: authelia-secrets
+    namespace: authelia
+    vault_path: secret/data/platform/authelia
+    rotation_interval: 168h
+    keys:
+      - jwt-token
+      - session-secret
+      - storage-encryption-key
+      - oidc-hmac-secret
+      - oidc-private-key
 
   # Service credentials
   - name: mattermost-credentials

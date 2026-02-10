@@ -1,4 +1,3 @@
----
 # Cert-Manager tasks
 
 - name: Create cert-manager namespace

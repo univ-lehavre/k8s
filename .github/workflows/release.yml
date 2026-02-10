@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Tag & Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          latest="${{ steps.latest_tag.outputs.tag }}"
+          # Strip leading v
+          version="${latest#v}"
+          IFS='.' read -r major minor patch <<< "$version"
+
+          # Scan commits since last tag for conventional commit prefixes
+          bump="none"
+          while IFS= read -r msg; do
+            if echo "$msg" | grep -qiE '^BREAKING CHANGE|^[a-z]+(\(.+\))?!:'; then
+              bump="major"
+              break
+            elif echo "$msg" | grep -qiE '^feat(\(.+\))?:'; then
+              if [ "$bump" != "major" ]; then
+                bump="minor"
+              fi
+            elif echo "$msg" | grep -qiE '^fix(\(.+\))?:'; then
+              if [ "$bump" = "none" ]; then
+                bump="patch"
+              fi
+            fi
+          done <<< "$(git log "${latest}..HEAD" --pretty=format:'%s')"
+
+          if [ "$bump" = "none" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No releasable commits (feat/fix) since $latest"
+            exit 0
+          fi
+
+          case "$bump" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+
+          new_tag="v${major}.${minor}.${patch}"
+          echo "new_tag=$new_tag" >> "$GITHUB_OUTPUT"
+          echo "bump=$bump" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "Bump: $bump → $new_tag"
+
+      - name: Generate changelog
+        id: changelog
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          latest="${{ steps.latest_tag.outputs.tag }}"
+          {
+            echo "changelog<<CHANGELOG_EOF"
+
+            # Features
+            feats=$(git log "${latest}..HEAD" --pretty=format:'%s' \
+              | grep -iE '^feat(\(.+\))?:' | sed 's/^/- /' || true)
+            if [ -n "$feats" ]; then
+              echo "### Features"
+              echo "$feats"
+              echo ""
+            fi
+
+            # Fixes
+            fixes=$(git log "${latest}..HEAD" --pretty=format:'%s' \
+              | grep -iE '^fix(\(.+\))?:' | sed 's/^/- /' || true)
+            if [ -n "$fixes" ]; then
+              echo "### Fixes"
+              echo "$fixes"
+              echo ""
+            fi
+
+            # Other notable changes
+            others=$(git log "${latest}..HEAD" --pretty=format:'%s' \
+              | grep -iEv '^(feat|fix)(\(.+\))?:' | sed 's/^/- /' || true)
+            if [ -n "$others" ]; then
+              echo "### Other changes"
+              echo "$others"
+              echo ""
+            fi
+
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create tag and release
+        if: steps.bump.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          new_tag="${{ steps.bump.outputs.new_tag }}"
+          git tag "$new_tag"
+          git push origin "$new_tag"
+          gh release create "$new_tag" \
+            --title "$new_tag" \
+            --notes "${{ steps.changelog.outputs.changelog }}" \
+            --latest

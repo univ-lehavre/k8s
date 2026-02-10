@@ -1,4 +1,3 @@
----
 # ArgoCD tasks
 
 - name: Create ArgoCD namespace

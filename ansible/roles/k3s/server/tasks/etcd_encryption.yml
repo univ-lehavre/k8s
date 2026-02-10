@@ -1,4 +1,3 @@
----
 - name: Generate etcd encryption key if not provided
   ansible.builtin.set_fact:
     k3s_etcd_encryption_key: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') | b64encode }}"
