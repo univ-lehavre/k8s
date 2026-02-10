@@ -15,7 +15,7 @@ Gestion des secrets applicatifs, certificats TLS, clefs de chiffrement et rotati
 ```text
   ┌──────────────────────────────────────────────────────────────────────┐
   │                                                                      │
-  │     Utilisateurs ──► Keycloak/Authelia SSO (un seul mot de passe)   │
+  │     Utilisateurs ──► Keycloak SSO (un seul mot de passe)            │
   │                                                                      │
   │     Applications ──► Secrets machines geres par Vault + ESO :        │
   │                      ● Mots de passe BDD (generes, uniques)          │
@@ -54,27 +54,21 @@ Gestion des secrets applicatifs, certificats TLS, clefs de chiffrement et rotati
 │  Keycloak     │  KEYCLOAK_DB_PW     │  Admin password                      │
 │               │  (PostgreSQL)        │  Secrets clients OIDC (par service)  │
 │               │                      │                                      │
-│  Authelia     │  AUTHELIA_DB_PW     │  JWT_SECRET                          │
-│               │  (PostgreSQL)        │  SESSION_SECRET                      │
-│               │                      │  OIDC_HMAC_SECRET                    │
-│               │                      │  OIDC_PRIVATE_KEY (RSA 4096)         │
-│               │                      │  STORAGE_ENCRYPTION_KEY              │
-│               │                      │                                      │
 │  Vault        │  VAULT_DB_PW        │  Root token + 5 unseal keys          │
 │               │  (PostgreSQL)        │  (Shamir threshold 3/5)              │
 │               │                      │                                      │
 │  Mattermost   │  MATTERMOST_DB_PW   │  Admin password (initial)            │
-│               │  (PostgreSQL)        │  OIDC client via Keycloak/Authelia   │
+│               │  (PostgreSQL)        │  OIDC client via Keycloak            │
 │               │                      │                                      │
 │  Nextcloud    │  NEXTCLOUD_DB_PW     │  Admin password (initial)            │
-│               │  (PostgreSQL)        │  OIDC client via Keycloak/Authelia   │
+│               │  (PostgreSQL)        │  OIDC client via Keycloak            │
 │               │                      │  SeaweedFS S3 access/secret key      │
 │               │                      │                                      │
 │  Gitea        │  GITEA_DB_PW        │  Admin password (initial)            │
 │               │  (PostgreSQL)        │  Proxy auth headers (pas de secret)  │
 │               │                      │                                      │
 │  ArgoCD       │  —                   │  Admin password (initial)            │
-│               │                      │  OIDC client via Keycloak/Authelia   │
+│               │                      │  OIDC client via Keycloak            │
 │               │                      │                                      │
 │  Grafana      │  —                   │  Admin password (initial)            │
 │               │                      │  Proxy auth headers (pas de secret)  │
@@ -107,7 +101,6 @@ Chaque service dispose d'un utilisateur dedie avec le minimum de privileges :
 ```text
   vault_user      ──► ALL PRIVILEGES  (schema owner, migrations)
   keycloak_user   ──► ALL PRIVILEGES  (schema owner, migrations)
-  authelia_user   ──► CRUD only       (SELECT, INSERT, UPDATE, DELETE)
   mattermost_user ──► CRUD only
   nextcloud_user  ──► CRUD only
   gitea_user      ──► CRUD only
@@ -139,7 +132,7 @@ L'isolation L7 Cilium garantit que chaque service ne peut acceder qu'a **sa prop
 | Categorie | Refresh interval | Secrets concernes |
 |-----------|-----------------|-------------------|
 | Credentials BDD | **24 heures** | PostgreSQL, MariaDB, Redis passwords |
-| Secrets plateforme | **7 jours** | Authelia JWT, session, OIDC keys |
+| Secrets plateforme | **7 jours** | Keycloak OIDC keys |
 | Mots de passe admin | **7 jours** | Mattermost, Nextcloud, Gitea, ArgoCD, Grafana |
 
 > **Note** : la rotation met a jour le Kubernetes Secret mais les pods doivent etre
@@ -208,8 +201,8 @@ Le renouvellement est **entierement automatique**. Cert-Manager renouvelle 30 jo
   OIDC tokens             RSA 4096         Generee par Ansible      7 jours (ESO)
                           (signature JWT)  stockee dans Vault
 
-  Sessions Authelia       HMAC-SHA256      Generee par Ansible      7 jours (ESO)
-                                           stockee dans Vault
+  Sessions Keycloak       HMAC-SHA256      Geree par Keycloak       Automatique
+                                           (interne au realm)
 ```
 
 ### etcd — chiffrement au repos
@@ -275,7 +268,7 @@ La rotation de la clef etcd est **manuelle** :
      Couche                 Composant               Environnement
     ─────────────────────────────────────────────────────────────────
 
-  7  Application     Keycloak/Authelia SSO          staging-prod / local
+  7  Application     Keycloak SSO                   tous
                      (SecurityPolicy par route)
                      ● SSO, OIDC, MFA
                      ● Groupes : admins/devops/

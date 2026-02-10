@@ -41,7 +41,6 @@ namespaces:
   postgresql: postgresql
   redis: redis
   mariadb: mariadb
-  authelia: authelia
   mattermost: mattermost
   nextcloud: nextcloud
   onlyoffice: onlyoffice
@@ -53,10 +52,6 @@ namespaces:
   argocd: argocd
   keycloak: keycloak
   monitoring: monitoring
-
-# Keycloak (replaces Authelia in staging/production)
-keycloak_enabled: true
-keycloak_allowed_email_domains: [] # Configure per team, e.g. ['univ-lehavre.fr']
 
 # PostgreSQL configuration
 postgresql_host: postgresql-postgresql-ha-pgpool.postgresql.svc.cluster.local

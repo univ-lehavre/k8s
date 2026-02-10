@@ -65,7 +65,7 @@ vault_ingress_host: "vault.{{ domain }}"
 vault_ingress_tls_secret: vault-tls
 vault_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak via Envoy Gateway SecurityPolicy)
 vault_forward_auth_enabled: true
 
 # Init settings (first deployment)

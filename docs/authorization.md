@@ -8,7 +8,7 @@ Regles d'acces par groupe, roles applicatifs, quotas et politique de securite pa
 
 ## Groupes utilisateurs
 
-Quatre groupes definis de maniere identique dans Keycloak et Authelia :
+Quatre groupes definis dans Keycloak :
 
 | Groupe        | Vocation                              | Affectation                                   |
 | ------------- | ------------------------------------- | --------------------------------------------- |
@@ -29,9 +29,10 @@ Un utilisateur peut appartenir a plusieurs groupes.
   │                                                              │
   │  Toute requete non couverte par une regle explicite          │
   │  est refusee. L'utilisateur est redirige vers la page        │
-  │  de login.                                                   │
+  │  de login Keycloak.                                          │
   │                                                              │
-  │  Configuration : authelia_default_policy: deny               │
+  │  Le controle d'acces est gere par les SecurityPolicies       │
+  │  Envoy Gateway + les clients/groupes Keycloak.               │
   └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -65,33 +66,32 @@ Un utilisateur peut appartenir a plusieurs groupes.
   OnlyOffice (1FA)        ✓         ✓          ✓            ✓
 ```
 
-> **Note** : en mode Keycloak, le niveau d'authentification (1FA/2FA) est gere
-> par les Required Actions du realm. En mode Authelia, il est defini dans les
-> `authelia_access_rules`.
+> **Note** : le niveau d'authentification (1FA/2FA) est gere par les Required Actions
+> du realm Keycloak.
 
 ---
 
-## Regles d'acces Authelia (local)
+## Controle d'acces Keycloak (SecurityPolicy)
 
-Definies dans `roles/platform/authelia/defaults/main.yml` :
+L'acces aux services est controle au niveau Envoy Gateway via des SecurityPolicies OIDC.
+Keycloak gere les groupes, les clients OIDC et les Required Actions (MFA) :
 
-| Domaine            | Politique  | Groupes             | Ressources exclues    |
-| ------------------ | ---------- | ------------------- | --------------------- |
-| `login.<domain>`   | two_factor | admins              | —                     |
-| `vault.<domain>`   | two_factor | admins, devops      | —                     |
-| `redcap.<domain>`  | bypass     | —                   | `^/surveys([/?].*)?$` |
-| `redcap.<domain>`  | two_factor | researchers, admins | —                     |
-| `argocd.<domain>`  | two_factor | devops, admins      | —                     |
-| `hubble.<domain>`  | one_factor | devops, admins      | —                     |
-| `ecrin.<domain>`   | one_factor | researchers, admins | —                     |
-| `flags.<domain>`   | one_factor | devops, admins      | —                     |
-| `grafana.<domain>` | one_factor | _(tous)_            | —                     |
-| `git.<domain>`     | one_factor | _(tous)_            | —                     |
-| `cloud.<domain>`   | one_factor | _(tous)_            | —                     |
-| `chat.<domain>`    | one_factor | _(tous)_            | —                     |
-| `office.<domain>`  | one_factor | _(tous)_            | —                     |
+| Service            | Groupes autorises   | MFA requis | Routes publiques      |
+| ------------------ | ------------------- | ---------- | --------------------- |
+| `login.<domain>`   | _(tous)_            | —          | —                     |
+| `vault.<domain>`   | admins, devops      | Oui        | `/v1/*` (API token)   |
+| `redcap.<domain>`  | researchers, admins | Oui        | `/surveys`            |
+| `argocd.<domain>`  | devops, admins      | Oui        | `/api/webhook`        |
+| `hubble.<domain>`  | devops, admins      | Non        | —                     |
+| `ecrin.<domain>`   | researchers, admins | Non        | —                     |
+| `flags.<domain>`   | devops, admins      | Non        | —                     |
+| `grafana.<domain>` | _(tous)_            | Non        | `/api/`               |
+| `git.<domain>`     | _(tous)_            | Non        | `/api/v1/`, `/.well-known/` |
+| `cloud.<domain>`   | _(tous)_            | Non        | `/remote.php/dav/`, `/ocs/`, `/.well-known/` |
+| `chat.<domain>`    | _(tous)_            | Non        | `/api/v4/`, `/plugins/`, `/hooks/` |
+| `office.<domain>`  | _(tous)_            | Non        | `/coauthoring/`       |
 
-Les regles sont evaluees dans l'ordre. La premiere regle correspondante s'applique.
+Le MFA est gere par les Required Actions du realm Keycloak (conditionnelles par groupe ou par client).
 
 ---
 
@@ -295,29 +295,20 @@ au niveau gateway.
 
 ### Modifier l'acces a un service existant
 
-Les regles d'acces Authelia se modifient dans `roles/platform/authelia/defaults/main.yml`
-sous `authelia_access_rules`, ou en surchargeant dans `inventories/<env>/group_vars/all.yml`.
+Le controle d'acces est gere par les SecurityPolicies Envoy Gateway et les groupes/clients Keycloak.
+Pour modifier l'acces, ajuster les groupes autorises dans le client Keycloak correspondant
+ou dans les variables d'inventaire.
 
 Exemple — rendre Flipt accessible aux chercheurs :
 
-```yaml
-# inventories/staging/group_vars/all.yml
-authelia_access_rules:
-  # ... regles existantes ...
-  - domain: "flags.{{ domain }}"
-    policy: one_factor
-    subject:
-      - "group:devops"
-      - "group:admins"
-      - "group:researchers" # ajoute
-```
+Ajouter le groupe `researchers` au client Keycloak `flipt` via la console d'administration
+ou en modifiant les variables dans `inventories/<env>/group_vars/all.yml`.
 
 ### Ajouter un nouveau service
 
 1. Creer le role Ansible avec `*_forward_auth_enabled: true` dans les defaults
-2. Ajouter un template `httproute.yml.j2` avec le bloc SecurityPolicy conditionnel
-3. Ajouter la regle Authelia dans `authelia_access_rules`
-4. Si Keycloak OIDC est necessaire, ajouter le client dans `keycloak_oidc_clients`
+2. Ajouter un template `httproute.yml.j2` avec le bloc SecurityPolicy OIDC
+3. Ajouter le client OIDC dans `keycloak_oidc_clients`
 
 ### Modifier les quotas Nextcloud
 

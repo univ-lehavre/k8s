@@ -53,7 +53,7 @@ grafana_ingress_host: "grafana.{{ domain }}"
 grafana_ingress_tls_secret: grafana-tls
 grafana_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak via Envoy Gateway SecurityPolicy)
 grafana_forward_auth_enabled: true
 
 prometheus_ingress_enabled: false
@@ -87,21 +87,12 @@ grafana_role_mapping:
   # Default role for authenticated users not in any specific group
   default_role: Viewer
 
-# OIDC settings (Keycloak/Authelia) - alternative to proxy auth
+# OIDC settings (Keycloak) - alternative to proxy auth
 grafana_oidc_enabled: "{{ grafana_auth_mode == 'oidc' }}"
-grafana_oidc_name: "{{ 'Keycloak' if keycloak_enabled | default(false) else 'Authelia' }}"
-grafana_oidc_auth_url: >-
-  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm + '/protocol/openid-connect/auth'
-     if keycloak_enabled | default(false)
-     else 'https://login.' + domain + '/api/oidc/authorization' }}
-grafana_oidc_token_url: >-
-  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm + '/protocol/openid-connect/token'
-     if keycloak_enabled | default(false)
-     else 'https://login.' + domain + '/api/oidc/token' }}
-grafana_oidc_api_url: >-
-  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm + '/protocol/openid-connect/userinfo'
-     if keycloak_enabled | default(false)
-     else 'https://login.' + domain + '/api/oidc/userinfo' }}
+grafana_oidc_name: Keycloak
+grafana_oidc_auth_url: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/protocol/openid-connect/auth"
+grafana_oidc_token_url: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/protocol/openid-connect/token"
+grafana_oidc_api_url: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/protocol/openid-connect/userinfo"
 grafana_oidc_client_id: grafana
 
 # Alertmanager settings

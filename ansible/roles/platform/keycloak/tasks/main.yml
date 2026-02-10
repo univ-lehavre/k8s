@@ -1,13 +1,7 @@
 # Keycloak deployment tasks
 # Deploys Keycloak IAM with realm configuration for ATLAS platform
 
-- name: Skip Keycloak in local environment
-  ansible.builtin.debug:
-    msg: "Keycloak is disabled (env={{ env | default('local') }}). Using Authelia instead."
-  when: not (keycloak_enabled | default(false) | bool)
-
 - name: Deploy Keycloak
-  when: keycloak_enabled | default(false) | bool
   block:
 
     - name: Create Keycloak namespace

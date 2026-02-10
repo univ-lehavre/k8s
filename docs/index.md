@@ -18,7 +18,7 @@ hero:
 features:
   - title: Securite
     details: >-
-      Keycloak/Authelia SSO/OIDC/MFA, Vault + External Secrets Operator,
+      Keycloak SSO/OIDC/MFA, Vault + External Secrets Operator,
       Kyverno, Network Policies, certificats Let's Encrypt
   - title: Deploiement
     details: >-
@@ -47,9 +47,9 @@ features:
               +---------------+---------------+
               |               |               |
         +-----+-----+  +-----+-----+  +------+------+
-        | Keycloak/  |  |   Apps    |  |   DevOps    |
-        | Authelia   |  | Nextcloud |  | Gitea       |
-        | SSO/OIDC   |  | Mattermost|  | ArgoCD      |
+        | Keycloak   |  |   Apps    |  |   DevOps    |
+        | SSO/OIDC   |  | Nextcloud |  | Gitea       |
+        |            |  | Mattermost|  | ArgoCD      |
         +-----+------+  | REDCap   |  +-------------+
               |          | ECRIN    |  +-------------+
               |          | Flipt    |  | Monitoring  |
@@ -69,8 +69,7 @@ features:
 
 | Service    | URL                | Description                     |
 |------------|--------------------|---------------------------------|
-| Keycloak   | `login.<domain>`   | IAM, SSO, OIDC, MFA (staging/prod) |
-| Authelia   | `login.<domain>`   | SSO, Forward Auth, MFA (local)  |
+| Keycloak   | `login.<domain>`   | IAM, SSO, OIDC, MFA            |
 | Mattermost | `chat.<domain>`    | Messagerie d'equipe             |
 | Nextcloud  | `cloud.<domain>`   | Partage de fichiers             |
 | OnlyOffice | `office.<domain>`  | Edition collaborative           |
@@ -91,7 +90,7 @@ features:
 | 2     | `phase-02-k3s-core.yml`    | K3s, Cilium, Envoy GW, Cert-Mgr       |
 | 3     | `phase-03-vault.yml`       | Vault, External Secrets Operator       |
 | 4     | `phase-04-databases.yml`   | PostgreSQL HA, MariaDB, Redis          |
-| 5     | `phase-05-services.yml`    | Keycloak/Authelia, apps, SeaweedFS     |
+| 5     | `phase-05-services.yml`    | Keycloak, apps, SeaweedFS              |
 | 6     | `phase-06-devops.yml`      | Gitea, ArgoCD                          |
 | 7     | `phase-07-monitoring.yml`  | Prometheus, Grafana, Hubble            |
 | 8     | `phase-08-security.yml`    | Kyverno, Network Policies, backups     |
@@ -101,7 +100,6 @@ features:
 | Aspect           | Local        | Staging               | Production            |
 |------------------|--------------|-----------------------|-----------------------|
 | Cluster          | K3D (Docker) | K3s single-node       | K3s HA (3+ nodes)     |
-| Authentification | Authelia     | Keycloak              | Keycloak              |
 | TLS              | Self-signed  | Let's Encrypt staging | Let's Encrypt prod    |
 | Kyverno          | Audit        | Audit                 | Enforce               |
 | Network Policies | Non          | Oui                   | Oui                   |

@@ -16,7 +16,6 @@ helm_versions:
   redis: "18.12.1"
 
   # Identity
-  authelia: "0.9.0"
   keycloak: "26.0"
   keycloak_chart: "3.0.0"
 
@@ -104,10 +103,6 @@ helm_repositories:
   grafana:
     name: grafana
     url: https://grafana.github.io/helm-charts
-
-  authelia:
-    name: authelia
-    url: https://charts.authelia.com
 
   codecentric:
     name: codecentric

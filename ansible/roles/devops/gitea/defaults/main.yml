@@ -48,7 +48,7 @@ gitea_ssh_enabled: true
 gitea_ssh_port: 22
 gitea_ssh_nodeport: 30022
 
-# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak via Envoy Gateway SecurityPolicy)
 gitea_forward_auth_enabled: true
 
 # Authentication mode: 'oidc' or 'proxy' (SSO provider headers)
@@ -73,13 +73,10 @@ gitea_role_mapping:
 # Legacy alias for backward compatibility
 gitea_admin_groups: "{{ gitea_role_mapping.admin_groups }}"
 
-# OIDC settings (Keycloak/Authelia) - alternative to proxy auth
+# OIDC settings (Keycloak) - alternative to proxy auth
 gitea_oidc_enabled: "{{ gitea_auth_mode == 'oidc' }}"
-gitea_oidc_name: "{{ 'Keycloak' if keycloak_enabled | default(false) else 'Authelia' }}"
-gitea_oidc_auto_discover_url: >-
-  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm + '/.well-known/openid-configuration'
-     if keycloak_enabled | default(false)
-     else 'https://login.' + domain + '/.well-known/openid-configuration' }}
+gitea_oidc_name: Keycloak
+gitea_oidc_auto_discover_url: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/.well-known/openid-configuration"
 gitea_oidc_client_id: gitea
 
 # LFS

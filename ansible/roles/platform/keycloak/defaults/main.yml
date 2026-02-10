@@ -1,9 +1,8 @@
 # Keycloak — Identity and Access Management
-# Replaces Authelia in staging/production with full IAM capabilities:
+# SSO provider for all environments:
 # SSO (OIDC), user management console, self-registration, MFA
 
-# Feature flag — disabled in local (Authelia used instead)
-keycloak_enabled: "{{ env | default('local') != 'local' }}"
+keycloak_enabled: true
 
 # Namespace
 keycloak_namespace: keycloak
@@ -56,20 +55,20 @@ keycloak_smtp_user: ""
 keycloak_smtp_password: ""
 keycloak_smtp_starttls: true
 
-# Password policy (matches existing Authelia policy)
+# Password policy
 keycloak_password_min_length: 12
 keycloak_password_require_uppercase: true
 keycloak_password_require_digit: true
 keycloak_password_require_special: true
 
-# User groups (same as Authelia)
+# User groups
 keycloak_groups:
   - admins
   - devops
   - researchers
   - users
 
-# OIDC clients (migrated from Authelia)
+# OIDC clients
 keycloak_oidc_clients:
   - client_id: ecrin
     name: ECRIN MDR Portal

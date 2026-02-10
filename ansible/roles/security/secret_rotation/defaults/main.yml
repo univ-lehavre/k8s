@@ -24,16 +24,12 @@ secret_rotation_secrets:
       - redis-password
 
   # Platform credentials
-  - name: authelia-secrets
-    namespace: authelia
-    vault_path: secret/data/platform/authelia
+  - name: keycloak-secrets
+    namespace: keycloak
+    vault_path: secret/data/platform/keycloak
     rotation_interval: 168h
     keys:
-      - jwt-token
-      - session-secret
-      - storage-encryption-key
-      - oidc-hmac-secret
-      - oidc-private-key
+      - admin-password
 
   # Service credentials
   - name: mattermost-credentials

@@ -8,7 +8,7 @@ Chaque jalon produit un resultat utilisable et constitue un point de validation
 avant de passer au suivant.
 
 > **Gestion des secrets SSO** : lorsque Vault est disponible (staging/production),
-> les secrets de Keycloak (admin password, OIDC client secrets) et d'Authelia (JWT, session, OIDC HMAC, cle privee RSA)
+> les secrets de Keycloak (admin password, OIDC client secrets)
 > sont generes au premier deploiement, stockes dans Vault et synchronises vers Kubernetes via External Secrets Operator.
 > En local (sans Vault), les secrets sont generes directement par Ansible (fallback).
 
@@ -38,7 +38,7 @@ task deploy-deps -- mattermost
 Le systeme resout la chaine complete :
 
 ```text
-k3s → cilium → envoy_gateway → longhorn → cert_manager → vault → external_secrets → postgresql → redis → keycloak/authelia → mattermost
+k3s → cilium → envoy_gateway → longhorn → cert_manager → vault → external_secrets → postgresql → redis → keycloak → mattermost
 ```
 
 Puis verifie chaque composant via l'API Kubernetes. Si K3s, Cilium et Vault sont deja operationnels, seuls les composants manquants sont deployes.
@@ -50,7 +50,7 @@ Puis verifie chaque composant via l'API Kubernetes. Si K3s, Cilium et Vault sont
 ## Vue d'ensemble des jalons
 
 ```text
-Jalon 0   Infrastructure         Cluster K8s, secrets, PostgreSQL, Redis, Keycloak/Authelia (SSO)
+Jalon 0   Infrastructure         Cluster K8s, secrets, PostgreSQL, Redis, Keycloak (SSO)
 Jalon 1   Communication          Mattermost (chat d'equipe)                        ─┐
 Jalon 2   Collaboration          Nextcloud + OnlyOffice (fichiers, edition)         ─┤ independants
 Jalon 3   Recherche              REDCap + ECRIN (capture de donnees)                ─┤ (ordre libre)
@@ -73,7 +73,7 @@ ansible-playbook playbooks/phase-01-preparation.yml
 ansible-playbook playbooks/phase-02-k3s-core.yml
 ansible-playbook playbooks/phase-03-vault.yml
 ansible-playbook playbooks/phase-04-databases.yml --tags postgresql,redis
-ansible-playbook playbooks/phase-05-services.yml --tags keycloak,authelia
+ansible-playbook playbooks/phase-05-services.yml --tags keycloak
 ```
 
 ### Composants deployes
@@ -88,18 +88,17 @@ ansible-playbook playbooks/phase-05-services.yml --tags keycloak,authelia
 | 6     | Cert-Manager     | 1.14.3       | Certificats TLS (Let's Encrypt)            | Cilium                       |
 | 7     | Vault            | 0.27.0       | Coffre-fort de secrets                     | Envoy GW, Cert-Mgr, Longhorn |
 | 8     | External Secrets | 0.9.12       | Sync secrets vers Kubernetes               | Vault                        |
-| 9     | PostgreSQL HA    | 14.0.4       | BDD principale (5 databases)               | Vault, Longhorn              |
+| 9     | PostgreSQL HA    | 14.0.4       | BDD principale (4 databases)               | Vault, Longhorn              |
 | 10    | Redis            | 18.12.1      | Sessions, cache, rate-limiting             | Vault, Longhorn              |
-| 11.1  | Keycloak         | 26.0         | IAM, SSO, OIDC, MFA (staging/prod)  | PostgreSQL, ESO          |
-| 11.2  | Authelia         | 0.9.0        | Forward Auth, OIDC, MFA (local)      | PostgreSQL, Redis, ESO   |
+| 11    | Keycloak         | 26.0         | IAM, SSO, OIDC, MFA                 | PostgreSQL, ESO          |
 
 ### Critere de validation
 
 - [ ] `kubectl get nodes` → tous Ready
 - [ ] `cilium status` → OK
 - [ ] `vault status` → Initialized, Unsealed
-- [ ] PostgreSQL : `\l` liste les 5 databases
-- [ ] `https://login.<domain>` → portail SSO (Keycloak ou Authelia) accessible, connexion test OK
+- [ ] PostgreSQL : `\l` liste les 4 databases
+- [ ] `https://login.<domain>` → portail SSO Keycloak accessible, connexion test OK
 
 ### Bases de donnees creees
 
@@ -108,13 +107,12 @@ ansible-playbook playbooks/phase-05-services.yml --tags keycloak,authelia
 | Database     | Service    | Utilisateur       | Utilise par |
 | ------------ | ---------- | ----------------- | ----------- |
 | `keycloak`   | Keycloak   | `keycloak_user`   | Jalon 0     |
-| `authelia`   | Authelia   | `authelia_user`   | Jalon 0     |
 | `mattermost` | Mattermost | `mattermost_user` | Jalon 1     |
 | `nextcloud`  | Nextcloud  | `nextcloud_user`  | Jalon 2     |
 | `gitea`      | Gitea      | `gitea_user`      | Jalon 4     |
 | `flipt`      | Flipt      | `flipt_user`      | Jalon 4     |
 
-> **Note** : les 5 databases sont creees en Jalon 0 car PostgreSQL est deploye une seule fois. Les services qui les utilisent sont deployes dans les jalons suivants.
+> **Note** : les 4 databases sont creees en Jalon 0 car PostgreSQL est deploye une seule fois. Les services qui les utilisent sont deployes dans les jalons suivants.
 
 **MariaDB** : non deployee en Jalon 0. Voir Jalon 3 (deploye avec REDCap).
 
@@ -143,7 +141,7 @@ ansible-playbook playbooks/phase-05-services.yml --tags mattermost
 ### Critere de validation
 
 - [ ] `https://chat.<domain>` → page de connexion
-- [ ] Connexion via SSO (bouton "Login with Keycloak/Authelia")
+- [ ] Connexion via SSO (bouton "Login with Keycloak")
 - [ ] Creation d'un canal, envoi d'un message
 
 ### Resultat
@@ -407,8 +405,8 @@ Le cluster est durci : isolation reseau entre namespaces, contraintes de securit
               └────────────┬────────────┘
                            │
                     ┌──────▼──────┐
-                    │ Keycloak/  │◄──────────── Jalon 0
-                    │ Authelia   │
+                    │  Keycloak  │◄──────────── Jalon 0
+                    │            │
                     └──────┬──────┘
                            │
     ┌─────────┬────────────┼────────────┬─────────┐
@@ -449,7 +447,7 @@ Le cluster est durci : isolation reseau entre namespaces, contraintes de securit
 
 | Jalon | Service    | URL                        |
 | ----- | ---------- | -------------------------- |
-| 0     | Keycloak/Authelia | `https://login.<domain>`   |
+| 0     | Keycloak   | `https://login.<domain>`   |
 | 1     | Mattermost | `https://chat.<domain>`    |
 | 2     | Nextcloud  | `https://cloud.<domain>`   |
 | 2     | OnlyOffice | `https://office.<domain>`  |

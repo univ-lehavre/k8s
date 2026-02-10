@@ -102,15 +102,6 @@ atlas_components:
       name: mariadb
       namespace: mariadb
 
-  authelia:
-    role: platform/authelia
-    deps: [postgresql, redis, external_secrets]
-    health:
-      api: apps/v1
-      kind: Deployment
-      name: authelia
-      namespace: authelia
-
   keycloak:
     role: platform/keycloak
     deps: [postgresql, external_secrets, envoy_gateway]

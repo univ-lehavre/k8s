@@ -2,31 +2,23 @@
 
 **Date** : 2026-02-10
 
-Gestion des identites, fournisseurs SSO et methodes d'authentification par application.
+Gestion des identites, fournisseur SSO et methodes d'authentification par application.
 
 ---
 
-## Fournisseurs d'identite
+## Fournisseur d'identite
 
-La plateforme utilise un fournisseur SSO conditionnel selon l'environnement :
+La plateforme utilise Keycloak comme fournisseur SSO unique pour tous les environnements :
 
 | Environnement  | Fournisseur | URL              | Description                                        |
 | -------------- | ----------- | ---------------- | -------------------------------------------------- |
-| **Local**      | Authelia    | `login.<domain>` | Fichier YAML, comptes de test, pas de base externe |
+| **Local**      | Keycloak    | `login.<domain>` | Mode dev, comptes de test                          |
 | **Staging**    | Keycloak    | `login.<domain>` | IAM complet, auto-enregistrement, console admin    |
 | **Production** | Keycloak    | `login.<domain>` | IAM complet, HA (2 replicas), MFA obligatoire      |
 
-Le basculement est pilote par la variable `keycloak_enabled` :
-
-```text
-  local       → keycloak_enabled: false  → Authelia
-  staging     → keycloak_enabled: true   → Keycloak
-  production  → keycloak_enabled: true   → Keycloak
-```
-
 ---
 
-## Keycloak (staging / production)
+## Keycloak
 
 ### Fonctionnalites
 
@@ -92,7 +84,6 @@ Les secrets clients sont generes automatiquement au deploiement et stockes dans 
     └── keycloak_groups                                    [admins, devops, researchers, users]
 
   inventories/staging/group_vars/all.yml
-    ├── keycloak_enabled                                   true
     └── keycloak_allowed_email_domains                     [] (a configurer)
 
   inventories/production/group_vars/all.yml
@@ -101,69 +92,23 @@ Les secrets clients sont generes automatiquement au deploiement et stockes dans 
 
 ---
 
-## Authelia (local)
-
-### Fonctionnalites
-
-- **Forward Auth** : verification d'authentification sur chaque requete via Envoy Gateway SecurityPolicy
-- **OIDC Provider** : fournisseur OpenID Connect pour ECRIN
-- **Fichier utilisateurs** : comptes de test pre-configures, pas de base externe
-- **MFA** : TOTP et WebAuthn disponibles
-
-### Comptes de test (local uniquement)
-
-| Utilisateur  | Groupes        | Email                 |
-| ------------ | -------------- | --------------------- |
-| `admin`      | admins, devops | `admin@<domain>`      |
-| `developer`  | devops         | `dev@<domain>`        |
-| `researcher` | researchers    | `researcher@<domain>` |
-
-### Sessions
-
-```text
-  Cookie           : atlas_session
-  Domaine          : *.<domain> (partage entre services)
-  Duree            : 1 heure
-  Inactivite       : 5 minutes
-  Remember me      : 1 mois
-  Stockage         : memoire (local) / Redis (staging)
-```
-
-### Configuration
-
-```text
-  Fichier                                                Variable
-  ─────────────────────────────────────────────────────────────────────
-  roles/platform/authelia/defaults/main.yml
-    ├── authelia_default_users_enabled                     true (local)
-    ├── authelia_default_users                              [admin, developer, researcher]
-    ├── authelia_oidc_enabled                               true
-    ├── authelia_oidc_clients                               [ecrin]
-    └── authelia_groups                                     [admins, devops, researchers, users]
-```
-
----
-
 ## Second facteur (MFA)
 
-| Methode  | Protocole      | Usage                                           | Disponibilite       |
-| -------- | -------------- | ----------------------------------------------- | ------------------- |
-| TOTP     | RFC 6238       | Application (Google Auth, Authy) — periode 30s  | Keycloak + Authelia |
-| WebAuthn | FIDO2/Passkeys | Clef physique (YubiKey) ou biometrie (Touch ID) | Keycloak + Authelia |
+| Methode  | Protocole      | Usage                                           | Disponibilite |
+| -------- | -------------- | ----------------------------------------------- | ------------- |
+| TOTP     | RFC 6238       | Application (Google Auth, Authy) — periode 30s  | Keycloak      |
+| WebAuthn | FIDO2/Passkeys | Clef physique (YubiKey) ou biometrie (Touch ID) | Keycloak      |
 
 ---
 
 ## Politique de mots de passe
 
-Identique sur Keycloak et Authelia :
-
-| Regle                    | Valeur                      |
-| ------------------------ | --------------------------- |
-| Longueur minimale        | 12 caracteres               |
-| Majuscule requise        | Oui                         |
-| Chiffre requis           | Oui                         |
-| Caractere special requis | Oui                         |
-| Hachage (Authelia)       | Argon2id (m=64Mo, t=3, p=4) |
+| Regle                    | Valeur        |
+| ------------------------ | ------------- |
+| Longueur minimale        | 12 caracteres |
+| Majuscule requise        | Oui           |
+| Chiffre requis           | Oui           |
+| Caractere special requis | Oui           |
 
 ---
 
@@ -176,8 +121,7 @@ Trois mecanismes coexistent sur la plateforme :
 
 Toute requete entrante passe par Envoy Gateway. Une `SecurityPolicy` est attachee aux routes protegees :
 
-- **Mode Keycloak** (`keycloak_enabled: true`) : `spec.oidc` — redirection native vers Keycloak, validation du token par Envoy
-- **Mode Authelia** (`keycloak_enabled: false`) : `spec.extAuth` — Envoy consulte Authelia qui retourne les headers `Remote-User`, `Remote-Groups`, `Remote-Email`
+- **OIDC** : `spec.oidc` — redirection native vers Keycloak, validation du token par Envoy
 
 ### 2. OIDC applicatif
 
@@ -221,7 +165,6 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 | Service      | URL              | SecurityPolicy | Details                                                 |
 | ------------ | ---------------- | :------------: | ------------------------------------------------------- |
 | **Keycloak** | `login.<domain>` |       —        | Fournisseur d'identite (pas de protection sur lui-meme) |
-| **Authelia** | `login.<domain>` |       —        | Fournisseur d'identite (local)                          |
 | **Vault**    | `vault.<domain>` |      Oui       | Forward auth UI + token API                             |
 
 ---
@@ -232,17 +175,16 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   ├── OIDC applicatif   : oui (oidc_login plugin)
-  │   ├── Provider URL  : https://login.<domain>/realms/atlas (Keycloak)
-  │   │                   https://login.<domain> (Authelia)
+  │   ├── Provider URL  : https://login.<domain>/realms/atlas
   │   ├── Client ID     : nextcloud
   │   └── Scopes        : openid, profile, email, groups
   └── Auto-creation     : compte cree au premier login OIDC
 
   Configuration : roles/services/nextcloud/defaults/main.yml
     ├── nextcloud_oidc_enabled          : true
-    ├── nextcloud_oidc_provider_url     : conditionnel Keycloak/Authelia
+    ├── nextcloud_oidc_provider_url     : https://login.<domain>/realms/atlas
     └── nextcloud_oidc_client_id        : nextcloud
 ```
 
@@ -250,19 +192,18 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   ├── OIDC applicatif   : oui (provider GitLab dans Mattermost)
-  │   ├── Discovery     : https://login.<domain>/realms/atlas/.well-known/openid-configuration (Keycloak)
-  │   │                   https://login.<domain>/.well-known/openid-configuration (Authelia)
+  │   ├── Discovery     : https://login.<domain>/realms/atlas/.well-known/openid-configuration
   │   ├── Client ID     : mattermost
-  │   ├── Bouton login  : "Login with Keycloak" ou "Login with Authelia"
+  │   ├── Bouton login  : "Login with Keycloak"
   │   └── Scopes        : openid, profile, email, groups
   └── Group sync        : oui (attribut "groups")
 
   Configuration : roles/services/mattermost/defaults/main.yml
     ├── mattermost_oidc_enabled                 : true
-    ├── mattermost_oidc_discovery_endpoint      : conditionnel Keycloak/Authelia
-    ├── mattermost_oidc_button_text             : conditionnel
+    ├── mattermost_oidc_discovery_endpoint      : https://login.<domain>/realms/atlas/.well-known/openid-configuration
+    ├── mattermost_oidc_button_text             : "Login with Keycloak"
     ├── mattermost_group_sync_enabled           : true
     └── mattermost_group_attribute              : groups
 ```
@@ -271,27 +212,26 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   ├── OIDC applicatif   : oui (SvelteKit OIDC)
-  │   ├── Authority     : https://login.<domain>/realms/atlas (Keycloak)
-  │   │                   https://login.<domain> (Authelia)
+  │   ├── Authority     : https://login.<domain>/realms/atlas
   │   ├── Client ID     : ecrin
-  │   ├── Client secret : depuis Vault (Keycloak) ou Authelia config
+  │   ├── Client secret : depuis Vault
   │   └── Redirect URI  : https://ecrin.<domain>/auth/callback
   └── Scopes            : openid, profile, email, groups
 
   Configuration : roles/services/ecrin/defaults/main.yml
     ├── ecrin_oidc_enabled          : true
-    ├── ecrin_oidc_authority         : conditionnel Keycloak/Authelia
+    ├── ecrin_oidc_authority         : https://login.<domain>/realms/atlas
     ├── ecrin_oidc_client_id         : ecrin
-    └── ecrin_oidc_client_secret     : conditionnel Keycloak/Authelia
+    └── ecrin_oidc_client_secret     : depuis Vault
 ```
 
 ### ArgoCD
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   ├── OIDC applicatif   : oui (config native ArgoCD)
   │   ├── Issuer        : https://login.<domain>
   │   ├── Client ID     : argocd
@@ -309,7 +249,7 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   ├── Mode par defaut   : proxy (headers)
   │   ├── Header user   : Remote-User
   │   ├── Header email  : Remote-Email
@@ -330,7 +270,7 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   ├── Mode par defaut   : proxy (headers)
   │   ├── Header user   : Remote-User
   │   ├── Header email  : Remote-Email
@@ -349,7 +289,7 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   └── Pas d'OIDC/proxy  : forward auth uniquement
 
   Configuration : roles/services/redcap/defaults/main.yml
@@ -360,7 +300,7 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   ├── JWT inter-service : pour la communication avec Nextcloud
   │   ├── JWT_ENABLED   : true
   │   ├── JWT_SECRET    : depuis Vault
@@ -377,7 +317,7 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   └── Auth interne      : token-based (flipt_auth_required: true)
 
   Configuration : roles/services/flipt/defaults/main.yml
@@ -390,7 +330,7 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   │   └── Protege       : UI (/)
   └── API               : token-based (pas de SecurityPolicy)
       └── Routes libres : /v1/sys/health, /v1/auth/, /v1/secret/, /v1/sys/
@@ -403,7 +343,7 @@ Certaines applications font confiance aux headers HTTP injectes par le forward a
 
 ```text
   Authentification
-  ├── SecurityPolicy    : OIDC (Keycloak) ou extAuth (Authelia)
+  ├── SecurityPolicy    : OIDC (Keycloak)
   └── Pas d'auth interne : forward auth uniquement
 
   Configuration : roles/monitoring/hubble_ui/defaults/main.yml
@@ -433,8 +373,6 @@ Ces routes sont definies dans des HTTPRoutes separees, sans `SecurityPolicy` att
 
 ## Flux d'authentification
 
-### Avec Keycloak (staging/production)
-
 ```text
   Navigateur                  Envoy Gateway          Keycloak            Service
       │                            │                    │                   │
@@ -459,39 +397,6 @@ Ces routes sont definies dans des HTTPRoutes separees, sans `SecurityPolicy` att
       │                            │                    │                   │
       │                            ├────────────────────────────────────────►
       │                            │  Requete + cookie de session           │
-      │◄───────────────────────────┤◄───────────────────────────────────────┤
-      │  200 OK                    │                    │                   │
-```
-
-### Avec Authelia (local)
-
-```text
-  Navigateur                  Envoy Gateway          Authelia            Service
-      │                            │                    │                   │
-      │  GET https://chat.<dom>/   │                    │                   │
-      ├───────────────────────────►│                    │                   │
-      │                            │                    │                   │
-      │                  SecurityPolicy extAuth         │                   │
-      │                            ├───────────────────►│                   │
-      │                            │  GET /api/authz/   │                   │
-      │                            │  ext-authz         │                   │
-      │                            │◄───────────────────┤                   │
-      │                            │  401 + redirect    │                   │
-      │◄───────────────────────────┤                    │                   │
-      │  302 → login.<dom>/?rd=... │                    │                   │
-      │                            │                    │                   │
-      │  ════ Utilisateur se connecte (1FA/2FA) ═══════ │                   │
-      │                            │                    │                   │
-      │  GET https://chat.<dom>/   │                    │                   │
-      │  + cookie atlas_session    │                    │                   │
-      ├───────────────────────────►│                    │                   │
-      │                            ├───────────────────►│                   │
-      │                            │  200 OK            │                   │
-      │                            │  + Remote-User     │                   │
-      │                            │  + Remote-Groups   │                   │
-      │                            │  + Remote-Email    │                   │
-      │                            │                    │                   │
-      │                            ├────────────────────────────────────────►
       │◄───────────────────────────┤◄───────────────────────────────────────┤
       │  200 OK                    │                    │                   │
 ```

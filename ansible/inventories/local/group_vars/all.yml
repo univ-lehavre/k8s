@@ -44,7 +44,6 @@ namespaces:
   postgresql: postgresql
   redis: redis
   mariadb: mariadb
-  authelia: authelia
   mattermost: mattermost
   nextcloud: nextcloud
   onlyoffice: onlyoffice

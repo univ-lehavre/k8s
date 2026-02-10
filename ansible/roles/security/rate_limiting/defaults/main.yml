@@ -8,12 +8,12 @@ rate_limiting_default_burst: 200
 
 # Per-service rate limiting overrides
 rate_limiting_services:
-  authelia:
+  keycloak:
     enabled: true
     rps: 50
     burst: 100
     paths:
-      - path: "/api/"
+      - path: "/realms/"
         rps: 20
         burst: 40
 

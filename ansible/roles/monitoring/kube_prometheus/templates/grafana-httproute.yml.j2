@@ -66,25 +66,15 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: grafana
-  extAuth:
-    http:
-      backendRefs:
-        - name: authelia
-          namespace: {{ authelia_namespace | default('authelia') }}
-          port: 9091
-      path: /api/authz/ext-authz
-      headersToBackend:
-        - Remote-User
-        - Remote-Groups
-        - Remote-Email
-        - Remote-Name
-    headersToExtAuth:
-      - cookie
-      - authorization
-      - proxy-authorization
-      - x-forwarded-proto
-      - x-forwarded-host
-      - x-forwarded-uri
-      - x-forwarded-for
-    failOpen: false
+  oidc:
+    provider:
+      issuer: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}"
+    clientID: grafana
+    clientSecret:
+      name: grafana-oidc-secret
+    redirectURL: "https://{{ grafana_ingress_host }}/oauth2/callback"
+    scopes:
+      - openid
+      - profile
+      - email
 {% endif %}

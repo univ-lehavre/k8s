@@ -60,7 +60,7 @@ backup_targets:
   kubernetes:
     enabled: true
     namespaces:
-      - authelia
+      - keycloak
       - mattermost
       - nextcloud
       - gitea

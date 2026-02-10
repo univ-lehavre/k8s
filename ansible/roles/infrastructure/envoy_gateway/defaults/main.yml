@@ -51,7 +51,7 @@ envoy_gateway_replicas: "{{ 2 if ha_enabled | default(false) else 1 }}"
 # Enable rate limiting support
 envoy_gateway_rate_limit_enabled: true
 
-# Enable external auth support (for SSO - Keycloak/Authelia)
+# Enable external auth support (for SSO - Keycloak)
 envoy_gateway_ext_auth_enabled: true
 
 # Logging level

@@ -29,6 +29,6 @@ pod_security_namespaces:
   - ecrin
   - flipt
   - seaweedfs
-  - authelia
+  - keycloak
   - onlyoffice
   - argocd

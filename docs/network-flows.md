@@ -106,7 +106,6 @@ applicative (tokens, HMAC, app passwords).
 | Service      | Hostname         | Routes                         | Backend       | Port |
 | ------------ | ---------------- | ------------------------------ | ------------- | ---- |
 | **Keycloak** | `login.<domain>` | `/` (non protege)              | keycloak-http | 8080 |
-| **Authelia** | `login.<domain>` | `/` (non protege)              | authelia      | 9091 |
 | **Vault**    | `vault.<domain>` | `/` (protege), `/v1/*` (libre) | vault         | 8200 |
 
 ### Timeouts specifiques
@@ -124,11 +123,11 @@ applicative (tokens, HMAC, app passwords).
 
 ```text
   ┌──────────────┐    OIDC     ┌──────────────┐
-  │  Nextcloud   │◄───────────►│  Keycloak/   │
-  │  cloud:8080  │             │  Authelia    │
-  └──────┬───────┘             │  login:9091  │
-         │                     └──────▲───────┘
-         │ HTTPS (WOPI/JWT)           │ OIDC
+  │  Nextcloud   │◄───────────►│  Keycloak    │
+  │  cloud:8080  │             │  login:8080  │
+  └──────┬───────┘             └──────▲───────┘
+         │                            │ OIDC
+         │ HTTPS (WOPI/JWT)           │
          ▼                            │
   ┌──────────────┐             ┌──────┴───────┐
   │  OnlyOffice  │             │  Mattermost  │
@@ -176,11 +175,11 @@ applicative (tokens, HMAC, app passwords).
   │  │  user     │ │ _user     │ │ user      │ │  user     │      │
   │  └─────▲─────┘ └─────▲─────┘ └─────▲─────┘ └─────▲─────┘      │
   │        │              │              │              │            │
-  │  ┌─────┼──────┐ ┌─────┼──────┐ ┌─────┼──────┐ ┌─────┼──────┐  │
-  │  │  flipt    │ │ authelia  │ │ keycloak  │ │            │  │
-  │  │  flipt_   │ │ authelia_ │ │ keycloak_ │ │            │  │
-  │  │  user     │ │ user      │ │ user      │ │            │  │
-  │  └───────────┘ └───────────┘ └───────────┘ └────────────┘  │
+  │  ┌─────┼──────┐ ┌─────┼──────┐ ┌─────┼──────┐                  │
+  │  │  flipt    │ │ keycloak  │ │            │                  │
+  │  │  flipt_   │ │ keycloak_ │ │            │                  │
+  │  │  user     │ │ user      │ │            │                  │
+  │  └───────────┘ └───────────┘ └────────────┘                  │
   │                                                                 │
   │  Isolation L7 : chaque service ne peut acceder qu'a sa base    │
   │  TLS : sslmode=require (staging/production)                    │
@@ -195,7 +194,6 @@ applicative (tokens, HMAC, app passwords).
 | Nextcloud  | nextcloud  | nextcloud_user  | CRUD                        | Oui |
 | Gitea      | gitea      | gitea_user      | CRUD                        | Oui |
 | Flipt      | flipt      | flipt_user      | CRUD                        | Oui |
-| Authelia   | authelia   | authelia_user   | CRUD                        | Oui |
 
 ### MariaDB
 
@@ -211,7 +209,6 @@ applicative (tokens, HMAC, app passwords).
 
 | Service   | Usage                                       | Database |
 | --------- | ------------------------------------------- | -------- |
-| Authelia  | Sessions                                    | —        |
 | Nextcloud | Sessions, cache                             | —        |
 | Gitea     | Cache (`/0`), sessions (`/1`), queue (`/2`) | 0, 1, 2  |
 
@@ -255,14 +252,13 @@ entrant et sortant. Seuls les flux explicitement autorises sont ouverts.
 
 ### Namespaces proteges
 
-vault, postgresql, mariadb, redis, authelia, keycloak, mattermost, nextcloud,
+vault, postgresql, mariadb, redis, keycloak, mattermost, nextcloud,
 onlyoffice, seaweedfs, redcap, ecrin, flipt, gitea, argocd, monitoring
 
 ### Politiques d'ingress (entrant)
 
 | Namespace  | Source autorisee           | Port(s)    | Raison                    |
 | ---------- | -------------------------- | ---------- | ------------------------- |
-| authelia   | envoy-gateway-system       | 9091       | Portail login + ext-authz |
 | keycloak   | envoy-gateway-system       | 8080       | Console admin + OIDC      |
 | vault      | envoy-gateway-system       | 8200       | UI Vault                  |
 | vault      | external-secrets           | 8200       | ESO → Vault API           |
@@ -270,7 +266,7 @@ onlyoffice, seaweedfs, redcap, ecrin, flipt, gitea, argocd, monitoring
 | nextcloud  | envoy-gateway-system       | 8080       | Trafic web                |
 | gitea      | envoy-gateway-system       | 3000, 22   | HTTP + SSH                |
 | argocd     | envoy-gateway-system       | 80, 443    | Trafic web                |
-| redis      | authelia, nextcloud, gitea | 6379       | Sessions, cache           |
+| redis      | nextcloud, gitea           | 6379       | Sessions, cache           |
 | seaweedfs  | nextcloud                  | 8333, 8888 | S3 API + Filer            |
 | postgresql | _services applicatifs_     | 5432       | Connexions BDD (L7)       |
 | mariadb    | redcap                     | 3306       | Connexion BDD (L7)        |
@@ -279,8 +275,6 @@ onlyoffice, seaweedfs, redcap, ecrin, flipt, gitea, argocd, monitoring
 
 | Namespace  | Destination | Port(s)  | Raison               |
 | ---------- | ----------- | -------- | -------------------- |
-| authelia   | redis       | 6379     | Sessions             |
-| authelia   | postgresql  | 5432     | Stockage             |
 | mattermost | postgresql  | 5432     | BDD                  |
 | nextcloud  | postgresql  | 5432     | BDD                  |
 | nextcloud  | redis       | 6379     | Cache/sessions       |
@@ -302,11 +296,11 @@ Chaque service est restreint a sa propre base de donnees :
 ```text
   CiliumNetworkPolicy (L7 PostgreSQL)
   ├── vault       → peut uniquement acceder a la base "vault"
+  ├── keycloak    → peut uniquement acceder a la base "keycloak"
   ├── mattermost  → peut uniquement acceder a la base "mattermost"
   ├── nextcloud   → peut uniquement acceder a la base "nextcloud"
   ├── gitea       → peut uniquement acceder a la base "gitea"
-  ├── flipt       → peut uniquement acceder a la base "flipt"
-  └── authelia    → peut uniquement acceder a la base "authelia"
+  └── flipt       → peut uniquement acceder a la base "flipt"
 ```
 
 Active uniquement en staging/production (`network_policy_l7_enabled`).
@@ -364,7 +358,6 @@ Reference complete des services Kubernetes et leurs coordonnees reseau :
 | Service  | DNS interne                                | Port | Namespace |
 | -------- | ------------------------------------------ | ---- | --------- |
 | Keycloak | `keycloak-http.keycloak.svc.cluster.local` | 8080 | keycloak  |
-| Authelia | `authelia.authelia.svc.cluster.local`      | 9091 | authelia  |
 | Vault    | `vault.vault.svc.cluster.local`            | 8200 | vault     |
 
 ### Donnees

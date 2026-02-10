@@ -38,10 +38,9 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: flipt
-{% if keycloak_enabled | default(false) %}
   oidc:
     provider:
-      issuer: "https://{{ keycloak_host | default('login.' + domain) }}/realms/{{ keycloak_realm | default('atlas') }}"
+      issuer: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}"
     clientID: flipt
     clientSecret:
       name: flipt-oidc-secret
@@ -50,27 +49,4 @@ spec:
       - openid
       - profile
       - email
-{% else %}
-  extAuth:
-    http:
-      backendRefs:
-        - name: authelia
-          namespace: {{ authelia_namespace | default('authelia') }}
-          port: 9091
-      path: /api/authz/ext-authz
-      headersToBackend:
-        - Remote-User
-        - Remote-Groups
-        - Remote-Email
-        - Remote-Name
-    headersToExtAuth:
-      - cookie
-      - authorization
-      - proxy-authorization
-      - x-forwarded-proto
-      - x-forwarded-host
-      - x-forwarded-uri
-      - x-forwarded-for
-    failOpen: false
-{% endif %}
 {% endif %}

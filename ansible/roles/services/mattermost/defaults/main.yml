@@ -35,19 +35,13 @@ mattermost_ingress_host: "chat.{{ domain }}"
 mattermost_ingress_tls_secret: mattermost-tls
 mattermost_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak via Envoy Gateway SecurityPolicy)
 mattermost_forward_auth_enabled: true
 
-# OIDC settings (Keycloak or Authelia)
+# OIDC settings (Keycloak)
 mattermost_oidc_enabled: true
-mattermost_oidc_button_text: >-
-  {{ 'Login with Keycloak'
-     if keycloak_enabled | default(false)
-     else 'Login with Authelia' }}
-mattermost_oidc_discovery_endpoint: >-
-  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm + '/.well-known/openid-configuration'
-     if keycloak_enabled | default(false)
-     else 'https://login.' + domain + '/.well-known/openid-configuration' }}
+mattermost_oidc_button_text: "Login with Keycloak"
+mattermost_oidc_discovery_endpoint: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/.well-known/openid-configuration"
 mattermost_oidc_client_id: mattermost
 
 # Group sync from OIDC claims

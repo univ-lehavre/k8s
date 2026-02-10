@@ -42,7 +42,7 @@ nextcloud_ingress_host: "cloud.{{ domain }}"
 nextcloud_ingress_tls_secret: nextcloud-tls
 nextcloud_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak via Envoy Gateway SecurityPolicy)
 nextcloud_forward_auth_enabled: true
 
 # S3 primary storage (SeaweedFS)
@@ -53,15 +53,12 @@ nextcloud_s3_port: 8333
 nextcloud_s3_use_ssl: "{{ env == 'production' }}"
 nextcloud_s3_use_path_style: true
 
-# Authentication mode: 'oidc' (Keycloak/Authelia) or 'saml' (for SAML-based SSO)
+# Authentication mode: 'oidc' (Keycloak) or 'saml' (for SAML-based SSO)
 nextcloud_auth_mode: oidc
 
-# OIDC settings (Keycloak or Authelia)
+# OIDC settings (Keycloak)
 nextcloud_oidc_enabled: "{{ nextcloud_auth_mode == 'oidc' }}"
-nextcloud_oidc_provider_url: >-
-  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm
-     if keycloak_enabled | default(false)
-     else 'https://login.' + domain }}
+nextcloud_oidc_provider_url: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}"
 nextcloud_oidc_client_id: nextcloud
 
 # Group mapping from OIDC provider to Nextcloud groups

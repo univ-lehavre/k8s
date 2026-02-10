@@ -33,5 +33,5 @@ redcap_salt: "{{ secrets.redcap.salt | default(omit) }}"
 redcap_ingress_enabled: true
 redcap_ingress_host: "redcap.{{ domain }}"
 
-# Forward Auth (Keycloak/Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak via Envoy Gateway SecurityPolicy)
 redcap_forward_auth_enabled: true
