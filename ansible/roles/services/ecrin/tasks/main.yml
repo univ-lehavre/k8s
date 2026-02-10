@@ -57,7 +57,7 @@
         namespace: "{{ ecrin_namespace }}"
       spec:
         selector:
-          app: ecrin
+          app.kubernetes.io/name: ecrin
         ports:
           - port: 80
             targetPort: "{{ ecrin_container_port }}"

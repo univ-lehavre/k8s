@@ -20,22 +20,31 @@ metadata:
   name: onlyoffice
   namespace: {{ onlyoffice_namespace }}
   labels:
-    app: onlyoffice
+    app.kubernetes.io/name: onlyoffice
+    app.kubernetes.io/component: office
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: onlyoffice
+      app.kubernetes.io/name: onlyoffice
   template:
     metadata:
       labels:
-        app: onlyoffice
+        app.kubernetes.io/name: onlyoffice
+        app.kubernetes.io/component: office
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: onlyoffice
           image: {{ onlyoffice_image }}:{{ onlyoffice_image_tag }}
           ports:
             - containerPort: 80
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
               cpu: {{ onlyoffice_resources.requests.cpu }}

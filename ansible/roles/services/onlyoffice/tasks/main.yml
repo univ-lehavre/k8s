@@ -44,7 +44,7 @@
         namespace: "{{ onlyoffice_namespace }}"
       spec:
         selector:
-          app: onlyoffice
+          app.kubernetes.io/name: onlyoffice
         ports:
           - port: 80
             targetPort: 80

@@ -78,11 +78,21 @@ podLabels:
 # Email domain restriction extension
 extraInitContainers: |
   - name: download-email-restrict
-    image: curlimages/curl:latest
+    image: curlimages/curl:{{ helm_versions.curl }}
     command:
       - sh
       - -c
-      - 'curl -sL -o /extensions/keycloak-registration-mail-restrict.jar "https://github.com/ognjenm/keycloak-registration-mail-restrict/releases/latest/download/keycloak-registration-mail-restrict.jar"'
+      - |
+        curl -sL -o /extensions/keycloak-registration-mail-restrict.jar \
+          "https://github.com/ognjenm/keycloak-registration-mail-restrict/releases/latest/download/keycloak-registration-mail-restrict.jar" && \
+        echo "Downloaded email restriction extension" && \
+        ls -la /extensions/keycloak-registration-mail-restrict.jar
+    securityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      readOnlyRootFilesystem: false
     volumeMounts:
       - name: extensions
         mountPath: /extensions

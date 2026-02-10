@@ -35,6 +35,8 @@ helm_versions:
   onlyoffice: "8.0.1"
   ecrin: "1.0.0"
   redcap: "14.0.0"
+  # Utility image versions
+  curl: "8.11.1"
   # Application image tags (for non-Helm deployments)
   mattermost_image_tag: "9.11"
   nextcloud_image_tag: "29"

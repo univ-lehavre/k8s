@@ -33,6 +33,29 @@ jobs:
       - name: Run yamllint
         run: yamllint -c .yamllint --strict .
 
+  kubernetes-validate:
+    name: Kubernetes Manifest Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz \
+            | tar xz -C /usr/local/bin
+
+      - name: Validate non-templated YAML manifests
+        run: |
+          find ansible/roles -name '*.yml' -not -name '*.j2' -not -path '*/tasks/*' \
+            -not -path '*/defaults/*' -not -path '*/vars/*' -not -path '*/handlers/*' \
+            -not -path '*/meta/*' | \
+          xargs -r kubeconform -summary -strict \
+            -ignore-missing-schemas \
+            -kubernetes-version 1.29.0 \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            || true
+
   markdown-lint:
     name: Markdown Lint
     runs-on: ubuntu-latest
