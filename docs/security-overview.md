@@ -10,7 +10,9 @@ Vue d'ensemble de la posture de securite du cluster : comptes utilisateurs, secr
 
 ### Modele d'identite
 
-Les utilisateurs sont geres dans Authelia (fichier `/config/users_database.yml`). En production, ce fichier est alimente par un annuaire externe (LDAP). En local, trois comptes de test sont crees automatiquement.
+Les utilisateurs sont geres dans Authelia (fichier `/config/users_database.yml`).
+En production, ce fichier est alimente par un annuaire externe (LDAP).
+En local, trois comptes de test sont crees automatiquement.
 
 ```text
   ┌────────────────────────────────────────────────────────────────┐
@@ -212,7 +214,9 @@ L'isolation L7 Cilium garantit que chaque service ne peut acceder qu'a **sa prop
 | Secrets plateforme       | **7 jours**      | Authelia JWT, session, OIDC keys                |
 | Mots de passe admin     | **7 jours**      | Mattermost, Nextcloud, Gitea, ArgoCD, Grafana   |
 
-> **Note** : la rotation met a jour le Kubernetes Secret mais les pods doivent etre redemares manuellement pour prendre en compte les nouveaux secrets. Un label `security.atlas/rotation-enabled: "true"` identifie les secrets concernes.
+> **Note** : la rotation met a jour le Kubernetes Secret mais les pods doivent etre
+> redemares manuellement pour prendre en compte les nouveaux secrets.
+> Un label `security.atlas/rotation-enabled: "true"` identifie les secrets concernes.
 
 ---
 
@@ -305,6 +309,7 @@ Le renouvellement est **entierement automatique**. Cert-Manager renouvelle 30 jo
 ```
 
 La rotation de la clef etcd est **manuelle** :
+
 1. Ajouter la nouvelle clef en premiere position dans la config
 2. Redemarrer le kube-apiserver
 3. Re-chiffrer tous les secrets : `kubectl get secrets --all-namespaces -o json | kubectl replace -f -`
@@ -380,7 +385,10 @@ La rotation de la clef etcd est **manuelle** :
          └─────────┘                 └─────────┘
 ```
 
-**Principe** : Toute requete passe par Envoy Gateway. Les routes principales (`/`) sont protegees par une SecurityPolicy qui consulte Authelia. Les routes API/webhook sont sur des HTTPRoutes separees sans SecurityPolicy — elles utilisent l'authentification applicative (tokens, HMAC).
+**Principe** : Toute requete passe par Envoy Gateway.
+Les routes principales (`/`) sont protegees par une SecurityPolicy qui consulte Authelia.
+Les routes API/webhook sont sur des HTTPRoutes separees sans SecurityPolicy —
+elles utilisent l'authentification applicative (tokens, HMAC).
 
 ---
 

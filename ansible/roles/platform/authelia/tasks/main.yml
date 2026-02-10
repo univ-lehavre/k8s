@@ -64,7 +64,12 @@
         namespace: "{{ namespaces.vault | default('vault') }}"
         pod: vault-0
         command: >-
-          vault kv put {{ authelia_vault_path }} jwt-token='{{ _authelia_generated_secrets.jwt_token }}' session-secret='{{ _authelia_generated_secrets.session_secret }}' storage-encryption-key='{{ _authelia_generated_secrets.storage_encryption_key }}' oidc-hmac-secret='{{ _authelia_generated_secrets.oidc_hmac_secret }}' oidc-private-key='{{ _authelia_generated_secrets.oidc_private_key }}'
+          vault kv put {{ authelia_vault_path }}
+          jwt-token='{{ _authelia_generated_secrets.jwt_token }}'
+          session-secret='{{ _authelia_generated_secrets.session_secret }}'
+          storage-encryption-key='{{ _authelia_generated_secrets.storage_encryption_key }}'
+          oidc-hmac-secret='{{ _authelia_generated_secrets.oidc_hmac_secret }}'
+          oidc-private-key='{{ _authelia_generated_secrets.oidc_private_key }}'
       environment:
         VAULT_TOKEN: "{{ secrets.vault.root_token }}"
       no_log: true
@@ -82,8 +87,13 @@
     name: authelia-secrets
     namespace: "{{ authelia_namespace }}"
   register: _authelia_es_status
-  until: >
-    _authelia_es_status.resources | length > 0 and _authelia_es_status.resources[0].status.conditions | default([]) | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+  until: >-
+    _authelia_es_status.resources | length > 0 and
+    _authelia_es_status.resources[0].status.conditions
+    | default([])
+    | selectattr('type', 'equalto', 'Ready')
+    | selectattr('status', 'equalto', 'True')
+    | list | length > 0
   retries: 12
   delay: 5
   when: authelia_vault_enabled | bool

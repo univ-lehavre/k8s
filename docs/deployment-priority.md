@@ -3,15 +3,23 @@
 **Date** : 2026-02-10
 **Branche** : `feature/ansible-atlas-platform`
 
-Ce guide structure le deploiement de la plateforme en **jalons** orientes valeur metier. Chaque jalon produit un resultat utilisable et constitue un point de validation avant de passer au suivant.
+Ce guide structure le deploiement de la plateforme en **jalons** orientes valeur metier.
+Chaque jalon produit un resultat utilisable et constitue un point de validation
+avant de passer au suivant.
 
-> **Gestion des secrets Authelia** : lorsque Vault est disponible (staging/production), les secrets d'Authelia (JWT, session, OIDC HMAC, cle privee RSA, cle de chiffrement storage) sont generes au premier deploiement, stockes dans Vault (`secret/platform/authelia`) et synchronises vers Kubernetes via External Secrets Operator. En local (sans Vault), les secrets sont generes directement par Ansible (fallback).
+> **Gestion des secrets Authelia** : lorsque Vault est disponible (staging/production),
+> les secrets d'Authelia (JWT, session, OIDC HMAC, cle privee RSA, cle de chiffrement storage)
+> sont generes au premier deploiement, stockes dans Vault (`secret/platform/authelia`)
+> et synchronises vers Kubernetes via External Secrets Operator.
+> En local (sans Vault), les secrets sont generes directement par Ansible (fallback).
 
 ---
 
 ## Deploiement automatique avec resolution de dependances
 
-Chaque composant declare ses dependances dans `ansible/vars/dependency_graph.yml`. Le playbook `deploy.yml` resout l'arbre complet, verifie quels composants sont deja operationnels dans le cluster, et ne deploie que les manquants dans l'ordre topologique.
+Chaque composant declare ses dependances dans `ansible/vars/dependency_graph.yml`.
+Le playbook `deploy.yml` resout l'arbre complet, verifie quels composants sont deja
+operationnels dans le cluster, et ne deploie que les manquants dans l'ordre topologique.
 
 ### Usage
 

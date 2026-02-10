@@ -66,8 +66,13 @@
     name: "{{ gateway_name }}"
     namespace: "{{ envoy_gateway_namespace }}"
   register: gateway_status
-  until: >
-    gateway_status.resources | length > 0 and gateway_status.resources[0].status is defined and gateway_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Accepted') | selectattr('status', 'equalto', 'True') | list | length > 0
+  until: >-
+    gateway_status.resources | length > 0 and
+    gateway_status.resources[0].status is defined and
+    gateway_status.resources[0].status.conditions
+    | selectattr('type', 'equalto', 'Accepted')
+    | selectattr('status', 'equalto', 'True')
+    | list | length > 0
   retries: 30
   delay: 10
 
