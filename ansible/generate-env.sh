@@ -105,6 +105,14 @@ export PROD_WORKER3_HOST="FIXME"
 export PROD_SSH_KEY="~/.ssh/production_key"
 
 # =============================================================================
+# STAGING SERVER (FIXME: fill in your values)
+# =============================================================================
+
+export STAGING_DOMAIN="FIXME.example.com"          # FIXME: your staging domain
+export STAGING_HOST="FIXME"                         # FIXME: staging server IP
+export STAGING_SSH_KEY="~/.ssh/staging_key"
+
+# =============================================================================
 # ENCRYPTION KEYS
 # =============================================================================
 
