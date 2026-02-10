@@ -1,6 +1,7 @@
 # Audit de Cohérence : Code vs Documentation
 
-> **ARCHIVE** : Les incohérences identifiées dans cet audit ont été corrigées. Voir les commits postérieurs au 2026-02-05.
+> **ARCHIVE** : Toutes les incohérences identifiées dans cet audit ont été corrigées le 2026-02-10.
+> Voir le commit `fix: comprehensive code review remediation` sur la branche `fix/comprehensive-code-review-remediation`.
 
 **Date** : 2026-02-03
 **Auteur** : Audit automatisé
@@ -10,16 +11,16 @@
 
 ## Résumé Exécutif
 
-| Catégorie | Statut | Score | Notes |
-|-----------|--------|-------|-------|
-| Structure du dépôt | Cohérent | 100% | Documentation reflète la structure réelle |
-| Playbooks | Cohérent | 100% | 9 phases documentées et implémentées |
-| Rôles Ansible | Cohérent | 100% | 45+ rôles présents comme documenté |
-| Versions Helm | Partiel | 75% | Quelques composants non centralisés |
-| Base de données | Incohérence | 80% | Documentation incomplète sur PostgreSQL |
-| Authentification | Incohérence | 70% | Double système Authelia + Authentik |
-| Network Policies | Incohérence | 85% | Documentation incomplète sur les namespaces |
-| **Score Global** | | **90%** | |
+| Catégorie | Statut initial | Score initial | Statut corrigé | Score corrigé |
+|-----------|----------------|---------------|----------------|---------------|
+| Structure du dépôt | Cohérent | 100% | Cohérent | 100% |
+| Playbooks | Cohérent | 100% | Cohérent | 100% |
+| Rôles Ansible | Cohérent | 100% | Cohérent | 100% |
+| Versions Helm | Partiel | 75% | Corrigé | 100% |
+| Base de données | Incohérence | 80% | Corrigé | 100% |
+| Authentification | Incohérence | 70% | Corrigé | 100% |
+| Network Policies | Incohérence | 85% | Corrigé | 100% |
+| **Score Global** | | **90%** | | **100%** |
 
 ---
 
@@ -238,10 +239,44 @@ Tous les playbooks documentés existent et contiennent les rôles attendus :
 
 ## 5. Conclusion
 
-Le dépôt est globalement bien structuré et documenté avec un score de **90%**. Les incohérences identifiées sont principalement :
+Le dépôt est globalement bien structuré et documenté avec un score initial de **90%**. Les incohérences identifiées étaient principalement :
 
 1. **Code superflu** : Authentik déployé mais non documenté et redondant avec Authelia
 2. **Documentation incomplète** : Namespaces, bases de données, versions non à jour
 3. **Manque de centralisation** : Certaines versions Helm hardcodées dans les rôles
 
-Voir le fichier `2026-02-03-remediation-roadmap.md` pour le plan de correction.
+---
+
+## 6. Remédiation (complétée le 2026-02-10)
+
+Toutes les incohérences ont été corrigées. Score final : **100%**.
+
+### 6.1 Suppression d'Authentik
+
+Authentik a été supprimé lors du commit `126176d`. Les références résiduelles dans les OIDC defaults et la documentation ont été nettoyées : endpoints migrés vers Authelia pour Mattermost, Nextcloud, ArgoCD et Grafana.
+
+- [x] Supprimer le rôle et namespace Ansible
+- [x] Mettre à jour playbooks, inventaires, helm_versions, secrets_mapping, network_policies
+- [x] Migrer les endpoints OIDC vers Authelia
+
+### 6.2 Correction des noms de bases de données
+
+La documentation utilisait le suffixe `_db`. Aligné sur les noms réels du code :
+
+| BDD          | Service         | Utilisateur       |
+| ------------ | --------------- | ----------------- |
+| `vault`      | HashiCorp Vault | `vault_user`      |
+| `authelia`   | Authelia        | `authelia_user`   |
+| `mattermost` | Mattermost      | `mattermost_user` |
+| `nextcloud`  | Nextcloud       | `nextcloud_user`  |
+| `gitea`      | Gitea           | `gitea_user`      |
+| `flipt`      | Flipt           | `flipt_user`      |
+| `redcap`     | REDCap (MariaDB)| `redcap_user`     |
+
+### 6.3 Ajout des namespaces manquants
+
+Migration du namespace partagé `databases` vers des namespaces séparés `postgresql`, `redis`, `mariadb`. Ajout de `onlyoffice`, `seaweedfs`, `redcap`, `ecrin`, `flipt`, `monitoring` dans la documentation.
+
+### 6.4 Centralisation des versions Helm
+
+Ajout dans `helm_versions.yml` : `onlyoffice`, `ecrin`, `mattermost_image_tag`, `nextcloud_image_tag`. Ajout de 4 repos Helm manquants (Envoy Gateway, Velero, Trivy, Flipt).

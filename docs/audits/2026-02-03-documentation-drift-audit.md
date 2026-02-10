@@ -1,5 +1,8 @@
 # Audit de Drift : Documentation Atlas vs Implémentation K8s
 
+> **ARCHIVE** : Les incohérences identifiées dans cet audit ont été corrigées le 2026-02-10.
+> Voir le commit `fix: comprehensive code review remediation` sur la branche `fix/comprehensive-code-review-remediation`.
+
 **Date** : 2026-02-03
 **Auteur** : Audit automatisé
 **Source documentation** : `/atlas/docs/projects/microservices/`
@@ -45,7 +48,7 @@ Authelia est le service d'authentification centralisé de la plateforme, rempla�
 | Namespace | `authelia` |
 | URL | `https://login.<domain>` |
 | Fonctions | SSO, OIDC, Forward Auth, MFA (TOTP/WebAuthn) |
-| Backend | PostgreSQL (`authelia_db`) + Redis (sessions) |
+| Backend | PostgreSQL (`authelia`) + Redis (sessions) |
 | Intégration | Envoy Gateway pour Forward Auth |
 
 Avantages d'Authelia :
@@ -274,17 +277,17 @@ Policies appliquées en staging/production :
 | Database | Service | Namespace |
 |----------|---------|-----------|
 | `vault` | HashiCorp Vault | vault |
-| `authelia_db` | Authelia | authelia |
-| `mattermost_db` | Mattermost | mattermost |
-| `nextcloud_db` | Nextcloud | nextcloud |
-| `gitea_db` | Gitea | gitea |
-| `flipt_db` | Flipt | flipt |
+| `authelia` | Authelia | authelia |
+| `mattermost` | Mattermost | mattermost |
+| `nextcloud` | Nextcloud | nextcloud |
+| `gitea` | Gitea | gitea |
+| `flipt` | Flipt | flipt |
 
 ### 4.2 MariaDB - Bases de Données
 
 | Database | Service | Namespace |
 |----------|---------|-----------|
-| `redcap_db` | REDCap | redcap |
+| `redcap` | REDCap | redcap |
 
 Configuration PostgreSQL :
 

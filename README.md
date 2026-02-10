@@ -220,13 +220,11 @@ ansible-playbook playbooks/site.yml -i inventories/production
 │
 ├── docs/
 │   ├── CONTRIBUTING.md                    # Guide du développeur (linting, hooks, CI)
-│   ├── audits/
-│   │   ├── 2026-02-03-code-documentation-coherence.md
-│   │   ├── 2026-02-03-code-review.md
-│   │   └── 2026-02-03-documentation-drift-audit.md
-│   └── roadmaps/
-│       ├── 2026-02-03-documentation-coherence-remediation.md
-│       └── 2026-02-05-ecrin-deployment-guide.md
+│   ├── ecrin-deployment-guide.md          # Guide de déploiement ECRIN
+│   └── audits/
+│       ├── 2026-02-03-code-documentation-coherence.md
+│       ├── 2026-02-03-code-review.md
+│       └── 2026-02-03-documentation-drift-audit.md
 │
 ├── Taskfile.yml
 └── README.md
