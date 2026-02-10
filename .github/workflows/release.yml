@@ -109,8 +109,8 @@ jobs:
           new_version="${{ steps.bump.outputs.new_tag }}"
           new_version="${new_version#v}"
           npm version "$new_version" --no-git-tag-version
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "chasset"
+          git config user.email "1488688+chasset@users.noreply.github.com"
           git add package.json package-lock.json
           git commit -m "chore: bump version to v${new_version}"
           git push
