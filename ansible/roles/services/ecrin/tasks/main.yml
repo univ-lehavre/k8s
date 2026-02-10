@@ -57,7 +57,7 @@
         namespace: "{{ ecrin_namespace }}"
       spec:
         selector:
-          app: ecrin
+          app.kubernetes.io/name: ecrin
         ports:
           - port: 80
             targetPort: "{{ ecrin_container_port }}"
@@ -82,3 +82,9 @@
     state: present
     definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: ecrin_ingress_enabled
+
+- name: Deploy ECRIN HPA
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'hpa.yml.j2') | from_yaml }}"
+  when: ecrin_hpa_enabled | bool

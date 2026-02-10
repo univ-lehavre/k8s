@@ -1,0 +1,21 @@
+# Argo Rollouts — Progressive Delivery
+# Provides canary and blue-green deployment strategies
+
+argo_rollouts_enabled: "{{ env == 'production' }}"
+argo_rollouts_namespace: argocd
+
+# Helm
+argo_rollouts_chart_repo: "{{ helm_repositories.argo.url }}"
+argo_rollouts_chart_repo_name: "{{ helm_repositories.argo.name }}"
+
+# Dashboard
+argo_rollouts_dashboard_enabled: true
+
+# Resources
+argo_rollouts_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

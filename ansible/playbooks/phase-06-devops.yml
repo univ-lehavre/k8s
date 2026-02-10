@@ -12,6 +12,8 @@
       tags: [devops, gitea, git]
     - role: devops/argocd
       tags: [devops, argocd, gitops, cd]
+    - role: devops/argo_rollouts
+      tags: [devops, argocd, rollouts, canary]
 
   post_tasks:
     - name: Phase 6 complete
@@ -20,5 +22,6 @@
           DevOps tools deployed:
           - Gitea: https://git.{{ domain }}
           - ArgoCD: https://argocd.{{ domain }}
+          - Argo Rollouts: Progressive delivery controller
 
           SSH access for Gitea: git@{{ domain }}:{{ gitea_ssh_nodeport | default(30022) }}

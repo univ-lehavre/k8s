@@ -80,3 +80,9 @@
     state: present
     definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: nextcloud_ingress_enabled
+
+- name: Deploy Nextcloud HPA
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'hpa.yml.j2') | from_yaml }}"
+  when: nextcloud_hpa_enabled | bool

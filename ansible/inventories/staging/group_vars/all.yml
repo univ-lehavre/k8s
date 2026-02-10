@@ -3,7 +3,7 @@ env: staging
 env_name: "Staging"
 
 # Domain configuration
-domain: "{{ lookup('env', 'STAGING_DOMAIN') | default('atlas.chasset.net', true) }}"
+domain: "{{ lookup('env', 'STAGING_DOMAIN') | default('atlas.fixme.com', true) }}"
 admin_email: "{{ lookup('env', 'LETSENCRYPT_EMAIL') | default('admin@example.com', true) }}"
 
 # K3s configuration
@@ -41,7 +41,6 @@ namespaces:
   postgresql: postgresql
   redis: redis
   mariadb: mariadb
-  authelia: authelia
   mattermost: mattermost
   nextcloud: nextcloud
   onlyoffice: onlyoffice
@@ -51,6 +50,7 @@ namespaces:
   flipt: flipt
   gitea: gitea
   argocd: argocd
+  keycloak: keycloak
   monitoring: monitoring
 
 # PostgreSQL configuration
@@ -75,6 +75,7 @@ service_urls:
   flipt: "https://flags.{{ domain }}"
   longhorn: "https://longhorn.{{ domain }}"
   hubble: "https://hubble.{{ domain }}"
+  keycloak: "https://login.{{ domain }}"
 
 # Firewall allowed IPs (for K3s API access)
 admin_allowed_ips:

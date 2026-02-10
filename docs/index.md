@@ -18,7 +18,7 @@ hero:
 features:
   - title: Securite
     details: >-
-      Authelia SSO/OIDC/MFA, Vault + External Secrets Operator,
+      Keycloak SSO/OIDC/MFA, Vault + External Secrets Operator,
       Kyverno, Network Policies, certificats Let's Encrypt
   - title: Deploiement
     details: >-
@@ -47,9 +47,9 @@ features:
               +---------------+---------------+
               |               |               |
         +-----+-----+  +-----+-----+  +------+------+
-        |  Authelia  |  |   Apps    |  |   DevOps    |
-        |  SSO/OIDC  |  | Nextcloud |  | Gitea       |
-        |  MFA       |  | Mattermost|  | ArgoCD      |
+        | Keycloak   |  |   Apps    |  |   DevOps    |
+        | SSO/OIDC   |  | Nextcloud |  | Gitea       |
+        |            |  | Mattermost|  | ArgoCD      |
         +-----+------+  | REDCap   |  +-------------+
               |          | ECRIN    |  +-------------+
               |          | Flipt    |  | Monitoring  |
@@ -69,7 +69,7 @@ features:
 
 | Service    | URL                | Description                     |
 |------------|--------------------|---------------------------------|
-| Authelia   | `login.<domain>`   | SSO, OIDC, Forward Auth, MFA   |
+| Keycloak   | `login.<domain>`   | IAM, SSO, OIDC, MFA            |
 | Mattermost | `chat.<domain>`    | Messagerie d'equipe             |
 | Nextcloud  | `cloud.<domain>`   | Partage de fichiers             |
 | OnlyOffice | `office.<domain>`  | Edition collaborative           |
@@ -90,7 +90,7 @@ features:
 | 2     | `phase-02-k3s-core.yml`    | K3s, Cilium, Envoy GW, Cert-Mgr       |
 | 3     | `phase-03-vault.yml`       | Vault, External Secrets Operator       |
 | 4     | `phase-04-databases.yml`   | PostgreSQL HA, MariaDB, Redis          |
-| 5     | `phase-05-services.yml`    | Authelia, apps, SeaweedFS              |
+| 5     | `phase-05-services.yml`    | Keycloak, apps, SeaweedFS              |
 | 6     | `phase-06-devops.yml`      | Gitea, ArgoCD                          |
 | 7     | `phase-07-monitoring.yml`  | Prometheus, Grafana, Hubble            |
 | 8     | `phase-08-security.yml`    | Kyverno, Network Policies, backups     |

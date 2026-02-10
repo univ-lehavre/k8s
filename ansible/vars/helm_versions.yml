@@ -16,7 +16,8 @@ helm_versions:
   redis: "18.12.1"
 
   # Identity
-  authelia: "0.9.0"
+  keycloak: "26.0"
+  keycloak_chart: "3.0.0"
 
   # Gateway API
   envoy_gateway: "1.2.0"
@@ -34,6 +35,8 @@ helm_versions:
   onlyoffice: "8.0.1"
   ecrin: "1.0.0"
   redcap: "14.0.0"
+  # Utility image versions
+  curl: "8.11.1"
   # Application image tags (for non-Helm deployments)
   mattermost_image_tag: "9.11"
   nextcloud_image_tag: "29"
@@ -41,9 +44,13 @@ helm_versions:
   # DevOps
   gitea: "10.1.1"
   argocd: "6.4.0"
+  argo_rollouts: "2.37.0"
 
   # Monitoring
   kube_prometheus_stack: "56.21.1"
+  # Logging
+  loki: "6.24.0"
+  alloy: "0.12.0"
 
   # Security
   velero: "1.13.0"
@@ -103,9 +110,9 @@ helm_repositories:
     name: grafana
     url: https://grafana.github.io/helm-charts
 
-  authelia:
-    name: authelia
-    url: https://charts.authelia.com
+  codecentric:
+    name: codecentric
+    url: https://codecentric.github.io/helm-charts
 
   kyverno:
     name: kyverno

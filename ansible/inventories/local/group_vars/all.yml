@@ -44,7 +44,6 @@ namespaces:
   postgresql: postgresql
   redis: redis
   mariadb: mariadb
-  authelia: authelia
   mattermost: mattermost
   nextcloud: nextcloud
   onlyoffice: onlyoffice
@@ -54,6 +53,7 @@ namespaces:
   flipt: flipt
   gitea: gitea
   argocd: argocd
+  keycloak: keycloak
   monitoring: monitoring
 
 # PostgreSQL configuration

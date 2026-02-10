@@ -25,16 +25,21 @@ ecrin_ingress_host: "ecrin.{{ domain }}"
 ecrin_ingress_tls_secret: ecrin-tls
 ecrin_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak via Envoy Gateway SecurityPolicy)
 ecrin_forward_auth_enabled: true
 
-# OIDC settings (Authelia)
+# OIDC settings (Keycloak)
 ecrin_oidc_enabled: true
-ecrin_oidc_authority: "https://login.{{ domain }}"
+ecrin_oidc_authority: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}"
 ecrin_oidc_client_id: ecrin
 ecrin_oidc_redirect_uri: "https://ecrin.{{ domain }}/auth/callback"
-# Uses the same secret as configured in Authelia OIDC client
-ecrin_oidc_client_secret: "{{ authelia_oidc_ecrin_secret }}"
+ecrin_oidc_client_secret: "{{ secrets.keycloak.oidc_ecrin_secret | default('') }}"
+
+# Autoscaling (production only)
+ecrin_hpa_enabled: "{{ env == 'production' }}"
+ecrin_hpa_min_replicas: 1
+ecrin_hpa_max_replicas: 2
+ecrin_hpa_target_cpu: 75
 
 # REDCap integration (external service)
 ecrin_redcap_url: "{{ lookup('env', 'ECRIN_REDCAP_URL') | default('') }}"

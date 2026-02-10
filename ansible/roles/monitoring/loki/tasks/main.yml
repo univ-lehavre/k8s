@@ -1,0 +1,42 @@
+# Loki + Alloy tasks
+
+- name: Add Grafana Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ loki_chart_repo_name }}"
+    repo_url: "{{ loki_chart_repo }}"
+
+- name: Deploy Loki via Helm
+  kubernetes.core.helm:
+    name: loki
+    chart_ref: "{{ loki_chart_repo_name }}/loki"
+    chart_version: "{{ helm_versions.loki }}"
+    release_namespace: "{{ loki_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'loki-values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 600s
+
+- name: Wait for Loki to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: StatefulSet
+    name: loki
+    namespace: "{{ loki_namespace }}"
+  register: loki_sts
+  until:
+    - loki_sts.resources | length > 0
+    - loki_sts.resources[0].status.readyReplicas is defined
+    - loki_sts.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+
+- name: Deploy Alloy via Helm
+  kubernetes.core.helm:
+    name: alloy
+    chart_ref: "{{ loki_chart_repo_name }}/alloy"
+    chart_version: "{{ helm_versions.alloy }}"
+    release_namespace: "{{ loki_namespace }}"
+    values: "{{ lookup('template', 'alloy-values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 300s
+  when: alloy_enabled

@@ -12,7 +12,7 @@ network_policies_namespaces:
   - postgresql
   - mariadb
   - redis
-  - authelia
+  - keycloak
   - mattermost
   - nextcloud
   - onlyoffice
@@ -35,8 +35,8 @@ monitoring_namespace: monitoring
 # Changed from kube-system (Cilium Ingress) to envoy-gateway-system (Envoy Gateway)
 ingress_namespace: envoy-gateway-system
 
-# Authelia namespace (for forward auth policies)
-authelia_namespace: authelia
+# Keycloak namespace (for SSO policies)
+keycloak_namespace: keycloak
 
 # L7 Network Policy settings
 # Enable L7 filtering for database access control
@@ -65,10 +65,10 @@ postgresql_l7_policies:
     namespace: flipt
     database: flipt
     user: flipt_user
-  - service: authelia
-    namespace: authelia
-    database: authelia
-    user: authelia_user
+  - service: keycloak
+    namespace: keycloak
+    database: keycloak
+    user: keycloak_user
 
 # MariaDB L7 filtering - for MySQL-compatible services
 # REDCap requires MySQL/MariaDB, not PostgreSQL

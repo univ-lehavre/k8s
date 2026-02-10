@@ -12,6 +12,9 @@ admissionController:
     limits:
       cpu: {{ kyverno_resources.admission_controller.limits.cpu }}
       memory: {{ kyverno_resources.admission_controller.limits.memory }}
+  podDisruptionBudget:
+    enabled: {{ ha_enabled | default(false) | lower }}
+    minAvailable: 2
 
 # Background controller
 backgroundController:

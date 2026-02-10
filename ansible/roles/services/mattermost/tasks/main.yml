@@ -66,3 +66,9 @@
     state: present
     definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: mattermost_ingress_enabled
+
+- name: Deploy Mattermost HPA
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'hpa.yml.j2') | from_yaml }}"
+  when: mattermost_hpa_enabled | bool

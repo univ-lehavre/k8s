@@ -106,7 +106,7 @@ grafana:
     server:
       root_url: "https://{{ grafana_ingress_host }}"
 {% if grafana_proxy_auth_enabled | default(false) %}
-    # Proxy authentication via Authelia headers
+    # Proxy authentication via SSO provider headers
     auth.proxy:
       enabled: true
       header_name: {{ grafana_proxy_header_name }}
@@ -121,7 +121,7 @@ grafana:
     users:
       auto_assign_org: true
       auto_assign_org_role: {{ grafana_role_mapping.default_role | default('Viewer') }}
-    # Role mapping based on Authelia groups (JMESPath expression)
+    # Role mapping based on SSO groups (JMESPath expression)
     # Maps groups header to Grafana roles: admins→Admin, devops→Editor, others→Viewer
     role_attribute_path: >-
       contains(groups[*], '{{ grafana_role_mapping.admin_groups | default(["admins"]) | join("') || contains(groups[*], '") }}') && 'Admin' ||
@@ -145,6 +145,13 @@ grafana:
         contains(groups[*], '{{ grafana_role_mapping.editor_groups | default(["devops"]) | join("') || contains(groups[*], '") }}') && 'Editor' ||
         'Viewer'
 {% endif %}
+
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki.monitoring.svc.cluster.local:3100
+      access: proxy
+      isDefault: false
 
   # Ingress disabled (managed separately)
   ingress:

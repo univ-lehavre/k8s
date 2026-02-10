@@ -1,0 +1,336 @@
+# Keycloak deployment tasks
+# Deploys Keycloak IAM with realm configuration for ATLAS platform
+
+- name: Deploy Keycloak
+  block:
+
+    - name: Create Keycloak namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ keycloak_namespace }}"
+            labels:
+              app.kubernetes.io/name: keycloak
+              app.kubernetes.io/component: identity
+
+    - name: Add Codecentric Helm repository
+      kubernetes.core.helm_repository:
+        name: "{{ keycloak_chart_repo_name }}"
+        repo_url: "{{ keycloak_chart_repo }}"
+        state: present
+
+    # --- Database setup ---
+
+    - name: Create Keycloak database in PostgreSQL
+      ansible.builtin.include_tasks: ../../platform/postgresql/tasks/create_database.yml
+      vars:
+        db_name: "{{ keycloak_postgresql_database }}"
+        db_user: "{{ keycloak_postgresql_user }}"
+        db_password: "{{ database_passwords.keycloak }}"
+        db_privileges: "{{ database_privileges.keycloak.privileges }}"
+        db_schema_owner: "{{ database_privileges.keycloak.schema_owner }}"
+      when:
+        - database_passwords.keycloak is defined
+        - database_passwords.keycloak != ''
+
+    # --- Vault-backed secrets management ---
+
+    - name: Check if Keycloak secrets exist in Vault
+      kubernetes.core.k8s_exec:
+        namespace: "{{ namespaces.vault | default('vault') }}"
+        pod: vault-0
+        command: vault kv get -format=json {{ keycloak_vault_path }}
+      environment:
+        VAULT_TOKEN: "{{ secrets.vault.root_token }}"
+      register: _vault_keycloak_check
+      failed_when: false
+      changed_when: false
+      when: keycloak_vault_enabled | bool
+      no_log: true
+
+    - name: Generate and store Keycloak secrets in Vault
+      when:
+        - keycloak_vault_enabled | bool
+        - _vault_keycloak_check.rc | default(1) != 0
+      block:
+        - name: Generate random secrets
+          ansible.builtin.set_fact:
+            _keycloak_generated_secrets:
+              admin_password: "{{ keycloak_admin_password | default(lookup('password', '/dev/null length=32 chars=ascii_letters,digits,punctuation')) }}"
+          no_log: true
+
+        - name: Generate OIDC client secrets
+          ansible.builtin.set_fact:
+            _keycloak_client_secrets: >-
+              {{
+                _keycloak_client_secrets | default({})
+                | combine({item.client_id: lookup('password', '/dev/null length=64 chars=ascii_letters,digits')})
+              }}
+          loop: "{{ keycloak_oidc_clients }}"
+          no_log: true
+
+        - name: Store Keycloak secrets in Vault
+          kubernetes.core.k8s_exec:
+            namespace: "{{ namespaces.vault | default('vault') }}"
+            pod: vault-0
+            command: >-
+              vault kv put {{ keycloak_vault_path }}
+              admin-password='{{ _keycloak_generated_secrets.admin_password }}'
+              {% for client in keycloak_oidc_clients %}
+              oidc-{{ client.client_id }}-secret='{{ _keycloak_client_secrets[client.client_id] }}'
+              {% endfor %}
+          environment:
+            VAULT_TOKEN: "{{ secrets.vault.root_token }}"
+          no_log: true
+
+    - name: Create ExternalSecret for Keycloak
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'external-secret.yml.j2') | from_yaml_all | list }}"
+      when: keycloak_vault_enabled | bool
+
+    - name: Wait for ExternalSecret to sync
+      kubernetes.core.k8s_info:
+        api_version: external-secrets.io/v1beta1
+        kind: ExternalSecret
+        name: keycloak-secrets
+        namespace: "{{ keycloak_namespace }}"
+      register: _keycloak_es_status
+      until: >-
+        _keycloak_es_status.resources | length > 0 and
+        _keycloak_es_status.resources[0].status.conditions
+        | default([])
+        | selectattr('type', 'equalto', 'Ready')
+        | selectattr('status', 'equalto', 'True')
+        | list | length > 0
+      retries: 12
+      delay: 5
+      when: keycloak_vault_enabled | bool
+
+    # --- Fallback: direct K8s Secret (local dev without Vault) ---
+
+    - name: Create Keycloak secrets (fallback without Vault)
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: keycloak-credentials
+            namespace: "{{ keycloak_namespace }}"
+          type: Opaque
+          stringData:
+            admin-password: "{{ keycloak_admin_password | default(lookup('password', '/dev/null length=32 chars=ascii_letters,digits')) }}"
+      when: not (keycloak_vault_enabled | bool)
+      no_log: true
+
+    - name: Create Keycloak DB credentials (fallback without Vault)
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: keycloak-db-credentials
+            namespace: "{{ keycloak_namespace }}"
+          type: Opaque
+          stringData:
+            password: "{{ database_passwords.keycloak | default(lookup('password', '/dev/null length=32 chars=ascii_letters,digits')) }}"
+      when: not (keycloak_vault_enabled | bool)
+      no_log: true
+
+    # --- Deploy Keycloak ---
+
+    - name: Deploy Keycloak via Helm
+      kubernetes.core.helm:
+        name: keycloak
+        chart_ref: "{{ keycloak_chart_repo_name }}/keycloak"
+        chart_version: "{{ helm_versions.keycloak_chart }}"
+        release_namespace: "{{ keycloak_namespace }}"
+        create_namespace: false
+        wait: true
+        wait_timeout: 600s
+        values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+
+    - name: Wait for Keycloak deployment
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: StatefulSet
+        name: keycloak
+        namespace: "{{ keycloak_namespace }}"
+      register: keycloak_deployment
+      until: >-
+        keycloak_deployment.resources | length > 0 and
+        keycloak_deployment.resources[0].status.readyReplicas | default(0) >= 1
+      retries: 30
+      delay: 10
+
+    # --- Realm configuration via kcadm.sh ---
+
+    - name: Get Keycloak admin token
+      kubernetes.core.k8s_exec:
+        namespace: "{{ keycloak_namespace }}"
+        pod: keycloak-0
+        command: >-
+          /opt/keycloak/bin/kcadm.sh config credentials
+          --server http://localhost:8080
+          --realm master
+          --user {{ keycloak_admin_user }}
+          --password "$(cat /opt/keycloak/secrets/admin-password)"
+      register: _kc_auth
+      retries: 5
+      delay: 10
+      until: _kc_auth.rc == 0
+      no_log: true
+
+    - name: Create ATLAS realm
+      kubernetes.core.k8s_exec:
+        namespace: "{{ keycloak_namespace }}"
+        pod: keycloak-0
+        command: >-
+          /opt/keycloak/bin/kcadm.sh create realms
+          -s realm={{ keycloak_realm }}
+          -s enabled=true
+          -s displayName="ATLAS Platform"
+          -s registrationAllowed={{ keycloak_registration_enabled | lower }}
+          -s verifyEmail={{ keycloak_email_verification_required | lower }}
+          -s loginWithEmailAllowed=true
+          -s duplicateEmailsAllowed=false
+          -s resetPasswordAllowed=true
+      register: _kc_realm
+      failed_when:
+        - _kc_realm.rc != 0
+        - "'Conflict' not in (_kc_realm.stderr | default(''))"
+      changed_when: _kc_realm.rc == 0
+
+    - name: Create user groups
+      kubernetes.core.k8s_exec:
+        namespace: "{{ keycloak_namespace }}"
+        pod: keycloak-0
+        command: >-
+          /opt/keycloak/bin/kcadm.sh create groups
+          -r {{ keycloak_realm }}
+          -s name={{ item }}
+      loop: "{{ keycloak_groups }}"
+      register: _kc_groups
+      failed_when:
+        - _kc_groups.rc != 0
+        - "'Conflict' not in (_kc_groups.stderr | default(''))"
+      changed_when: _kc_groups.rc == 0
+
+    - name: Get default group ID
+      kubernetes.core.k8s_exec:
+        namespace: "{{ keycloak_namespace }}"
+        pod: keycloak-0
+        command: >-
+          /opt/keycloak/bin/kcadm.sh get groups
+          -r {{ keycloak_realm }}
+          --fields id,name
+          -q name={{ keycloak_default_group }}
+      register: _kc_default_group
+      changed_when: false
+
+    - name: Set default group for new users
+      kubernetes.core.k8s_exec:
+        namespace: "{{ keycloak_namespace }}"
+        pod: keycloak-0
+        command: >-
+          /opt/keycloak/bin/kcadm.sh update realms/{{ keycloak_realm }}
+          -s 'defaultGroups=["{{ (_kc_default_group.stdout | from_json)[0].id }}"]'
+      when: _kc_default_group.stdout | from_json | length > 0
+
+    - name: Configure password policy
+      kubernetes.core.k8s_exec:
+        namespace: "{{ keycloak_namespace }}"
+        pod: keycloak-0
+        command: >-
+          /opt/keycloak/bin/kcadm.sh update realms/{{ keycloak_realm }}
+          -s 'passwordPolicy=length({{ keycloak_password_min_length }}) and upperCase(1) and digits(1) and specialChars(1)'
+
+    - name: Create OIDC clients
+      kubernetes.core.k8s_exec:
+        namespace: "{{ keycloak_namespace }}"
+        pod: keycloak-0
+        command: >-
+          /opt/keycloak/bin/kcadm.sh create clients
+          -r {{ keycloak_realm }}
+          -s clientId={{ item.client_id }}
+          -s name="{{ item.name }}"
+          -s enabled=true
+          -s publicClient=false
+          -s standardFlowEnabled=true
+          -s directAccessGrantsEnabled=false
+          -s 'redirectUris={{ item.redirect_uris | to_json }}'
+          -s 'webOrigins={{ item.web_origins | default([]) | to_json }}'
+          -s 'protocol=openid-connect'
+          -s 'defaultClientScopes=["openid","profile","email","groups"]'
+      loop: "{{ keycloak_oidc_clients }}"
+      register: _kc_clients
+      failed_when:
+        - _kc_clients.rc != 0
+        - "'Conflict' not in (_kc_clients.stderr | default(''))"
+      changed_when: _kc_clients.rc == 0
+
+    - name: Build SMTP configuration JSON
+      ansible.builtin.set_fact:
+        _keycloak_smtp_config: >-
+          {{
+            {
+              'host': keycloak_smtp_host,
+              'port': keycloak_smtp_port | string,
+              'from': keycloak_smtp_from,
+              'starttls': keycloak_smtp_starttls | lower,
+              'auth': (keycloak_smtp_user != '') | lower
+            }
+            | combine(
+              {'user': keycloak_smtp_user,
+               'password': keycloak_smtp_password}
+              if keycloak_smtp_user != '' else {}
+            )
+            | to_json
+          }}
+      when: keycloak_smtp_host != ''
+      no_log: true
+
+    - name: Configure SMTP for email verification
+      kubernetes.core.k8s_exec:
+        namespace: "{{ keycloak_namespace }}"
+        pod: keycloak-0
+        command: >-
+          /opt/keycloak/bin/kcadm.sh update
+          realms/{{ keycloak_realm }}
+          -s 'smtpServer={{ _keycloak_smtp_config }}'
+      when: keycloak_smtp_host != ''
+      no_log: true
+
+    # --- Ingress ---
+
+    - name: Create Keycloak HTTPRoute
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml_all | list }}"
+      when: keycloak_ingress_enabled
+
+    - name: Display Keycloak information
+      ansible.builtin.debug:
+        msg: |
+          Keycloak deployed successfully!
+
+          Login URL: https://{{ keycloak_host }}
+          Admin Console: https://{{ keycloak_host }}/admin/
+          Realm: {{ keycloak_realm }}
+          Namespace: {{ keycloak_namespace }}
+
+          OIDC Discovery: https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/.well-known/openid-configuration
+
+          Self-registration: {{ keycloak_registration_enabled }}
+          Email verification: {{ keycloak_email_verification_required }}
+          Allowed email domains: {{ keycloak_allowed_email_domains | default('all') }}
+
+          Groups: {{ keycloak_groups | join(', ') }}
+          Default group: {{ keycloak_default_group }}
+
+          OIDC clients: {{ keycloak_oidc_clients | map(attribute='client_id') | join(', ') }}

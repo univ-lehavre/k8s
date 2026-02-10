@@ -59,6 +59,11 @@ metrics:
   serviceMonitor:
     enabled: {{ redis_metrics_enabled | lower }}
 
+# Pod Disruption Budget
+pdb:
+  create: {{ ha_enabled | default(false) | lower }}
+  minAvailable: 1
+
 # Network policy
 networkPolicy:
   enabled: false

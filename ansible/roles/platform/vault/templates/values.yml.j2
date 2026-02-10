@@ -104,6 +104,16 @@ server:
 {% endif %}
 {% endif %}
 
+  readinessProbe:
+    enabled: true
+    path: "/v1/sys/health?standbyok=true&uninitcode=204&sealedcode=204"
+    port: 8200
+  livenessProbe:
+    enabled: true
+    path: "/v1/sys/health?standbyok=true&uninitcode=204&sealedcode=204"
+    port: 8200
+    initialDelaySeconds: 60
+
   dataStorage:
     enabled: true
     size: {{ vault_storage_size }}

@@ -54,6 +54,11 @@ metrics:
 witness:
   replicaCount: 1
 
+# Pod Disruption Budget
+pdb:
+  create: {{ ha_enabled | default(false) | lower }}
+  minAvailable: 2
+
 # Network policy
 networkPolicy:
   enabled: false

@@ -1,0 +1,18 @@
+# Pod Disruption Budgets
+# Protects critical services from voluntary disruptions during node maintenance
+
+pdb_enabled: "{{ ha_enabled | default(false) }}"
+
+# Services that need PDB but are NOT managed by Helm PDB settings
+# (Helm-managed PDBs are configured in each service's values.yml.j2)
+pdb_services:
+  - name: vault
+    namespace: vault
+    match_labels:
+      app.kubernetes.io/name: vault
+    min_available: 2
+  - name: envoy-gateway
+    namespace: envoy-gateway-system
+    match_labels:
+      app.kubernetes.io/name: gateway-helm
+    min_available: 1

@@ -29,6 +29,8 @@
 
     - role: security/backup_offsite
       tags: [security, backup, velero]
+    - role: security/pod_disruption_budgets
+      tags: [security, pdb, availability]
 
   post_tasks:
     - name: Phase 8 complete
@@ -57,4 +59,7 @@
           {% endif %}
           {% if backup_offsite_enabled | default(false) %}
           - Off-site encrypted backups configured via Velero.
+          {% endif %}
+          {% if pdb_enabled | default(false) %}
+          - Pod Disruption Budgets created for critical services.
           {% endif %}

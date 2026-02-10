@@ -89,7 +89,7 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: vault
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authelia
+            k8s:io.kubernetes.pod.namespace: keycloak
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: mattermost
         - matchLabels:
@@ -120,7 +120,7 @@ spec:
   ingress:
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authelia
+            k8s:io.kubernetes.pod.namespace: keycloak
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: nextcloud
         - matchLabels:
@@ -361,10 +361,10 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authelia
+            k8s:io.kubernetes.pod.namespace: keycloak
       toPorts:
         - ports:
-            - port: "9091"
+            - port: "8080"
               protocol: TCP
     # Allow HTTPS egress for external git repos
     - toCIDR:
@@ -413,49 +413,83 @@ spec:
               protocol: TCP
 
 ---
-# Authelia: Allow from ingress (for login portal) and all namespaces (for ext-authz)
+# Keycloak: Allow from ingress (for login portal and OIDC)
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: authelia-ingress
-  namespace: {{ authelia_namespace | default('authelia') }}
+  name: keycloak-ingress
+  namespace: {{ keycloak_namespace | default('keycloak') }}
 spec:
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: authelia
+      app.kubernetes.io/name: keycloak
   ingress:
-    # Allow from Envoy Gateway (for login portal and ext-authz verification)
+    # Allow from Envoy Gateway (for login portal and OIDC callbacks)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: {{ ingress_namespace }}
       toPorts:
         - ports:
-            - port: "9091"
+            - port: "8080"
               protocol: TCP
 
 ---
-# Authelia egress to Redis (session storage)
+# Keycloak egress to PostgreSQL
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: authelia-egress
-  namespace: {{ authelia_namespace | default('authelia') }}
+  name: keycloak-egress
+  namespace: {{ keycloak_namespace | default('keycloak') }}
 spec:
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: authelia
+      app.kubernetes.io/name: keycloak
   egress:
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ namespaces.redis }}
-      toPorts:
-        - ports:
-            - port: "6379"
-              protocol: TCP
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: {{ namespaces.postgresql }}
       toPorts:
         - ports:
             - port: "5432"
+              protocol: TCP
+
+---
+# SMTP egress: Allow email-sending services to reach SMTP relay
+{% for ns in ['keycloak', 'mattermost', 'nextcloud', 'gitea'] %}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: smtp-egress
+  namespace: {{ ns }}
+spec:
+  endpointSelector: {}
+  egress:
+    - toCIDR:
+        - 0.0.0.0/0
+      toPorts:
+        - ports:
+            - port: "587"
+              protocol: TCP
+
+---
+{% endfor %}
+# Loki: Allow log ingestion from all application namespaces
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: loki-ingress
+  namespace: {{ monitoring_namespace }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  ingress:
+    - fromEndpoints:
+{% for ns in network_policies_namespaces %}
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ ns }}
+{% endfor %}
+      toPorts:
+        - ports:
+            - port: "3100"
               protocol: TCP

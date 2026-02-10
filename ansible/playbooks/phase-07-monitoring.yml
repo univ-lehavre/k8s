@@ -12,6 +12,8 @@
       tags: [monitoring, prometheus, grafana, alertmanager]
     - role: monitoring/hubble_ui
       tags: [monitoring, hubble, cilium, network]
+    - role: monitoring/loki
+      tags: [monitoring, loki, alloy, logging]
 
   post_tasks:
     - name: Phase 7 complete
@@ -20,5 +22,6 @@
           Monitoring deployed:
           - Grafana: https://grafana.{{ domain }}
           - Hubble UI: https://hubble.{{ domain }}
+          - Loki: Log aggregation in Grafana
 
           Default Grafana credentials: admin / (see secrets)

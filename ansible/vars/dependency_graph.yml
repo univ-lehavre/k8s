@@ -102,14 +102,14 @@ atlas_components:
       name: mariadb
       namespace: mariadb
 
-  authelia:
-    role: platform/authelia
-    deps: [postgresql, redis, external_secrets]
+  keycloak:
+    role: platform/keycloak
+    deps: [postgresql, external_secrets, envoy_gateway]
     health:
       api: apps/v1
-      kind: Deployment
-      name: authelia
-      namespace: authelia
+      kind: StatefulSet
+      name: keycloak
+      namespace: keycloak
 
   # --- Services ---
 
@@ -124,7 +124,7 @@ atlas_components:
 
   mattermost:
     role: services/mattermost
-    deps: [authelia, postgresql]
+    deps: [keycloak, postgresql]
     health:
       api: apps/v1
       kind: Deployment
@@ -133,7 +133,7 @@ atlas_components:
 
   nextcloud:
     role: services/nextcloud
-    deps: [authelia, postgresql, seaweedfs]
+    deps: [keycloak, postgresql, seaweedfs]
     health:
       api: apps/v1
       kind: Deployment
@@ -142,7 +142,7 @@ atlas_components:
 
   onlyoffice:
     role: services/onlyoffice
-    deps: [authelia]
+    deps: [keycloak]
     health:
       api: apps/v1
       kind: Deployment
@@ -151,7 +151,7 @@ atlas_components:
 
   redcap:
     role: services/redcap
-    deps: [authelia, mariadb]
+    deps: [keycloak, mariadb]
     health:
       api: apps/v1
       kind: Deployment
@@ -160,7 +160,7 @@ atlas_components:
 
   ecrin:
     role: services/ecrin
-    deps: [authelia]
+    deps: [keycloak]
     health:
       api: apps/v1
       kind: Deployment
@@ -169,7 +169,7 @@ atlas_components:
 
   flipt:
     role: services/flipt
-    deps: [authelia, postgresql]
+    deps: [keycloak, postgresql]
     health:
       api: apps/v1
       kind: Deployment
@@ -180,7 +180,7 @@ atlas_components:
 
   gitea:
     role: devops/gitea
-    deps: [authelia, postgresql]
+    deps: [keycloak, postgresql]
     health:
       api: apps/v1
       kind: StatefulSet
@@ -189,18 +189,27 @@ atlas_components:
 
   argocd:
     role: devops/argocd
-    deps: [authelia]
+    deps: [keycloak]
     health:
       api: apps/v1
       kind: Deployment
       name: argocd-server
       namespace: argocd
 
+  argo_rollouts:
+    role: devops/argo_rollouts
+    deps: [argocd]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: argo-rollouts
+      namespace: argocd
+
   # --- Monitoring ---
 
   kube_prometheus:
     role: monitoring/kube_prometheus
-    deps: [authelia, envoy_gateway, longhorn]
+    deps: [keycloak, envoy_gateway, longhorn]
     health:
       api: apps/v1
       kind: Deployment
@@ -209,12 +218,21 @@ atlas_components:
 
   hubble_ui:
     role: monitoring/hubble_ui
-    deps: [cilium, authelia, envoy_gateway]
+    deps: [cilium, keycloak, envoy_gateway]
     health:
       api: apps/v1
       kind: Deployment
       name: hubble-ui
       namespace: kube-system
+
+  loki:
+    role: monitoring/loki
+    deps: [kube_prometheus, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: loki
+      namespace: monitoring
 
   # --- Sécurité applicative ---
 
@@ -233,7 +251,7 @@ atlas_components:
     health:
       api: networking.k8s.io/v1
       kind: NetworkPolicy
-      namespace: authelia
+      namespace: keycloak
 
   pod_security:
     role: security/pod_security
@@ -258,7 +276,7 @@ atlas_components:
     health:
       api: external-secrets.io/v1beta1
       kind: ExternalSecret
-      namespace: authelia
+      namespace: keycloak
 
   image_scanning:
     role: security/image_scanning
@@ -277,3 +295,11 @@ atlas_components:
       kind: Deployment
       name: velero
       namespace: velero
+
+  pod_disruption_budgets:
+    role: security/pod_disruption_budgets
+    deps: [k3s]
+    health:
+      api: policy/v1
+      kind: PodDisruptionBudget
+      namespace: vault

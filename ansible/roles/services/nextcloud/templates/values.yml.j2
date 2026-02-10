@@ -59,6 +59,39 @@ nextcloud:
       );
 {% endif %}
 
+{% if nextcloud_smtp_host | default('') != '' %}
+  mail:
+    enabled: true
+    fromAddress: "{{ nextcloud_smtp_from | regex_replace('@.*', '') }}"
+    domain: "{{ domain }}"
+    smtp:
+      host: {{ nextcloud_smtp_host }}
+      port: {{ nextcloud_smtp_port }}
+      secure: {{ nextcloud_smtp_secure }}
+      authtype: LOGIN
+      name: {{ nextcloud_smtp_user }}
+      password: "{{ nextcloud_smtp_password }}"
+{% endif %}
+
+  phpConfigs:
+    uploadlimit.ini: |
+      upload_max_filesize = 16G
+      post_max_size = 16G
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    failureThreshold: 30
+
 # Internal database disabled
 internalDatabase:
   enabled: false

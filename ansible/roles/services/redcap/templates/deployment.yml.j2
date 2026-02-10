@@ -20,22 +20,31 @@ metadata:
   name: redcap
   namespace: {{ redcap_namespace }}
   labels:
-    app: redcap
+    app.kubernetes.io/name: redcap
+    app.kubernetes.io/component: research
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: redcap
+      app.kubernetes.io/name: redcap
   template:
     metadata:
       labels:
-        app: redcap
+        app.kubernetes.io/name: redcap
+        app.kubernetes.io/component: research
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: redcap
           image: {{ redcap_image }}:{{ redcap_image_tag }}
           ports:
             - containerPort: 80
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
               cpu: {{ redcap_resources.requests.cpu }}

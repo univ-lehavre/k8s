@@ -33,12 +33,18 @@ flipt_ingress_host: "flags.{{ domain }}"
 flipt_ingress_tls_secret: flipt-tls
 flipt_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak via Envoy Gateway SecurityPolicy)
 flipt_forward_auth_enabled: true
 
 # Authentication
 flipt_auth_enabled: true
 flipt_auth_required: true
+
+# Autoscaling (production only)
+flipt_hpa_enabled: "{{ env == 'production' }}"
+flipt_hpa_min_replicas: 1
+flipt_hpa_max_replicas: 2
+flipt_hpa_target_cpu: 75
 
 # Metrics
 flipt_metrics_enabled: "{{ monitoring_enabled | default(true) }}"

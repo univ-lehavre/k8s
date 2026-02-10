@@ -1,0 +1,136 @@
+---
+# Keycloak Helm values (Codecentric chart)
+# https://github.com/codecentric/helm-charts/tree/master/charts/keycloak
+
+replicas: {{ keycloak_replicas }}
+
+image:
+  repository: quay.io/keycloak/keycloak
+  tag: "{{ helm_versions.keycloak }}"
+
+command:
+  - "/opt/keycloak/bin/kc.sh"
+  - "start"
+  - "--hostname={{ keycloak_host }}"
+  - "--proxy-headers=xforwarded"
+  - "--http-enabled=true"
+
+resources:
+  requests:
+    cpu: {{ keycloak_resources.requests.cpu }}
+    memory: {{ keycloak_resources.requests.memory }}
+  limits:
+    cpu: {{ keycloak_resources.limits.cpu }}
+    memory: {{ keycloak_resources.limits.memory }}
+
+# External PostgreSQL database
+extraEnv: |
+  - name: KC_DB
+    value: postgres
+  - name: KC_DB_URL_HOST
+    value: {{ keycloak_postgresql_host }}
+  - name: KC_DB_URL_PORT
+    value: "{{ keycloak_postgresql_port }}"
+  - name: KC_DB_URL_DATABASE
+    value: {{ keycloak_postgresql_database }}
+  - name: KC_DB_USERNAME
+    value: {{ keycloak_postgresql_user }}
+  - name: KC_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-db-credentials
+        key: password
+  - name: KEYCLOAK_ADMIN
+    value: {{ keycloak_admin_user }}
+  - name: KEYCLOAK_ADMIN_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-credentials
+        key: admin-password
+{% if keycloak_metrics_enabled %}
+  - name: KC_HEALTH_ENABLED
+    value: "true"
+  - name: KC_METRICS_ENABLED
+    value: "true"
+{% endif %}
+
+# Disable built-in ingress (we use HTTPRoute)
+ingress:
+  enabled: false
+
+# Service
+service:
+  type: ClusterIP
+  httpPort: 8080
+{% if keycloak_metrics_enabled %}
+  extraPorts:
+    - name: metrics
+      port: {{ keycloak_metrics_port }}
+      targetPort: {{ keycloak_metrics_port }}
+{% endif %}
+
+# Pod labels for Kyverno compliance
+podLabels:
+  app.kubernetes.io/name: keycloak
+  app.kubernetes.io/component: identity
+
+{% if keycloak_allowed_email_domains | default([]) | length > 0 %}
+# Email domain restriction extension
+extraInitContainers: |
+  - name: download-email-restrict
+    image: curlimages/curl:{{ helm_versions.curl }}
+    command:
+      - sh
+      - -c
+      - |
+        curl -sL -o /extensions/keycloak-registration-mail-restrict.jar \
+          "https://github.com/ognjenm/keycloak-registration-mail-restrict/releases/latest/download/keycloak-registration-mail-restrict.jar" && \
+        echo "Downloaded email restriction extension" && \
+        ls -la /extensions/keycloak-registration-mail-restrict.jar
+    securityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      readOnlyRootFilesystem: false
+    volumeMounts:
+      - name: extensions
+        mountPath: /extensions
+
+extraVolumeMounts: |
+  - name: extensions
+    mountPath: /opt/keycloak/providers
+    readOnly: true
+
+extraVolumes: |
+  - name: extensions
+    emptyDir: {}
+{% endif %}
+
+# Readiness and liveness probes
+livenessProbe: |
+  httpGet:
+    path: /health/live
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 30
+
+readinessProbe: |
+  httpGet:
+    path: /health/ready
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+startupProbe: |
+  httpGet:
+    path: /health/started
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  failureThreshold: 60
+
+# Pod Disruption Budget
+pdb:
+  create: {{ ha_enabled | default(false) | lower }}
+  minAvailable: 1

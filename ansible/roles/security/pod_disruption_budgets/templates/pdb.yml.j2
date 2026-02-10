@@ -1,0 +1,17 @@
+{% for svc in pdb_services %}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ svc.name }}-pdb
+  namespace: {{ svc.namespace }}
+  labels:
+    app.kubernetes.io/managed-by: atlas-ansible
+spec:
+  minAvailable: {{ svc.min_available }}
+  selector:
+    matchLabels:
+{% for key, value in svc.match_labels.items() %}
+      {{ key }}: {{ value }}
+{% endfor %}
+{% endfor %}

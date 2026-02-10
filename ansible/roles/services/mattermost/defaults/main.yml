@@ -35,21 +35,21 @@ mattermost_ingress_host: "chat.{{ domain }}"
 mattermost_ingress_tls_secret: mattermost-tls
 mattermost_ingress_issuer: "{{ tls_issuer }}"
 
-# Forward Auth (Authelia via Envoy Gateway SecurityPolicy)
+# Forward Auth (Keycloak via Envoy Gateway SecurityPolicy)
 mattermost_forward_auth_enabled: true
 
-# OIDC settings (Authelia)
+# OIDC settings (Keycloak)
 mattermost_oidc_enabled: true
-mattermost_oidc_button_text: "Login with Authelia"
-mattermost_oidc_discovery_endpoint: "https://login.{{ domain }}/.well-known/openid-configuration"
+mattermost_oidc_button_text: "Login with Keycloak"
+mattermost_oidc_discovery_endpoint: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/.well-known/openid-configuration"
 mattermost_oidc_client_id: mattermost
 
-# Group sync from Authelia OIDC claims
+# Group sync from OIDC claims
 # Automatically creates Mattermost teams from groups
 mattermost_group_sync_enabled: true
 mattermost_group_attribute: groups
 
-# Role mapping from Authelia groups
+# Role mapping from OIDC groups
 # admins → system_admin, devops → team_admin, others → team_user
 mattermost_role_mapping:
   system_admin_groups:
@@ -64,6 +64,19 @@ mattermost_team_admin_groups: "{{ mattermost_role_mapping.team_admin_groups }}"
 
 # Default team for all users
 mattermost_default_team: "{{ organization_name | default('atlas') | lower }}"
+
+# SMTP settings (email notifications)
+mattermost_smtp_host: "{{ secrets.smtp.host | default('') }}"
+mattermost_smtp_port: "{{ secrets.smtp.port | default(587) }}"
+mattermost_smtp_from: "{{ secrets.smtp.from | default('mattermost@' + domain) }}"
+mattermost_smtp_user: "{{ secrets.smtp.user | default('') }}"
+mattermost_smtp_password: "{{ secrets.smtp.password | default('') }}"
+
+# Autoscaling (production only)
+mattermost_hpa_enabled: "{{ env == 'production' }}"
+mattermost_hpa_min_replicas: 1
+mattermost_hpa_max_replicas: 3
+mattermost_hpa_target_cpu: 70
 
 # Site settings
 mattermost_site_name: "{{ organization_name | default('ATLAS') }} Chat"

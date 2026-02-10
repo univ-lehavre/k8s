@@ -1,0 +1,22 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nextcloud
+  namespace: {{ nextcloud_namespace }}
+  labels:
+    app.kubernetes.io/name: nextcloud
+    app.kubernetes.io/component: collaboration
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nextcloud
+  minReplicas: {{ nextcloud_hpa_min_replicas }}
+  maxReplicas: {{ nextcloud_hpa_max_replicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ nextcloud_hpa_target_cpu }}

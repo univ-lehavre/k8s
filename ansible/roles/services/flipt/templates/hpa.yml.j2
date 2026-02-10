@@ -1,0 +1,22 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: flipt
+  namespace: {{ flipt_namespace }}
+  labels:
+    app.kubernetes.io/name: flipt
+    app.kubernetes.io/component: feature-flags
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: flipt
+  minReplicas: {{ flipt_hpa_min_replicas }}
+  maxReplicas: {{ flipt_hpa_max_replicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ flipt_hpa_target_cpu }}

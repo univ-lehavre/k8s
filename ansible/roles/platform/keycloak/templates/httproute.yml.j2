@@ -1,42 +1,42 @@
 ---
-# Authelia HTTPRoute for Gateway API
-# Exposes the Authelia login portal
+# Keycloak HTTPRoute for Gateway API
+# Exposes the Keycloak login portal and admin console
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: authelia
-  namespace: {{ authelia_namespace }}
+  name: keycloak
+  namespace: {{ keycloak_namespace }}
   labels:
-    app.kubernetes.io/name: authelia
+    app.kubernetes.io/name: keycloak
     app.kubernetes.io/component: httproute
 spec:
   parentRefs:
     - name: {{ gateway_name | default('atlas-gateway') }}
       namespace: {{ envoy_gateway_namespace | default('envoy-gateway-system') }}
   hostnames:
-    - {{ authelia_host }}
+    - {{ keycloak_host }}
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: authelia
-          port: 9091
+        - name: keycloak-http
+          port: 8080
 
----
-# Certificate for Authelia (if not using wildcard)
 {% if not (gateway_wildcard_enabled | default(true)) %}
+---
+# Certificate for Keycloak (if not using wildcard)
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: authelia-tls
-  namespace: {{ authelia_namespace }}
+  name: keycloak-tls
+  namespace: {{ keycloak_namespace }}
 spec:
-  secretName: authelia-tls
+  secretName: keycloak-tls
   issuerRef:
-    name: {{ authelia_ingress_issuer }}
+    name: {{ tls_issuer }}
     kind: ClusterIssuer
   dnsNames:
-    - {{ authelia_host }}
+    - {{ keycloak_host }}
 {% endif %}

@@ -19,9 +19,9 @@ Deploiement via Ansible sur K3s (production) ou K3D (developpement local).
               +---------------+---------------+
               |               |               |
         +-----+-----+  +-----+-----+  +------+------+
-        |  Authelia  |  |   Apps    |  |   DevOps    |
-        |  SSO/OIDC  |  | Nextcloud |  | Gitea       |
-        |  MFA       |  | Mattermost|  | ArgoCD      |
+        | Keycloak   |  |   Apps    |  |   DevOps    |
+        | SSO/OIDC   |  | Nextcloud |  | Gitea       |
+        |            |  | Mattermost|  | ArgoCD      |
         +-----+------+  | REDCap   |  +-------------+
               |          | ECRIN    |  +-------------+
               |          | Flipt    |  | Monitoring  |
@@ -57,7 +57,7 @@ ansible-playbook playbooks/site.yml -i inventories/production
 
 | Service    | URL                | Description                     |
 |------------|--------------------|---------------------------------|
-| Authelia   | `login.<domain>`   | SSO, OIDC, Forward Auth, MFA   |
+| Keycloak   | `login.<domain>`   | IAM, SSO, OIDC, MFA            |
 | Mattermost | `chat.<domain>`    | Messagerie d'equipe             |
 | Nextcloud  | `cloud.<domain>`   | Partage de fichiers             |
 | OnlyOffice | `office.<domain>`  | Edition collaborative           |
@@ -78,7 +78,7 @@ ansible-playbook playbooks/site.yml -i inventories/production
 | 2     | `phase-02-k3s-core.yml`    | K3s, Cilium, Envoy GW, Cert-Mgr       |
 | 3     | `phase-03-vault.yml`       | Vault, External Secrets Operator       |
 | 4     | `phase-04-databases.yml`   | PostgreSQL HA, MariaDB, Redis          |
-| 5     | `phase-05-services.yml`    | Authelia, apps, SeaweedFS              |
+| 5     | `phase-05-services.yml`    | Keycloak, apps, SeaweedFS              |
 | 6     | `phase-06-devops.yml`      | Gitea, ArgoCD                          |
 | 7     | `phase-07-monitoring.yml`  | Prometheus, Grafana, Hubble            |
 | 8     | `phase-08-security.yml`    | Kyverno, Network Policies, backups     |
@@ -98,7 +98,10 @@ ansible-playbook playbooks/site.yml -i inventories/production
 | Document | Description |
 |----------|-------------|
 | [Guide de deploiement](docs/deployment-priority.md) | Deploiement par jalons avec dependances |
-| [Securite et authentification](docs/security-overview.md) | Secrets, certificats, forward auth, ACL |
+| [Authentification](docs/authentication.md) | Authentification |
+| [Autorisations](docs/authorization.md) | Autorisations |
+| [Secrets et chiffrement](docs/secrets-encryption.md) | Secrets et chiffrement |
+| [Flux reseau](docs/network-flows.md) | Flux reseau |
 | [Contribuer](docs/CONTRIBUTING.md) | Linting, hooks, CI/CD |
 
 ## License
