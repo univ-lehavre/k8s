@@ -7,10 +7,9 @@ Ce guide structure le deploiement de la plateforme en **jalons** orientes valeur
 Chaque jalon produit un resultat utilisable et constitue un point de validation
 avant de passer au suivant.
 
-> **Gestion des secrets Authelia** : lorsque Vault est disponible (staging/production),
-> les secrets d'Authelia (JWT, session, OIDC HMAC, cle privee RSA, cle de chiffrement storage)
-> sont generes au premier deploiement, stockes dans Vault (`secret/platform/authelia`)
-> et synchronises vers Kubernetes via External Secrets Operator.
+> **Gestion des secrets SSO** : lorsque Vault est disponible (staging/production),
+> les secrets de Keycloak (admin password, OIDC client secrets) et d'Authelia (JWT, session, OIDC HMAC, cle privee RSA)
+> sont generes au premier deploiement, stockes dans Vault et synchronises vers Kubernetes via External Secrets Operator.
 > En local (sans Vault), les secrets sont generes directement par Ansible (fallback).
 
 ---
@@ -39,7 +38,7 @@ task deploy-deps -- mattermost
 Le systeme resout la chaine complete :
 
 ```text
-k3s → cilium → envoy_gateway → longhorn → cert_manager → vault → external_secrets → postgresql → redis → authelia → mattermost
+k3s → cilium → envoy_gateway → longhorn → cert_manager → vault → external_secrets → postgresql → redis → keycloak/authelia → mattermost
 ```
 
 Puis verifie chaque composant via l'API Kubernetes. Si K3s, Cilium et Vault sont deja operationnels, seuls les composants manquants sont deployes.
@@ -51,7 +50,7 @@ Puis verifie chaque composant via l'API Kubernetes. Si K3s, Cilium et Vault sont
 ## Vue d'ensemble des jalons
 
 ```text
-Jalon 0   Infrastructure         Cluster K8s, secrets, PostgreSQL, Redis, Authelia
+Jalon 0   Infrastructure         Cluster K8s, secrets, PostgreSQL, Redis, Keycloak/Authelia (SSO)
 Jalon 1   Communication          Mattermost (chat d'equipe)                        ─┐
 Jalon 2   Collaboration          Nextcloud + OnlyOffice (fichiers, edition)         ─┤ independants
 Jalon 3   Recherche              REDCap + ECRIN (capture de donnees)                ─┤ (ordre libre)
@@ -74,7 +73,7 @@ ansible-playbook playbooks/phase-01-preparation.yml
 ansible-playbook playbooks/phase-02-k3s-core.yml
 ansible-playbook playbooks/phase-03-vault.yml
 ansible-playbook playbooks/phase-04-databases.yml --tags postgresql,redis
-ansible-playbook playbooks/phase-05-services.yml --tags authelia
+ansible-playbook playbooks/phase-05-services.yml --tags keycloak,authelia
 ```
 
 ### Composants deployes
@@ -91,7 +90,8 @@ ansible-playbook playbooks/phase-05-services.yml --tags authelia
 | 8     | External Secrets | 0.9.12       | Sync secrets vers Kubernetes               | Vault                        |
 | 9     | PostgreSQL HA    | 14.0.4       | BDD principale (5 databases)               | Vault, Longhorn              |
 | 10    | Redis            | 18.12.1      | Sessions, cache, rate-limiting             | Vault, Longhorn              |
-| 11    | Authelia         | 0.9.0        | Authentification, OIDC, MFA                | PostgreSQL, Redis, ESO       |
+| 11.1  | Keycloak         | 26.0         | IAM, SSO, OIDC, MFA (staging/prod)  | PostgreSQL, ESO          |
+| 11.2  | Authelia         | 0.9.0        | Forward Auth, OIDC, MFA (local)      | PostgreSQL, Redis, ESO   |
 
 ### Critere de validation
 
@@ -99,7 +99,7 @@ ansible-playbook playbooks/phase-05-services.yml --tags authelia
 - [ ] `cilium status` → OK
 - [ ] `vault status` → Initialized, Unsealed
 - [ ] PostgreSQL : `\l` liste les 5 databases
-- [ ] `https://login.<domain>` → portail Authelia accessible, connexion test OK
+- [ ] `https://login.<domain>` → portail SSO (Keycloak ou Authelia) accessible, connexion test OK
 
 ### Bases de donnees creees
 
@@ -107,6 +107,7 @@ ansible-playbook playbooks/phase-05-services.yml --tags authelia
 
 | Database     | Service    | Utilisateur       | Utilise par |
 | ------------ | ---------- | ----------------- | ----------- |
+| `keycloak`   | Keycloak   | `keycloak_user`   | Jalon 0     |
 | `authelia`   | Authelia   | `authelia_user`   | Jalon 0     |
 | `mattermost` | Mattermost | `mattermost_user` | Jalon 1     |
 | `nextcloud`  | Nextcloud  | `nextcloud_user`  | Jalon 2     |
@@ -137,7 +138,7 @@ ansible-playbook playbooks/phase-05-services.yml --tags mattermost
 
 | Composant  | Version | Namespace    | URL                     | Depend de                   |
 | ---------- | ------- | ------------ | ----------------------- | --------------------------- |
-| Mattermost | 9.11    | `mattermost` | `https://chat.<domain>` | PostgreSQL, Authelia (OIDC) |
+| Mattermost | 9.11    | `mattermost` | `https://chat.<domain>` | PostgreSQL, SSO (OIDC) |
 
 ### Critere de validation
 
@@ -171,14 +172,14 @@ ansible-playbook playbooks/phase-05-services.yml --tags seaweedfs,nextcloud,only
 | Ordre | Composant  | Version | Namespace    | URL                       | Depend de                       |
 | ----- | ---------- | ------- | ------------ | ------------------------- | ------------------------------- |
 | 1     | SeaweedFS  | 3.67.0  | `seaweedfs`  | interne                   | Vault, Longhorn                 |
-| 2     | Nextcloud  | 29      | `nextcloud`  | `https://cloud.<domain>`  | Authelia, PostgreSQL, SeaweedFS |
-| 3     | OnlyOffice | 8.0.1   | `onlyoffice` | `https://office.<domain>` | Authelia                        |
+| 2     | Nextcloud  | 29      | `nextcloud`  | `https://cloud.<domain>`  | SSO, PostgreSQL, SeaweedFS |
+| 3     | OnlyOffice | 8.0.1   | `onlyoffice` | `https://office.<domain>` | SSO                        |
 
 **Ordre important** : SeaweedFS fournit le stockage S3 pour Nextcloud. OnlyOffice s'integre dans Nextcloud pour l'edition de documents.
 
 ### Critere de validation
 
-- [ ] `https://cloud.<domain>` → connexion Nextcloud via Authelia
+- [ ] `https://cloud.<domain>` → connexion Nextcloud via SSO
 - [ ] Upload d'un fichier → stocke dans SeaweedFS (S3)
 - [ ] Ouverture d'un .docx → edition dans OnlyOffice
 - [ ] Partage d'un fichier entre deux utilisateurs
@@ -210,8 +211,8 @@ ansible-playbook playbooks/phase-05-services.yml --tags redcap,ecrin
 | Ordre | Composant | Version | Namespace | URL                       | Depend de                           |
 | ----- | --------- | ------- | --------- | ------------------------- | ----------------------------------- |
 | 1     | MariaDB   | 18.2.2  | `mariadb` | interne                   | Vault, Longhorn                     |
-| 2     | REDCap    | 14.0.0  | `redcap`  | `https://redcap.<domain>` | MariaDB, Authelia (Forward Auth)    |
-| 3     | ECRIN     | 1.0.0   | `ecrin`   | `https://ecrin.<domain>`  | Authelia (OIDC), REDCap (optionnel) |
+| 2     | REDCap    | 14.0.0  | `redcap`  | `https://redcap.<domain>` | MariaDB, SSO (Forward Auth)    |
+| 3     | ECRIN     | 1.0.0   | `ecrin`   | `https://ecrin.<domain>`  | SSO (OIDC), REDCap (optionnel) |
 
 **MariaDB** (`mariadb.mariadb.svc.cluster.local:3306`) : deployee ici car utilisee uniquement par REDCap. Base creee : `redcap` (utilisateur `redcap_user`).
 
@@ -249,9 +250,9 @@ ansible-playbook playbooks/phase-06-devops.yml
 
 | Ordre | Composant | Chart version | Namespace | URL                       | Depend de                          |
 | ----- | --------- | ------------- | --------- | ------------------------- | ---------------------------------- |
-| 1     | Flipt     | 1.35.0        | `flipt`   | `https://flags.<domain>`  | Authelia, PostgreSQL               |
-| 2     | Gitea     | 10.1.1        | `gitea`   | `https://git.<domain>`    | Authelia, PostgreSQL               |
-| 3     | ArgoCD    | 6.4.0         | `argocd`  | `https://argocd.<domain>` | Authelia (OIDC), Gitea (optionnel) |
+| 1     | Flipt     | 1.35.0        | `flipt`   | `https://flags.<domain>`  | SSO, PostgreSQL               |
+| 2     | Gitea     | 10.1.1        | `gitea`   | `https://git.<domain>`    | SSO, PostgreSQL               |
+| 3     | ArgoCD    | 6.4.0         | `argocd`  | `https://argocd.<domain>` | SSO (OIDC), Gitea (optionnel) |
 
 **Ordre important** : ArgoCD se connecte a Gitea pour le GitOps. Flipt est independant de Gitea/ArgoCD.
 
@@ -293,8 +294,8 @@ ansible-playbook playbooks/phase-07-monitoring.yml
 
 | Composant             | Chart version      | Namespace     | URL                        | Depend de                                 |
 | --------------------- | ------------------ | ------------- | -------------------------- | ----------------------------------------- |
-| Kube Prometheus Stack | 56.21.1            | `monitoring`  | `https://grafana.<domain>` | Authelia (proxy auth), Envoy GW, Longhorn |
-| Hubble UI             | inclus dans Cilium | `kube-system` | `https://hubble.<domain>`  | Cilium (Deployment), Authelia, Envoy GW   |
+| Kube Prometheus Stack | 56.21.1            | `monitoring`  | `https://grafana.<domain>` | SSO (proxy auth), Envoy GW, Longhorn |
+| Hubble UI             | inclus dans Cilium | `kube-system` | `https://hubble.<domain>`  | Cilium (Deployment), SSO, Envoy GW   |
 
 Le stack Prometheus inclut : Prometheus (collecte, 50Gi, retention 15j), Grafana (dashboards, proxy auth SSO), Alertmanager (alertes).
 
@@ -406,7 +407,8 @@ Le cluster est durci : isolation reseau entre namespaces, contraintes de securit
               └────────────┬────────────┘
                            │
                     ┌──────▼──────┐
-                    │  Authelia   │◄──────────── Jalon 0
+                    │ Keycloak/  │◄──────────── Jalon 0
+                    │ Authelia   │
                     └──────┬──────┘
                            │
     ┌─────────┬────────────┼────────────┬─────────┐
@@ -447,7 +449,7 @@ Le cluster est durci : isolation reseau entre namespaces, contraintes de securit
 
 | Jalon | Service    | URL                        |
 | ----- | ---------- | -------------------------- |
-| 0     | Authelia   | `https://login.<domain>`   |
+| 0     | Keycloak/Authelia | `https://login.<domain>`   |
 | 1     | Mattermost | `https://chat.<domain>`    |
 | 2     | Nextcloud  | `https://cloud.<domain>`   |
 | 2     | OnlyOffice | `https://office.<domain>`  |

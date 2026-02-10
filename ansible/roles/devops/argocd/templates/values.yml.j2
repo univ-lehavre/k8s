@@ -87,7 +87,7 @@ configs:
       name: {{ argocd_oidc_name }}
       issuer: {{ argocd_oidc_issuer }}
       clientID: {{ argocd_oidc_client_id }}
-      clientSecret: $oidc.authelia.clientSecret
+      clientSecret: {{ '$oidc.keycloak.clientSecret' if keycloak_enabled | default(false) else '$oidc.authelia.clientSecret' }}
       requestedScopes:
 {% for scope in argocd_oidc_requested_scopes %}
         - {{ scope }}

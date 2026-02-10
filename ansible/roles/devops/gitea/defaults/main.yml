@@ -75,8 +75,11 @@ gitea_admin_groups: "{{ gitea_role_mapping.admin_groups }}"
 
 # OIDC settings (Keycloak/Authelia) - alternative to proxy auth
 gitea_oidc_enabled: "{{ gitea_auth_mode == 'oidc' }}"
-gitea_oidc_name: authelia
-gitea_oidc_auto_discover_url: "https://login.{{ domain }}/.well-known/openid-configuration"
+gitea_oidc_name: "{{ 'Keycloak' if keycloak_enabled | default(false) else 'Authelia' }}"
+gitea_oidc_auto_discover_url: >-
+  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm + '/.well-known/openid-configuration'
+     if keycloak_enabled | default(false)
+     else 'https://login.' + domain + '/.well-known/openid-configuration' }}
 gitea_oidc_client_id: gitea
 
 # LFS

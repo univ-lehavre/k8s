@@ -133,7 +133,7 @@ atlas_components:
 
   mattermost:
     role: services/mattermost
-    deps: [authelia, postgresql]
+    deps: [keycloak, postgresql]
     health:
       api: apps/v1
       kind: Deployment
@@ -142,7 +142,7 @@ atlas_components:
 
   nextcloud:
     role: services/nextcloud
-    deps: [authelia, postgresql, seaweedfs]
+    deps: [keycloak, postgresql, seaweedfs]
     health:
       api: apps/v1
       kind: Deployment
@@ -151,7 +151,7 @@ atlas_components:
 
   onlyoffice:
     role: services/onlyoffice
-    deps: [authelia]
+    deps: [keycloak]
     health:
       api: apps/v1
       kind: Deployment
@@ -160,7 +160,7 @@ atlas_components:
 
   redcap:
     role: services/redcap
-    deps: [authelia, mariadb]
+    deps: [keycloak, mariadb]
     health:
       api: apps/v1
       kind: Deployment
@@ -169,7 +169,7 @@ atlas_components:
 
   ecrin:
     role: services/ecrin
-    deps: [authelia]
+    deps: [keycloak]
     health:
       api: apps/v1
       kind: Deployment
@@ -178,7 +178,7 @@ atlas_components:
 
   flipt:
     role: services/flipt
-    deps: [authelia, postgresql]
+    deps: [keycloak, postgresql]
     health:
       api: apps/v1
       kind: Deployment
@@ -189,7 +189,7 @@ atlas_components:
 
   gitea:
     role: devops/gitea
-    deps: [authelia, postgresql]
+    deps: [keycloak, postgresql]
     health:
       api: apps/v1
       kind: StatefulSet
@@ -198,7 +198,7 @@ atlas_components:
 
   argocd:
     role: devops/argocd
-    deps: [authelia]
+    deps: [keycloak]
     health:
       api: apps/v1
       kind: Deployment
@@ -209,7 +209,7 @@ atlas_components:
 
   kube_prometheus:
     role: monitoring/kube_prometheus
-    deps: [authelia, envoy_gateway, longhorn]
+    deps: [keycloak, envoy_gateway, longhorn]
     health:
       api: apps/v1
       kind: Deployment
@@ -218,7 +218,7 @@ atlas_components:
 
   hubble_ui:
     role: monitoring/hubble_ui
-    deps: [cilium, authelia, envoy_gateway]
+    deps: [cilium, keycloak, envoy_gateway]
     health:
       api: apps/v1
       kind: Deployment
@@ -242,7 +242,7 @@ atlas_components:
     health:
       api: networking.k8s.io/v1
       kind: NetworkPolicy
-      namespace: authelia
+      namespace: keycloak
 
   pod_security:
     role: security/pod_security
@@ -267,7 +267,7 @@ atlas_components:
     health:
       api: external-secrets.io/v1beta1
       kind: ExternalSecret
-      namespace: authelia
+      namespace: keycloak
 
   image_scanning:
     role: security/image_scanning

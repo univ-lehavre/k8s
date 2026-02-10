@@ -89,10 +89,19 @@ grafana_role_mapping:
 
 # OIDC settings (Keycloak/Authelia) - alternative to proxy auth
 grafana_oidc_enabled: "{{ grafana_auth_mode == 'oidc' }}"
-grafana_oidc_name: Authelia
-grafana_oidc_auth_url: "https://login.{{ domain }}/api/oidc/authorization"
-grafana_oidc_token_url: "https://login.{{ domain }}/api/oidc/token"
-grafana_oidc_api_url: "https://login.{{ domain }}/api/oidc/userinfo"
+grafana_oidc_name: "{{ 'Keycloak' if keycloak_enabled | default(false) else 'Authelia' }}"
+grafana_oidc_auth_url: >-
+  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm + '/protocol/openid-connect/auth'
+     if keycloak_enabled | default(false)
+     else 'https://login.' + domain + '/api/oidc/authorization' }}
+grafana_oidc_token_url: >-
+  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm + '/protocol/openid-connect/token'
+     if keycloak_enabled | default(false)
+     else 'https://login.' + domain + '/api/oidc/token' }}
+grafana_oidc_api_url: >-
+  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm + '/protocol/openid-connect/userinfo'
+     if keycloak_enabled | default(false)
+     else 'https://login.' + domain + '/api/oidc/userinfo' }}
 grafana_oidc_client_id: grafana
 
 # Alertmanager settings
