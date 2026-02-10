@@ -5,7 +5,7 @@
 
 Ce guide structure le deploiement de la plateforme en **jalons** orientes valeur metier. Chaque jalon produit un resultat utilisable et constitue un point de validation avant de passer au suivant.
 
-> **Point d'attention** : les secrets d'Authelia (JWT, session, OIDC HMAC, cle de chiffrement storage) sont generes par Ansible et stockes dans un Kubernetes Secret classique. Ils ne transitent pas par Vault et ne sont pas couverts par la rotation automatique du Jalon 6. Authelia etant le broker SSO de toute la plateforme, une migration vers Vault + ESO est recommandee avant la mise en production.
+> **Gestion des secrets Authelia** : lorsque Vault est disponible (staging/production), les secrets d'Authelia (JWT, session, OIDC HMAC, cle privee RSA, cle de chiffrement storage) sont generes au premier deploiement, stockes dans Vault (`secret/platform/authelia`) et synchronises vers Kubernetes via External Secrets Operator. En local (sans Vault), les secrets sont generes directement par Ansible (fallback).
 
 ---
 

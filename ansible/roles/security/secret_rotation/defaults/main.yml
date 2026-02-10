@@ -24,6 +24,18 @@ secret_rotation_secrets:
     keys:
       - redis-password
 
+  # Platform credentials
+  - name: authelia-secrets
+    namespace: authelia
+    vault_path: secret/data/platform/authelia
+    rotation_interval: 168h
+    keys:
+      - jwt-token
+      - session-secret
+      - storage-encryption-key
+      - oidc-hmac-secret
+      - oidc-private-key
+
   # Service credentials
   - name: mattermost-credentials
     namespace: mattermost
