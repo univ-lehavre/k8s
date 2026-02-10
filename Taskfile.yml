@@ -1,4 +1,3 @@
----
 # Taskfile pour le projet k8s
 # Installation: brew install go-task/tap/go-task
 # Utilisation: task --list
@@ -22,51 +21,51 @@ tasks:
   install-deps:
     desc: Installer toutes les dépendances
     cmds:
-      - echo "📦 Installation des dépendances..."
-      - echo "ℹ️  Outils requis: brew install ansible-lint yamllint markdownlint-cli2"
+      - echo "Installation des dependances..."
+      - 'echo "Outils requis: brew install ansible-lint yamllint markdownlint-cli2"'
       - ansible-galaxy install -r {{.ANSIBLE_DIR}}/requirements.yml
-      - task: install-hooks
-      - echo "✅ Dépendances installées"
+      - lefthook install
+      - echo "Dependances installees"
 
   install-hooks:
     desc: Installer les git hooks avec lefthook
     cmds:
-      - echo "🪝 Installation des git hooks..."
+      - echo "Installation des git hooks..."
       - lefthook install
-      - echo "✅ Git hooks installés"
+      - echo "Git hooks installes"
 
   install-galaxy:
     desc: Installer les collections et rôles Ansible
     cmds:
-      - echo "📦 Installation des collections Ansible..."
+      - echo "Installation des collections Ansible..."
       - ansible-galaxy install -r {{.ANSIBLE_DIR}}/requirements.yml
 
   install-galaxy-update:
     desc: Mettre à jour les collections et rôles Ansible
     cmds:
-      - echo "🔄 Mise à jour des collections..."
+      - echo "Mise a jour des collections..."
       - ansible-galaxy install -r {{.ANSIBLE_DIR}}/requirements.yml --force
-      - echo "✅ Collections mises à jour"
+      - echo "Collections mises a jour"
 
   # Linting
   lint:
     desc: Linter le projet Ansible
     cmds:
-      - echo "🔍 Linting du projet..."
+      - echo "Linting du projet..."
       - ansible-lint --profile={{.PROFILE}}
 
   lint-fix:
     desc: Linter et corriger automatiquement
     cmds:
-      - echo "🔧 Linting avec auto-fix..."
+      - echo "Linting avec auto-fix..."
       - ansible-lint --fix --profile={{.PROFILE}}
 
   lint-report:
     desc: Générer un rapport de linting (format CodeClimate)
     cmds:
-      - echo "📊 Génération du rapport..."
+      - echo "Generation du rapport..."
       - ansible-lint --format=codeclimate > {{.REPORT_FILE}}
-      - echo "✅ Rapport généré → {{.REPORT_FILE}}"
+      - echo "Rapport genere → {{.REPORT_FILE}}"
 
   lint-file:
     desc: Linter un fichier spécifique (usage - task lint-file -- path/to/file.yml)
@@ -82,40 +81,33 @@ tasks:
   yaml-lint:
     desc: Valider la syntaxe YAML
     cmds:
-      - echo "📝 Validation YAML..."
+      - echo "Validation YAML..."
       - yamllint -c .yamllint --strict .
 
   # Validation Markdown
   md-lint:
     desc: Valider la syntaxe Markdown
     cmds:
-      - echo "📝 Validation Markdown..."
+      - echo "Validation Markdown..."
       - markdownlint-cli2 "**/*.md" "#node_modules" "#venv" "#.cache"
 
   md-lint-fix:
     desc: Corriger automatiquement les fichiers Markdown
     cmds:
-      - echo "🔧 Correction Markdown..."
+      - echo "Correction Markdown..."
       - markdownlint-cli2 --fix "**/*.md" "#node_modules" "#venv" "#.cache"
 
   yaml-fix:
-    desc: Formater les fichiers YAML avec yamlfmt (si installé)
+    desc: Formater les fichiers YAML avec yamlfmt
     cmds:
-      - |
-        if command -v yamlfmt >/dev/null 2>&1; then
-          yamlfmt -formatter retain_line_breaks=true .
-        else
-          echo "⚠️  yamlfmt non installé. Installer avec - go install github.com/google/yamlfmt/cmd/yamlfmt@latest"
-        fi
+      - yamlfmt -formatter retain_line_breaks=true .
 
   # Vérification syntaxe Ansible
   syntax-check:
     desc: Vérifier la syntaxe des playbooks
     cmds:
-      - echo "🔍 Vérification de la syntaxe..."
-      - for: { var: PLAYBOOKS, split: "\\n" }
+      - for: {var: PLAYBOOKS, split: "\n"}
         cmd: ansible-playbook --syntax-check {{.ITEM}}
-      - echo "✅ Syntaxe correcte"
     vars:
       PLAYBOOKS:
         sh: find {{.ANSIBLE_DIR}}/playbooks -name "*.yml" -type f 2>/dev/null || echo ""
@@ -135,20 +127,20 @@ tasks:
 
   check-quick:
     desc: Check rapide (lint seulement)
-    cmds:
-      - task: lint
+    deps:
+      - lint
 
   # Git hooks
   hooks-test:
     desc: Tester les hooks pre-commit sur tous les fichiers
     cmds:
-      - echo "🪝 Test des hooks pre-commit..."
+      - echo "Test des hooks pre-commit..."
       - lefthook run pre-commit --all-files
 
   hooks-skip:
     desc: Exemple pour skip les hooks (info seulement)
     cmds:
-      - echo "Pour bypasser les hooks-"
+      - 'echo "Pour bypasser les hooks:"'
       - echo "  LEFTHOOK=0 git commit -m 'message'"
       - echo "  LEFTHOOK_EXCLUDE=ansible-lint git commit -m 'message'"
     silent: true
@@ -157,41 +149,42 @@ tasks:
   clean:
     desc: Nettoyer les fichiers temporaires
     cmds:
-      - echo "🧹 Nettoyage..."
+      - echo "Nettoyage..."
       - find . -type f -name '*.retry' -delete
       - find . -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
       - find . -type d -name '.pytest_cache' -exec rm -rf {} + 2>/dev/null || true
       - rm -f {{.REPORT_FILE}}
-      - echo "✅ Nettoyage terminé"
+      - echo "Nettoyage termine"
 
   clean-cache:
     desc: Nettoyer le cache ansible-lint
     cmds:
       - rm -rf .cache/
-      - echo "✅ Cache nettoyé"
+      - echo "Cache nettoye"
 
   # CI/CD
   ci:
     desc: Commande CI complète
+    deps:
+      - install-deps
     cmds:
-      - task: install-deps
       - task: check
-      - echo "✅ CI passée avec succès"
+    requires:
+      vars: []
 
   ci-fast:
     desc: CI rapide (sans install)
     cmds:
       - task: check
-      - echo "✅ CI rapide passée"
 
   # Debug et info
   info:
     desc: Afficher les informations sur l'environnement
     cmds:
-      - echo "📋 Informations environnement-"
+      - 'echo "Informations environnement:"'
       - echo "  ansible-lint → $(ansible-lint --version | head -1)"
-      - echo "  yamllint → $(yamllint --version 2>&1 || echo 'non installé')"
-      - echo "  markdownlint-cli2 → $(markdownlint-cli2 --version 2>&1 || echo 'non installé')"
+      - echo "  yamllint → $(yamllint --version 2>&1 || echo 'non installe')"
+      - echo "  markdownlint-cli2 → $(markdownlint-cli2 --version 2>&1 || echo 'non installe')"
       - echo "  lefthook → $(lefthook version)"
       - echo "  ansible → $(ansible --version | head -1)"
       - echo "  task → $(task --version)"
@@ -235,28 +228,28 @@ tasks:
 
   # Déploiement avec résolution de dépendances
   deploy:
-    desc: "Déployer un composant avec ses dépendances (usage : task deploy -- mattermost)"
+    desc: "Deployer un composant avec ses dependances (usage: task deploy -- mattermost)"
     dir: "{{.ANSIBLE_DIR}}"
     cmds:
       - ansible-playbook playbooks/deploy.yml -e target={{.CLI_ARGS}}
     preconditions:
       - sh: "[ -n '{{.CLI_ARGS}}' ]"
-        msg: "Spécifier un composant. Usage : task deploy -- mattermost"
+        msg: "Specifier un composant. Usage: task deploy -- mattermost"
 
   deploy-list:
-    desc: "Lister les composants déployables"
+    desc: "Lister les composants deployables"
     cmds:
-      - echo "Composants disponibles :" && grep -E '^\s{2}\w+:$' {{.ANSIBLE_DIR}}/vars/dependency_graph.yml | sed 's/://;s/^  /  - /'
+      - 'echo "Composants disponibles:" && grep -E "^\s{2}\w+:$" {{.ANSIBLE_DIR}}/vars/dependency_graph.yml | sed "s/://;s/^  /  - /"'
     silent: true
 
   deploy-deps:
-    desc: "Afficher les dépendances d'un composant (usage : task deploy-deps -- mattermost)"
+    desc: "Afficher les dependances d'un composant (usage: task deploy-deps -- mattermost)"
     dir: "{{.ANSIBLE_DIR}}"
     cmds:
       - ansible-playbook playbooks/deploy.yml -e target={{.CLI_ARGS}} --check
     preconditions:
       - sh: "[ -n '{{.CLI_ARGS}}' ]"
-        msg: "Spécifier un composant. Usage : task deploy-deps -- mattermost"
+        msg: "Specifier un composant. Usage: task deploy-deps -- mattermost"
 
   # Raccourcis
   format:

@@ -1,4 +1,3 @@
----
 # Authelia deployment tasks
 # Deploys forward auth service with centralized access control
 
@@ -65,12 +64,7 @@
         namespace: "{{ namespaces.vault | default('vault') }}"
         pod: vault-0
         command: >-
-          vault kv put {{ authelia_vault_path }}
-          jwt-token='{{ _authelia_generated_secrets.jwt_token }}'
-          session-secret='{{ _authelia_generated_secrets.session_secret }}'
-          storage-encryption-key='{{ _authelia_generated_secrets.storage_encryption_key }}'
-          oidc-hmac-secret='{{ _authelia_generated_secrets.oidc_hmac_secret }}'
-          oidc-private-key='{{ _authelia_generated_secrets.oidc_private_key }}'
+          vault kv put {{ authelia_vault_path }} jwt-token='{{ _authelia_generated_secrets.jwt_token }}' session-secret='{{ _authelia_generated_secrets.session_secret }}' storage-encryption-key='{{ _authelia_generated_secrets.storage_encryption_key }}' oidc-hmac-secret='{{ _authelia_generated_secrets.oidc_hmac_secret }}' oidc-private-key='{{ _authelia_generated_secrets.oidc_private_key }}'
       environment:
         VAULT_TOKEN: "{{ secrets.vault.root_token }}"
       no_log: true
@@ -89,10 +83,7 @@
     namespace: "{{ authelia_namespace }}"
   register: _authelia_es_status
   until: >
-    _authelia_es_status.resources | length > 0 and
-    _authelia_es_status.resources[0].status.conditions | default([]) |
-    selectattr('type', 'equalto', 'Ready') |
-    selectattr('status', 'equalto', 'True') | list | length > 0
+    _authelia_es_status.resources | length > 0 and _authelia_es_status.resources[0].status.conditions | default([]) | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
   retries: 12
   delay: 5
   when: authelia_vault_enabled | bool
@@ -135,7 +126,11 @@
             'SESSION_SECRET': authelia_session_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')),
             'STORAGE_ENCRYPTION_KEY': authelia_storage_key | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits'))
           }
-          | combine({'OIDC_HMAC_SECRET': authelia_oidc_hmac_secret | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')), 'OIDC_PRIVATE_KEY': _authelia_oidc_private_key} if authelia_oidc_enabled | default(false) else {})
+          | combine({
+            'OIDC_HMAC_SECRET': authelia_oidc_hmac_secret
+              | default(lookup('password', '/dev/null length=64 chars=ascii_letters,digits')),
+            'OIDC_PRIVATE_KEY': _authelia_oidc_private_key
+          } if authelia_oidc_enabled | default(false) else {})
           | combine({'REDIS_PASSWORD': redis_password | default('')} if authelia_redis_enabled else {})
           | combine({'STORAGE_POSTGRES_PASSWORD': authelia_postgresql_password | default('')} if authelia_storage_backend == 'postgres' else {})
         }}
@@ -171,8 +166,7 @@
     namespace: "{{ authelia_namespace }}"
   register: authelia_deployment
   until: >
-    authelia_deployment.resources | length > 0 and
-    authelia_deployment.resources[0].status.readyReplicas | default(0) >= 1
+    authelia_deployment.resources | length > 0 and authelia_deployment.resources[0].status.readyReplicas | default(0) >= 1
   retries: 30
   delay: 10
 
