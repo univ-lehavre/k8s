@@ -1,4 +1,3 @@
----
 # Déploiement intelligent avec résolution de dépendances
 #
 # Résout l'arbre de dépendances du composant cible, vérifie lesquels
@@ -24,9 +23,7 @@
           - target is defined
           - target in atlas_components
         fail_msg: >-
-          Cible "{{ target | default('non définie') }}" invalide.
-          Composants disponibles : {{ atlas_components.keys() | sort | join(', ') }}
-
+          Cible "{{ target | default('non définie') }}" invalide. Composants disponibles : {{ atlas_components.keys() | sort | join(', ') }} #magic___^_^___line
     - name: Résoudre les dépendances
       ansible.builtin.set_fact:
         _deploy_order: "{{ atlas_components | resolve_deps(target) }}"

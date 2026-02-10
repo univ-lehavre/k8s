@@ -1,4 +1,3 @@
----
 # Configuration pre-commit pour linter automatiquement le code Ansible
 # Installation: pip install pre-commit && pre-commit install
 

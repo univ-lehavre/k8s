@@ -1,4 +1,3 @@
----
 # HashiCorp Vault tasks
 
 - name: Create Vault namespace
@@ -69,10 +68,7 @@
         namespace: "{{ vault_namespace }}"
         pod: vault-0
         command: >
-          vault operator init
-          -key-shares={{ vault_init_key_shares }}
-          -key-threshold={{ vault_init_key_threshold }}
-          -format=json
+          vault operator init -key-shares={{ vault_init_key_shares }} -key-threshold={{ vault_init_key_threshold }} -format=json
       register: vault_init_output
 
     - name: Parse init output

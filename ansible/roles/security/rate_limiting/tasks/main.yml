@@ -1,4 +1,3 @@
----
 # Rate Limiting via Cilium CiliumClusterwideNetworkPolicy
 
 - name: Skip rate limiting for local environment

@@ -1,4 +1,3 @@
----
 - name: Include SSH hardening
   ansible.builtin.include_tasks: ssh.yml
 

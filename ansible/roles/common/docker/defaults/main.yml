@@ -1,4 +1,3 @@
----
 # Docker role defaults (for local K3D development)
 
 # Docker packages (macOS uses Docker Desktop)

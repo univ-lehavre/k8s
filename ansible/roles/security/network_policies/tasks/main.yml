@@ -1,4 +1,3 @@
----
 # Network Policies tasks
 
 - name: Skip network policies for local environment

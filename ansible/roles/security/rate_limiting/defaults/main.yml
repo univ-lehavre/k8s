@@ -1,4 +1,3 @@
----
 # Rate Limiting defaults
 
 rate_limiting_enabled: "{{ env != 'local' }}"

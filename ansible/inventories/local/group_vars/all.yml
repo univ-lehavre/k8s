@@ -1,4 +1,3 @@
----
 # Environment identification
 env: local
 env_name: "Local Development"

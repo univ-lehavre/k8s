@@ -1,4 +1,3 @@
----
 # Apply Pod Security Standards to namespaces
 
 - name: Skip Pod Security Standards for local environment

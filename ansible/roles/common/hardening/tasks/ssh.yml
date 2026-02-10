@@ -1,4 +1,3 @@
----
 - name: Backup SSH configuration
   ansible.builtin.copy:
     src: /etc/ssh/sshd_config

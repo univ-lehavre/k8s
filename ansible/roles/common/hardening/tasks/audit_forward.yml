@@ -1,4 +1,3 @@
----
 # Centralized Audit Log Forwarding
 
 - name: Install rsyslog for log forwarding

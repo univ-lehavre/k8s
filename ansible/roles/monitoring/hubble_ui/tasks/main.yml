@@ -1,4 +1,3 @@
----
 # Hubble UI tasks
 
 # Hubble UI is deployed with Cilium, this role just manages ingress

@@ -1,4 +1,3 @@
----
 # Cilium role defaults
 
 # Cilium version (from helm_versions)

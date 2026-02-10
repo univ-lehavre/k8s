@@ -1,4 +1,3 @@
----
 # Kube-Prometheus Stack tasks
 
 - name: Create monitoring namespace

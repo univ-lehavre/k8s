@@ -1,4 +1,3 @@
----
 # Flipt tasks
 
 - name: Create Flipt namespace
@@ -41,8 +40,7 @@
         namespace: "{{ flipt_namespace }}"
       type: Opaque
       stringData:
-        database-url: "postgres://{{ flipt_postgresql_user }}:{{ database_passwords.flipt }}@{{ flipt_postgresql_host }}:{{ flipt_postgresql_port }}/{{ flipt_postgresql_database
-          }}?sslmode={{ 'require' if postgresql_ssl_enabled | default(false) else 'disable' }}"
+        database-url: "postgres://{{ flipt_postgresql_user }}:{{ database_passwords.flipt }}@{{ flipt_postgresql_host }}:{{ flipt_postgresql_port }}/{{ flipt_postgresql_database }}?sslmode={{ 'require' if postgresql_ssl_enabled | default(false) else 'disable' }}"
   when:
     - flipt_database_enabled
     - database_passwords.flipt is defined

@@ -1,4 +1,3 @@
----
 # Kyverno deployment tasks
 # Deploys Kubernetes-native policy engine
 
@@ -39,8 +38,7 @@
     namespace: "{{ kyverno_namespace }}"
   register: kyverno_deployment
   until: >
-    kyverno_deployment.resources | length > 0 and
-    kyverno_deployment.resources[0].status.readyReplicas | default(0) >= 1
+    kyverno_deployment.resources | length > 0 and kyverno_deployment.resources[0].status.readyReplicas | default(0) >= 1
   retries: 30
   delay: 10
 

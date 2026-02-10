@@ -1,4 +1,3 @@
----
 - name: Restart K3s agent
   ansible.builtin.systemd:
     name: k3s-agent

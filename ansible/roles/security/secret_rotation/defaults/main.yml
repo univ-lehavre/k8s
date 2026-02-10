@@ -1,4 +1,3 @@
----
 # Secret Rotation defaults via External Secrets Operator
 
 secret_rotation_enabled: "{{ env == 'production' }}"
