@@ -452,3 +452,44 @@ spec:
         - ports:
             - port: "5432"
               protocol: TCP
+
+---
+# SMTP egress: Allow email-sending services to reach SMTP relay
+{% for ns in ['keycloak', 'mattermost', 'nextcloud', 'gitea'] %}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: smtp-egress
+  namespace: {{ ns }}
+spec:
+  endpointSelector: {}
+  egress:
+    - toCIDR:
+        - 0.0.0.0/0
+      toPorts:
+        - ports:
+            - port: "587"
+              protocol: TCP
+
+---
+{% endfor %}
+# Loki: Allow log ingestion from all application namespaces
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: loki-ingress
+  namespace: {{ monitoring_namespace }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  ingress:
+    - fromEndpoints:
+{% for ns in network_policies_namespaces %}
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ ns }}
+{% endfor %}
+      toPorts:
+        - ports:
+            - port: "3100"
+              protocol: TCP

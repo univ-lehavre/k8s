@@ -196,6 +196,15 @@ atlas_components:
       name: argocd-server
       namespace: argocd
 
+  argo_rollouts:
+    role: devops/argo_rollouts
+    deps: [argocd]
+    health:
+      api: apps/v1
+      kind: Deployment
+      name: argo-rollouts
+      namespace: argocd
+
   # --- Monitoring ---
 
   kube_prometheus:
@@ -215,6 +224,15 @@ atlas_components:
       kind: Deployment
       name: hubble-ui
       namespace: kube-system
+
+  loki:
+    role: monitoring/loki
+    deps: [kube_prometheus, longhorn]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: loki
+      namespace: monitoring
 
   # --- Sécurité applicative ---
 
@@ -277,3 +295,11 @@ atlas_components:
       kind: Deployment
       name: velero
       namespace: velero
+
+  pod_disruption_budgets:
+    role: security/pod_disruption_budgets
+    deps: [k3s]
+    health:
+      api: policy/v1
+      kind: PodDisruptionBudget
+      namespace: vault

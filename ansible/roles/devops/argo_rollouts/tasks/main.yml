@@ -1,0 +1,39 @@
+# Argo Rollouts tasks
+
+- name: Skip Argo Rollouts if not enabled
+  ansible.builtin.debug:
+    msg: "Argo Rollouts disabled for {{ env | default('local') }} environment"
+  when: not (argo_rollouts_enabled | bool)
+
+- name: Add Argo Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ argo_rollouts_chart_repo_name }}"
+    repo_url: "{{ argo_rollouts_chart_repo }}"
+  when: argo_rollouts_enabled | bool
+
+- name: Deploy Argo Rollouts via Helm
+  kubernetes.core.helm:
+    name: argo-rollouts
+    chart_ref: "{{ argo_rollouts_chart_repo_name }}/argo-rollouts"
+    chart_version: "{{ helm_versions.argo_rollouts }}"
+    release_namespace: "{{ argo_rollouts_namespace }}"
+    create_namespace: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    wait: true
+    wait_timeout: 300s
+  when: argo_rollouts_enabled | bool
+
+- name: Wait for Argo Rollouts to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: argo-rollouts
+    namespace: "{{ argo_rollouts_namespace }}"
+  register: rollouts_deployment
+  until:
+    - rollouts_deployment.resources | length > 0
+    - rollouts_deployment.resources[0].status.readyReplicas is defined
+    - rollouts_deployment.resources[0].status.readyReplicas >= 1
+  retries: 30
+  delay: 10
+  when: argo_rollouts_enabled | bool

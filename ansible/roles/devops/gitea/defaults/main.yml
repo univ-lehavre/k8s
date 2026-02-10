@@ -79,5 +79,12 @@ gitea_oidc_name: Keycloak
 gitea_oidc_auto_discover_url: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/.well-known/openid-configuration"
 gitea_oidc_client_id: gitea
 
+# SMTP settings (email notifications)
+gitea_smtp_host: "{{ secrets.smtp.host | default('') }}"
+gitea_smtp_port: "{{ secrets.smtp.port | default(587) }}"
+gitea_smtp_from: "{{ secrets.smtp.from | default('gitea@' + domain) }}"
+gitea_smtp_user: "{{ secrets.smtp.user | default('') }}"
+gitea_smtp_password: "{{ secrets.smtp.password | default('') }}"
+
 # LFS
 gitea_lfs_enabled: true

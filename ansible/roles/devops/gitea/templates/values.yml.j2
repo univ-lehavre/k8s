@@ -67,6 +67,17 @@ gitea:
       REQUIRE_SIGNIN_VIEW: false
       DEFAULT_ALLOW_CREATE_ORGANIZATION: false
 
+{% if gitea_smtp_host | default('') != '' %}
+    mailer:
+      ENABLED: true
+      SMTP_ADDR: {{ gitea_smtp_host }}
+      SMTP_PORT: {{ gitea_smtp_port }}
+      FROM: {{ gitea_smtp_from }}
+      USER: {{ gitea_smtp_user }}
+      PASSWD: "{{ gitea_smtp_password }}"
+      PROTOCOL: smtps
+{% endif %}
+
 {% if gitea_proxy_auth_enabled | default(false) %}
     # Reverse proxy authentication via SSO provider headers
     service:
@@ -92,6 +103,29 @@ gitea:
       RESTRICTED_GROUP: {{ gitea_role_mapping.restricted_groups | join(',') }}
 {% endif %}
 {% endif %}
+
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /api/healthz
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 30
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /api/healthz
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  startupProbe:
+    enabled: true
+    httpGet:
+      path: /api/healthz
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 30
 
 # Disable built-in PostgreSQL and Redis
 postgresql:

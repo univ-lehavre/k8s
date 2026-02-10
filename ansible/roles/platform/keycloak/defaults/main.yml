@@ -48,11 +48,11 @@ keycloak_totp_enabled: true
 keycloak_webauthn_enabled: true
 
 # SMTP (for email verification + password reset)
-keycloak_smtp_host: ""
-keycloak_smtp_port: 587
-keycloak_smtp_from: "keycloak@{{ domain }}"
-keycloak_smtp_user: ""
-keycloak_smtp_password: ""
+keycloak_smtp_host: "{{ secrets.smtp.host | default('') }}"
+keycloak_smtp_port: "{{ secrets.smtp.port | default(587) }}"
+keycloak_smtp_from: "{{ secrets.smtp.from | default('keycloak@' + domain) }}"
+keycloak_smtp_user: "{{ secrets.smtp.user | default('') }}"
+keycloak_smtp_password: "{{ secrets.smtp.password | default('') }}"
 keycloak_smtp_starttls: true
 
 # Password policy

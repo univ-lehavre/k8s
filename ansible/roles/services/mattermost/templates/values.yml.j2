@@ -13,6 +13,20 @@ resources:
     cpu: {{ mattermost_resources.limits.cpu }}
     memory: {{ mattermost_resources.limits.memory }}
 
+livenessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  httpGet:
+    path: /api/v4/system/ping
+    port: 8065
+
+readinessProbe:
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  httpGet:
+    path: /api/v4/system/ping
+    port: 8065
+
 persistence:
   data:
     enabled: true
@@ -62,6 +76,17 @@ config:
   GuestAccountsSettings:
     Enable: false
 {% endif %}
+{% endif %}
+
+{% if mattermost_smtp_host | default('') != '' %}
+  EmailSettings:
+    SendEmailNotifications: true
+    SMTPServer: "{{ mattermost_smtp_host }}"
+    SMTPPort: "{{ mattermost_smtp_port }}"
+    SMTPUsername: "{{ mattermost_smtp_user }}"
+    SMTPPassword: "{{ mattermost_smtp_password }}"
+    FeedbackEmail: "{{ mattermost_smtp_from }}"
+    ConnectionSecurity: STARTTLS
 {% endif %}
 
 # Ingress disabled (managed separately)

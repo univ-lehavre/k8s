@@ -1,0 +1,38 @@
+# Loki — Centralized Log Aggregation
+# Provides log storage and querying, integrated with Grafana
+
+loki_enabled: true
+loki_namespace: monitoring
+
+# Helm
+loki_chart_repo: "{{ helm_repositories.grafana.url }}"
+loki_chart_repo_name: "{{ helm_repositories.grafana.name }}"
+
+# Deployment mode
+loki_deployment_mode: SingleBinary
+
+# Storage
+loki_storage_class: "{{ storage_class }}"
+loki_storage_size: 50Gi
+
+# Retention
+loki_retention_period: 744h # 31 days
+
+# Resources
+loki_resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+# Alloy (Grafana log collector — replaces Fluent Bit)
+alloy_enabled: true
+alloy_resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

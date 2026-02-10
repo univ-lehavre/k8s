@@ -44,9 +44,13 @@ helm_versions:
   # DevOps
   gitea: "10.1.1"
   argocd: "6.4.0"
+  argo_rollouts: "2.37.0"
 
   # Monitoring
   kube_prometheus_stack: "56.21.1"
+  # Logging
+  loki: "6.24.0"
+  alloy: "0.12.0"
 
   # Security
   velero: "1.13.0"

@@ -1,0 +1,12 @@
+# PDB tasks
+
+- name: Skip PDB if not HA
+  ansible.builtin.debug:
+    msg: "PDB disabled (HA not enabled)"
+  when: not (pdb_enabled | bool)
+
+- name: Create PodDisruptionBudgets
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'pdb.yml.j2') | from_yaml_all }}"
+  when: pdb_enabled | bool

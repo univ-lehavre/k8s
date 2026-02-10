@@ -81,6 +81,20 @@ nextcloud_group_quotas:
   researchers: 107374182400 # 100 GB
   users: 10737418240 # 10 GB
 
+# SMTP settings (email notifications)
+nextcloud_smtp_host: "{{ secrets.smtp.host | default('') }}"
+nextcloud_smtp_port: "{{ secrets.smtp.port | default(587) }}"
+nextcloud_smtp_from: "{{ secrets.smtp.from | default('nextcloud@' + domain) }}"
+nextcloud_smtp_user: "{{ secrets.smtp.user | default('') }}"
+nextcloud_smtp_password: "{{ secrets.smtp.password | default('') }}"
+nextcloud_smtp_secure: starttls
+
+# Autoscaling (production only)
+nextcloud_hpa_enabled: "{{ env == 'production' }}"
+nextcloud_hpa_min_replicas: 1
+nextcloud_hpa_max_replicas: 2
+nextcloud_hpa_target_cpu: 70
+
 # OnlyOffice integration
 nextcloud_onlyoffice_enabled: true
 nextcloud_onlyoffice_url: "https://office.{{ domain }}"

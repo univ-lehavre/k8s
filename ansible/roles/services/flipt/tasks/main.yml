@@ -100,3 +100,9 @@
     state: present
     definition: "{{ lookup('template', 'httproute.yml.j2') | from_yaml }}"
   when: flipt_ingress_enabled
+
+- name: Deploy Flipt HPA
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'hpa.yml.j2') | from_yaml }}"
+  when: flipt_hpa_enabled | bool

@@ -15,6 +15,9 @@ controller:
     limits:
       cpu: {{ argocd_controller_resources.limits.cpu }}
       memory: {{ argocd_controller_resources.limits.memory }}
+  pdb:
+    enabled: true
+    minAvailable: 1
 
 server:
   replicas: 2
@@ -25,6 +28,9 @@ server:
     limits:
       cpu: {{ argocd_server_resources.limits.cpu }}
       memory: {{ argocd_server_resources.limits.memory }}
+  pdb:
+    enabled: true
+    minAvailable: 1
 
 repoServer:
   replicas: 2
@@ -35,6 +41,9 @@ repoServer:
     limits:
       cpu: {{ argocd_repo_server_resources.limits.cpu }}
       memory: {{ argocd_repo_server_resources.limits.memory }}
+  pdb:
+    enabled: true
+    minAvailable: 1
 
 redis-ha:
   enabled: true

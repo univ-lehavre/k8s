@@ -129,3 +129,8 @@ startupProbe: |
   initialDelaySeconds: 30
   periodSeconds: 5
   failureThreshold: 60
+
+# Pod Disruption Budget
+pdb:
+  create: {{ ha_enabled | default(false) | lower }}
+  minAvailable: 1

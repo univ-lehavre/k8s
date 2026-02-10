@@ -1,0 +1,25 @@
+# Argo Rollouts Helm Values
+
+controller:
+  resources:
+    requests:
+      cpu: {{ argo_rollouts_resources.requests.cpu }}
+      memory: {{ argo_rollouts_resources.requests.memory }}
+    limits:
+      cpu: {{ argo_rollouts_resources.limits.cpu }}
+      memory: {{ argo_rollouts_resources.limits.memory }}
+
+  metrics:
+    enabled: {{ monitoring_enabled | default(true) | lower }}
+    serviceMonitor:
+      enabled: {{ monitoring_enabled | default(true) | lower }}
+
+dashboard:
+  enabled: {{ argo_rollouts_dashboard_enabled | lower }}
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

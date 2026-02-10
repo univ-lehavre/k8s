@@ -1,0 +1,72 @@
+# Loki Helm Values — SingleBinary mode
+
+deploymentMode: {{ loki_deployment_mode }}
+
+loki:
+  auth_enabled: false
+
+  commonConfig:
+    replication_factor: 1
+
+  storage:
+    type: filesystem
+
+  limits_config:
+    retention_period: {{ loki_retention_period }}
+
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: {{ loki_resources.requests.cpu }}
+      memory: {{ loki_resources.requests.memory }}
+    limits:
+      cpu: {{ loki_resources.limits.cpu }}
+      memory: {{ loki_resources.limits.memory }}
+
+  persistence:
+    enabled: true
+    storageClass: {{ loki_storage_class }}
+    size: {{ loki_storage_size }}
+
+# Disable unused components
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+
+gateway:
+  enabled: false
+
+chunksCache:
+  enabled: false
+
+resultsCache:
+  enabled: false
+
+# Monitoring
+monitoring:
+  serviceMonitor:
+    enabled: {{ monitoring_enabled | default(true) | lower }}
+  selfMonitoring:
+    enabled: false
+    grafanaAgent:
+      installOperator: false
+  lokiCanary:
+    enabled: false
+
+# Disable test
+test:
+  enabled: false

@@ -35,6 +35,12 @@ ecrin_oidc_client_id: ecrin
 ecrin_oidc_redirect_uri: "https://ecrin.{{ domain }}/auth/callback"
 ecrin_oidc_client_secret: "{{ secrets.keycloak.oidc_ecrin_secret | default('') }}"
 
+# Autoscaling (production only)
+ecrin_hpa_enabled: "{{ env == 'production' }}"
+ecrin_hpa_min_replicas: 1
+ecrin_hpa_max_replicas: 2
+ecrin_hpa_target_cpu: 75
+
 # REDCap integration (external service)
 ecrin_redcap_url: "{{ lookup('env', 'ECRIN_REDCAP_URL') | default('') }}"
 ecrin_redcap_token: "{{ lookup('env', 'ECRIN_REDCAP_TOKEN') | default('') }}"
