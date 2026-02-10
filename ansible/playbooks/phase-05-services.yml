@@ -1,4 +1,16 @@
-# Phase 5: Application Services
+# Phase 5: Identity & Application Services
+
+- name: Phase 5 - Keycloak (Identity Provider)
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  roles:
+    - role: platform/keycloak
+      tags: [services, keycloak, auth, identity]
+      when: keycloak_enabled | default(false)
 
 - name: Phase 5 - Authelia (Forward Auth)
   hosts: localhost
@@ -10,6 +22,7 @@
   roles:
     - role: platform/authelia
       tags: [services, authelia, auth, forward-auth]
+      when: not (keycloak_enabled | default(false))
 
 - name: Phase 5 - Application Services
   hosts: localhost
@@ -46,7 +59,11 @@
       ansible.builtin.debug:
         msg: |
           Application services deployed:
+          {% if keycloak_enabled | default(false) %}
+          - Keycloak (IAM): https://login.{{ domain }}
+          {% else %}
           - Authelia (Forward Auth): https://login.{{ domain }}
+          {% endif %}
           - Mattermost: https://chat.{{ domain }}
           - Nextcloud: https://cloud.{{ domain }}
           - OnlyOffice: https://office.{{ domain }}

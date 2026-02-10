@@ -1,0 +1,106 @@
+# Keycloak — Identity and Access Management
+# Replaces Authelia in staging/production with full IAM capabilities:
+# SSO (OIDC), user management console, self-registration, MFA
+
+# Feature flag — disabled in local (Authelia used instead)
+keycloak_enabled: "{{ env | default('local') != 'local' }}"
+
+# Namespace
+keycloak_namespace: keycloak
+
+# Helm chart (Codecentric — community standard, uses official Keycloak image)
+keycloak_chart_repo: "{{ helm_repositories.codecentric.url }}"
+keycloak_chart_repo_name: "{{ helm_repositories.codecentric.name }}"
+
+# Domain / URLs
+keycloak_host: "login.{{ domain }}"
+keycloak_realm: atlas
+
+# Replicas
+keycloak_replicas: "{{ 2 if ha_enabled | default(false) else 1 }}"
+
+# Resources
+keycloak_resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# PostgreSQL (dedicated database)
+keycloak_postgresql_host: "{{ postgresql_host | default('postgresql-postgresql-ha-pgpool.postgresql.svc.cluster.local') }}"
+keycloak_postgresql_port: 5432
+keycloak_postgresql_database: "{{ database_config.keycloak.database }}"
+keycloak_postgresql_user: "{{ database_config.keycloak.user }}"
+
+# Admin credentials
+keycloak_admin_user: admin
+keycloak_admin_password: "{{ secrets.keycloak.admin_password | default(omit) }}"
+
+# Self-registration
+keycloak_registration_enabled: true
+keycloak_email_verification_required: true
+keycloak_allowed_email_domains: [] # Override per env, e.g. ['univ-lehavre.fr']
+keycloak_default_group: users
+
+# MFA
+keycloak_totp_enabled: true
+keycloak_webauthn_enabled: true
+
+# SMTP (for email verification + password reset)
+keycloak_smtp_host: ""
+keycloak_smtp_port: 587
+keycloak_smtp_from: "keycloak@{{ domain }}"
+keycloak_smtp_user: ""
+keycloak_smtp_password: ""
+keycloak_smtp_starttls: true
+
+# Password policy (matches existing Authelia policy)
+keycloak_password_min_length: 12
+keycloak_password_require_uppercase: true
+keycloak_password_require_digit: true
+keycloak_password_require_special: true
+
+# User groups (same as Authelia)
+keycloak_groups:
+  - admins
+  - devops
+  - researchers
+  - users
+
+# OIDC clients (migrated from Authelia)
+keycloak_oidc_clients:
+  - client_id: ecrin
+    name: ECRIN MDR Portal
+    redirect_uris:
+      - "https://ecrin.{{ domain }}/signin-oidc"
+      - "https://ecrin.{{ domain }}/callback"
+      - "https://ecrin.{{ domain }}/auth/callback"
+    web_origins:
+      - "https://ecrin.{{ domain }}"
+  - client_id: mattermost
+    name: Mattermost
+    redirect_uris:
+      - "https://chat.{{ domain }}/signup/gitlab/complete"
+      - "https://chat.{{ domain }}/login/gitlab/complete"
+    web_origins:
+      - "https://chat.{{ domain }}"
+  - client_id: nextcloud
+    name: Nextcloud
+    redirect_uris:
+      - "https://cloud.{{ domain }}/apps/oidc_login/oidc"
+    web_origins:
+      - "https://cloud.{{ domain }}"
+
+# Vault integration
+keycloak_vault_enabled: "{{ secrets.vault.root_token is defined and secrets.vault.root_token != '' }}"
+keycloak_vault_path: secret/platform/keycloak
+keycloak_eso_refresh_interval: 1h
+
+# Ingress
+keycloak_ingress_enabled: true
+
+# Metrics
+keycloak_metrics_enabled: true
+keycloak_metrics_port: 9000

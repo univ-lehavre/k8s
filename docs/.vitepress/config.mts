@@ -18,16 +18,29 @@ export default defineConfig({
     nav: [
       { text: 'Accueil', link: '/' },
       { text: 'Deploiement', link: '/deployment-priority' },
-      { text: 'Securite', link: '/security-overview' },
+      { text: 'Securite', link: '/authentication' },
       { text: 'Contribuer', link: '/CONTRIBUTING' },
     ],
 
     sidebar: [
       {
-        text: 'Documentation',
+        text: 'Deploiement',
         items: [
           { text: 'Guide de deploiement', link: '/deployment-priority' },
-          { text: 'Securite et authentification', link: '/security-overview' },
+        ],
+      },
+      {
+        text: 'Securite',
+        items: [
+          { text: 'Authentification', link: '/authentication' },
+          { text: 'Autorisations', link: '/authorization' },
+          { text: 'Secrets et chiffrement', link: '/secrets-encryption' },
+          { text: 'Flux reseau', link: '/network-flows' },
+        ],
+      },
+      {
+        text: 'Projet',
+        items: [
           { text: 'Contribuer', link: '/CONTRIBUTING' },
         ],
       },

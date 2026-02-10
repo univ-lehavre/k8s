@@ -111,6 +111,15 @@ atlas_components:
       name: authelia
       namespace: authelia
 
+  keycloak:
+    role: platform/keycloak
+    deps: [postgresql, external_secrets, envoy_gateway]
+    health:
+      api: apps/v1
+      kind: StatefulSet
+      name: keycloak
+      namespace: keycloak
+
   # --- Services ---
 
   seaweedfs:

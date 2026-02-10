@@ -53,15 +53,18 @@ nextcloud_s3_port: 8333
 nextcloud_s3_use_ssl: "{{ env == 'production' }}"
 nextcloud_s3_use_path_style: true
 
-# Authentication mode: 'oidc' (Authelia) or 'saml' (for SAML-based SSO)
+# Authentication mode: 'oidc' (Keycloak/Authelia) or 'saml' (for SAML-based SSO)
 nextcloud_auth_mode: oidc
 
-# OIDC settings (Authelia)
+# OIDC settings (Keycloak or Authelia)
 nextcloud_oidc_enabled: "{{ nextcloud_auth_mode == 'oidc' }}"
-nextcloud_oidc_provider_url: "https://login.{{ domain }}"
+nextcloud_oidc_provider_url: >-
+  {{ 'https://' + keycloak_host + '/realms/' + keycloak_realm
+     if keycloak_enabled | default(false)
+     else 'https://login.' + domain }}
 nextcloud_oidc_client_id: nextcloud
 
-# Group mapping from Authelia to Nextcloud groups
+# Group mapping from OIDC provider to Nextcloud groups
 # Groups are synced automatically via OIDC claims
 nextcloud_group_mapping:
   # Authelia group → Nextcloud group

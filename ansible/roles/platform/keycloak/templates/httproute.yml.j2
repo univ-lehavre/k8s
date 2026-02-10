@@ -1,0 +1,42 @@
+---
+# Keycloak HTTPRoute for Gateway API
+# Exposes the Keycloak login portal and admin console
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: keycloak
+  namespace: {{ keycloak_namespace }}
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/component: httproute
+spec:
+  parentRefs:
+    - name: {{ gateway_name | default('atlas-gateway') }}
+      namespace: {{ envoy_gateway_namespace | default('envoy-gateway-system') }}
+  hostnames:
+    - {{ keycloak_host }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: keycloak-http
+          port: 8080
+
+{% if not (gateway_wildcard_enabled | default(true)) %}
+---
+# Certificate for Keycloak (if not using wildcard)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: keycloak-tls
+  namespace: {{ keycloak_namespace }}
+spec:
+  secretName: keycloak-tls
+  issuerRef:
+    name: {{ tls_issuer }}
+    kind: ClusterIssuer
+  dnsNames:
+    - {{ keycloak_host }}
+{% endif %}

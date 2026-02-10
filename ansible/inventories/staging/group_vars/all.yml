@@ -51,7 +51,12 @@ namespaces:
   flipt: flipt
   gitea: gitea
   argocd: argocd
+  keycloak: keycloak
   monitoring: monitoring
+
+# Keycloak (replaces Authelia in staging/production)
+keycloak_enabled: true
+keycloak_allowed_email_domains: [] # Configure per team, e.g. ['univ-lehavre.fr']
 
 # PostgreSQL configuration
 postgresql_host: postgresql-postgresql-ha-pgpool.postgresql.svc.cluster.local
@@ -75,6 +80,7 @@ service_urls:
   flipt: "https://flags.{{ domain }}"
   longhorn: "https://longhorn.{{ domain }}"
   hubble: "https://hubble.{{ domain }}"
+  keycloak: "https://login.{{ domain }}"
 
 # Firewall allowed IPs (for K3s API access)
 admin_allowed_ips:

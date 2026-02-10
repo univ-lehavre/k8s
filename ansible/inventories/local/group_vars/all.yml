@@ -54,6 +54,7 @@ namespaces:
   flipt: flipt
   gitea: gitea
   argocd: argocd
+  keycloak: keycloak
   monitoring: monitoring
 
 # PostgreSQL configuration
