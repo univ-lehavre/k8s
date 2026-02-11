@@ -237,10 +237,29 @@ tasks:
       - sh: "[ -n '{{.CLI_ARGS}}' ]"
         msg: "Specifier un composant. Usage: task deploy:staging -- mattermost"
 
+  k3d:stop:
+    desc: "Arreter le cluster k3d local"
+    cmds:
+      - k3d cluster stop atlas-local
+      - echo "✓ Cluster k3d 'atlas-local' arrete"
+
+  k3d:delete:
+    desc: "Supprimer le cluster k3d local"
+    prompt: "Supprimer le cluster atlas-local ? Toutes les donnees seront perdues."
+    cmds:
+      - k3d cluster delete atlas-local
+      - echo "✓ Cluster k3d 'atlas-local' supprime"
+
+  k3d:status:
+    desc: "Afficher le statut du cluster k3d local"
+    cmds:
+      - k3d cluster list
+
   deploy:local:
     desc: "Deployer en LOCAL (usage: task deploy:local -- mattermost)"
     dir: "{{.ANSIBLE_DIR}}"
     cmds:
+      - task: _ensure-k3d
       - task: _ensure-env
         vars: {ENV: local}
       - |
@@ -281,6 +300,55 @@ tasks:
     preconditions:
       - sh: "[ -n '{{.CLI_ARGS}}' ]"
         msg: "Specifier un composant. Usage: task deploy:production -- mattermost"
+
+  _ensure-k3d:
+    internal: true
+    desc: "Verifier et demarrer k3d si necessaire"
+    cmds:
+      - |
+        CLUSTER_NAME="atlas-local"
+
+        # Vérifier si k3d est installé
+        if ! command -v k3d &> /dev/null; then
+          echo "❌ k3d n'est pas installé. Installez-le avec: brew install k3d"
+          exit 1
+        fi
+
+        # Vérifier si le cluster existe
+        if k3d cluster list | grep -q "^${CLUSTER_NAME}"; then
+          # Le cluster existe, vérifier s'il est running
+          if k3d cluster list | grep "^${CLUSTER_NAME}" | grep -q "running"; then
+            echo "✓ Cluster k3d '${CLUSTER_NAME}' est deja en cours d'execution"
+          else
+            echo "🚀 Demarrage du cluster k3d '${CLUSTER_NAME}'..."
+            k3d cluster start ${CLUSTER_NAME}
+            echo "✓ Cluster k3d '${CLUSTER_NAME}' demarre"
+          fi
+        else
+          echo "📦 Creation du cluster k3d '${CLUSTER_NAME}'..."
+          k3d cluster create ${CLUSTER_NAME} \
+            --api-port 6550 \
+            --port "80:80@loadbalancer" \
+            --port "443:443@loadbalancer" \
+            --agents 0 \
+            --k3s-arg "--disable=traefik@server:*" \
+            --k3s-arg "--disable=servicelb@server:*" \
+            --k3s-arg "--disable=local-storage@server:*" \
+            --k3s-arg "--flannel-backend=none@server:*" \
+            --k3s-arg "--disable-network-policy@server:*"
+          echo "✓ Cluster k3d '${CLUSTER_NAME}' cree et demarre"
+        fi
+
+        # Merger le kubeconfig pour que kubectl fonctionne
+        k3d kubeconfig merge ${CLUSTER_NAME} --kubeconfig-merge-default
+
+        # Attendre que l'API soit accessible (le node sera NotReady tant que le CNI n'est pas installé)
+        echo "⏳ Attente que l'API Kubernetes soit accessible..."
+        until kubectl get nodes &> /dev/null; do
+          sleep 2
+        done
+        echo "✓ Cluster k3d pret (API accessible)"
+    silent: false
 
   _ensure-env:
     internal: true

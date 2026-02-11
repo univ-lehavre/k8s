@@ -36,24 +36,22 @@
 
           Vérification de l'état de chaque composant...
 
-    - name: "Vérifier {{ item }}"
+    - name: "Vérifier les composants"
       ansible.builtin.include_tasks: ../tasks/check_component.yml
       vars:
         _component_name: "{{ item }}"
         _component_def: "{{ atlas_components[item] }}"
       loop: "{{ _deploy_order }}"
-      register: _health_checks
 
     - name: Construire la liste des composants manquants
       ansible.builtin.set_fact:
         _to_deploy: >-
-          {{ _deploy_order | select('in', _missing) | list }}
+          {{ _deploy_order | reject('in', _healthy) | list }}
       vars:
-        _missing: >-
-          {{ _health_checks.results
-             | selectattr('ansible_facts._component_healthy', 'defined')
-             | rejectattr('ansible_facts._component_healthy')
-             | map(attribute='item') | list }}
+        _healthy: >-
+          {{ _health_map | default({}) | dict2items
+             | selectattr('value')
+             | map(attribute='key') | list }}
 
     - name: Afficher le plan d'exécution
       ansible.builtin.debug:
@@ -70,7 +68,7 @@
       when: _to_deploy | length == 0
 
   tasks:
-    - name: "Déployer {{ item }}"
+    - name: "Déployer les composants"
       ansible.builtin.include_role:
         name: "{{ atlas_components[item].role }}"
       loop: "{{ _to_deploy }}"

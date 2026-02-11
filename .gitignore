@@ -11,3 +11,4 @@ docs/.vitepress/cache/
 # Ignore generated .env files but keep .example templates
 ansible/.env.*
 !ansible/.env.*.example
+*.log
