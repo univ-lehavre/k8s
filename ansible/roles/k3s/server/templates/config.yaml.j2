@@ -7,6 +7,13 @@ token: "{{ k3s_token }}"
 # Write kubeconfig with specific permissions
 write-kubeconfig-mode: "{{ k3s_kubeconfig_mode }}"
 
+# TLS SANs for API server certificate (enables remote kubeconfig access)
+tls-san:
+  - "{{ ansible_host }}"
+{% for san in k3s_tls_san %}
+  - "{{ san }}"
+{% endfor %}
+
 # Disable default components
 disable:
 {% for component in k3s_disable %}

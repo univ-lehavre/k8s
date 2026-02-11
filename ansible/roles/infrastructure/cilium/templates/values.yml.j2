@@ -64,9 +64,17 @@ bpf:
 ipam:
   mode: kubernetes
 
-# Enable endpoint routes
+{% if k3s_type == 'k3d' %}
+# K3D: use tunnel/VXLAN mode (default), no direct routing
+routingMode: tunnel
+autoDirectNodeRoutes: false
+endpointRoutes:
+  enabled: false
+{% else %}
+# K3s native: use direct routing for better performance
+routingMode: native
+autoDirectNodeRoutes: true
 endpointRoutes:
   enabled: true
-
-# Auto direct routing
-autoDirectNodeRoutes: true
+ipv4NativeRoutingCIDR: "10.42.0.0/16"
+{% endif %}

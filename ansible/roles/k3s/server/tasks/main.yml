@@ -20,6 +20,33 @@
     mode: "0600"
   notify: Restart K3s
 
+- name: Check if API server certificate includes ansible_host SAN
+  ansible.builtin.shell: |
+    set -o pipefail
+    if [ -f /var/lib/rancher/k3s/server/tls/serving-kube-apiserver.crt ]; then
+      openssl x509 -in /var/lib/rancher/k3s/server/tls/serving-kube-apiserver.crt -noout -text \
+        | grep -q "DNS:{{ ansible_host }}" && echo "present" || echo "missing"
+    else
+      echo "nocert"
+    fi
+  args:
+    executable: /bin/bash
+  register: _k3s_san_check
+  changed_when: false
+
+- name: Remove API server certificate to regenerate with new SANs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/lib/rancher/k3s/server/tls/serving-kube-apiserver.crt
+    - /var/lib/rancher/k3s/server/tls/serving-kube-apiserver.key
+  when: _k3s_san_check.stdout == 'missing'
+  notify: Restart K3s
+
+- name: Flush handlers to restart K3s if config changed
+  ansible.builtin.meta: flush_handlers
+
 - name: Download and install K3s
   ansible.builtin.shell: |
     set -o pipefail
@@ -41,11 +68,11 @@
   delay: 10
   changed_when: false
 
-- name: Wait for node to be Ready
-  ansible.builtin.shell: |
-    k3s kubectl get node {{ ansible_hostname }} -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
-  register: node_ready
-  until: node_ready.stdout == "True"
+- name: Wait for node to be registered
+  ansible.builtin.command: >
+    k3s kubectl get node {{ ansible_hostname }}
+  register: node_registered
+  until: node_registered.rc == 0
   retries: 30
   delay: 10
   changed_when: false
@@ -83,11 +110,37 @@
     state: link
     force: true
 
+- name: Ensure .kube directory exists for {{ ansible_user }}
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0700"
+
+- name: Copy kubeconfig for {{ ansible_user }}
+  ansible.builtin.copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    remote_src: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0600"
+
 - name: Fetch kubeconfig to controller
   ansible.builtin.fetch:
     src: /etc/rancher/k3s/k3s.yaml
     dest: "{{ playbook_dir }}/../kubeconfig-{{ env }}.yaml"
     flat: true
+  when: k3s_server_init
+
+- name: Rewrite kubeconfig server URL for controller access
+  ansible.builtin.replace:
+    path: "{{ playbook_dir }}/../kubeconfig-{{ env }}.yaml"
+    regexp: 'server:\s*https://127\.0\.0\.1:6443'
+    replace: "server: https://{{ ansible_host }}:6443"
+  delegate_to: localhost
+  become: false
   when: k3s_server_init
 
 - name: Display K3s server info

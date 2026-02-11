@@ -1,6 +1,18 @@
 {
-  "private": true,
+  "name": "@univ-lehavre/k8s",
+  "description": "Kubernetes cluster deployment and documentation",
   "version": "0.4.1",
+  "private": true,
+  "license": "MIT",
+  "author": "Pierre-Olivier Chasset",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/univ-lehavre/k8s.git"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/k8s/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/k8s#readme",
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

@@ -7,3 +7,11 @@ __pycache__/
 node_modules/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+
+# Ignore generated .env files but keep .example templates
+ansible/.env.*
+!ansible/.env.*.example
+*.log
+.ansible/
+.cache/
+ansible/kubeconfig-*.yaml

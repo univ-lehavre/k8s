@@ -5,7 +5,7 @@
 #   _component_def   — définition depuis atlas_components (contient .health)
 #
 # Sortie :
-#   _component_healthy — booléen (fact)
+#   _health_map — dictionnaire accumulé { composant: true/false }
 
 - name: "Health check : {{ _component_name }}"
   kubernetes.core.k8s_info:
@@ -18,11 +18,13 @@
 
 - name: "Évaluer santé : {{ _component_name }}"
   ansible.builtin.set_fact:
-    _component_healthy: >-
-      {{
-        _health_result.resources | length > 0
-        and (
-          _health_result.resources[0].status.readyReplicas | default(0) | int >= 1
-          or _health_result.resources[0].status.numberReady | default(0) | int >= 1
+    _health_map: >-
+      {{ _health_map | default({}) | combine({
+        _component_name: (
+          (_health_result.resources | default([])) | length > 0
+          and (
+            (_health_result.resources | default([]))[0].status.readyReplicas | default(0) | int >= 1
+            or (_health_result.resources | default([]))[0].status.numberReady | default(0) | int >= 1
+          )
         )
-      }}
+      }) }}
