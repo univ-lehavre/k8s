@@ -364,6 +364,82 @@ tasks:
         fi
     silent: true
 
+  # Infrastructure (phases 1+2)
+  infra:staging:
+    desc: "Deployer l'infra staging (phases 1+2: preparation + K3s + composants)"
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - task: _ensure-env
+        vars: {ENV: staging}
+      - |
+        set -a
+        source .env.staging
+        set +a
+        ansible-playbook -i inventories/staging/ playbooks/phase-01-preparation.yml
+        ansible-playbook -i inventories/staging/ playbooks/phase-02-k3s-core.yml
+
+  infra:production:
+    desc: "Deployer l'infra production (phases 1+2: preparation + K3s + composants)"
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - task: _ensure-env
+        vars: {ENV: production}
+      - |
+        set -a
+        source .env.production
+        set +a
+        ansible-playbook -i inventories/production/ playbooks/phase-01-preparation.yml
+        ansible-playbook -i inventories/production/ playbooks/phase-02-k3s-core.yml
+
+  # Reset cluster
+  reset:staging:
+    desc: "Reset complet du cluster staging (desinstalle K3s)"
+    dir: "{{.ANSIBLE_DIR}}"
+    prompt: "Reset complet du cluster staging ? Toutes les donnees seront perdues."
+    cmds:
+      - task: _ensure-env
+        vars: {ENV: staging}
+      - |
+        set -a
+        source .env.staging
+        set +a
+        STAGING_HOST="${STAGING_HOST:-10.0.1.10}"
+        STAGING_SSH_KEY="${STAGING_SSH_KEY:-~/.ssh/staging_key}"
+        ssh -i "${STAGING_SSH_KEY}" ubuntu@"${STAGING_HOST}" "\
+          sudo /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true; \
+          sudo rm -rf /etc/rancher /var/lib/rancher /var/lib/longhorn; \
+          sudo rm -rf /opt/cni /etc/cni; \
+          sudo rm -f /usr/local/bin/helm; \
+          rm -f ~/.kube/config"
+        rm -f kubeconfig-staging.yaml
+        echo "Cluster staging reinitialise. Relancez: task infra:staging"
+
+  reset:production:
+    desc: "Reset complet du cluster production (desinstalle K3s)"
+    dir: "{{.ANSIBLE_DIR}}"
+    prompt: "Reset complet du cluster PRODUCTION ? TOUTES les donnees seront DEFINITIVEMENT perdues."
+    cmds:
+      - task: _ensure-env
+        vars: {ENV: production}
+      - |
+        set -a
+        source .env.production
+        set +a
+        PROD_MASTER_HOST="${PROD_MASTER_HOST:-10.0.2.10}"
+        PROD_SSH_KEY="${PROD_SSH_KEY:-~/.ssh/production_key}"
+        for HOST in "${PROD_MASTER_HOST}" "${PROD_WORKER1_HOST:-}" "${PROD_WORKER2_HOST:-}" "${PROD_WORKER3_HOST:-}"; do
+          [ -z "${HOST}" ] && continue
+          echo "Reset ${HOST}..."
+          ssh -i "${PROD_SSH_KEY}" debian@"${HOST}" "\
+            sudo /usr/local/bin/k3s-uninstall.sh 2>/dev/null || sudo /usr/local/bin/k3s-agent-uninstall.sh 2>/dev/null || true; \
+            sudo rm -rf /etc/rancher /var/lib/rancher /var/lib/longhorn; \
+            sudo rm -rf /opt/cni /etc/cni; \
+            sudo rm -f /usr/local/bin/helm; \
+            rm -f ~/.kube/config"
+        done
+        rm -f kubeconfig-production.yaml
+        echo "Cluster production reinitialise. Relancez: task infra:production"
+
   deploy-list:
     desc: "Lister les composants deployables"
     cmds:

@@ -38,6 +38,35 @@
       tags: [k3s, agent, cluster]
       when: k3s_type == 'k3s'
 
+- name: Phase 2 - Longhorn prerequisites on nodes
+  hosts: k3s_cluster
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../vars/helm_versions.yml
+    - ../vars/secrets_mapping.yml
+
+  tasks:
+    - name: Ensure open-iscsi is installed (required by Longhorn)
+      ansible.builtin.package:
+        name:
+          - open-iscsi
+          - nfs-common
+        state: present
+      when:
+        - k3s_type != 'k3d'
+        - storage_class == 'longhorn-encrypted'
+
+    - name: Ensure iscsid is running
+      ansible.builtin.systemd:
+        name: iscsid
+        enabled: true
+        state: started
+      when:
+        - k3s_type != 'k3d'
+        - storage_class == 'longhorn-encrypted'
+  tags: [infrastructure, longhorn, storage]
+
 - name: Phase 2 - Infrastructure Components
   hosts: localhost
   gather_facts: false

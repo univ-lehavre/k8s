@@ -34,9 +34,9 @@ cainjector:
 
 # Prometheus metrics
 prometheus:
-  enabled: {{ monitoring_enabled | default(true) | lower }}
+  enabled: {{ monitoring_enabled | default(false) | lower }}
   servicemonitor:
-    enabled: {{ monitoring_enabled | default(true) | lower }}
+    enabled: {{ monitoring_enabled | default(false) | lower }}
 
 # Global settings
 global:

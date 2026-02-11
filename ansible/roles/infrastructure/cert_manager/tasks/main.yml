@@ -54,13 +54,14 @@
   kubernetes.core.k8s_info:
     api_version: cert-manager.io/v1
     kind: ClusterIssuer
-    name: "{{ item.name }}"
+    name: "{{ issuer.name }}"
   register: issuer_status
   loop: "{{ cert_manager_cluster_issuers | selectattr('enabled', 'equalto', true) | list }}"
+  loop_control:
+    loop_var: issuer
   until:
     - issuer_status.resources | length > 0
     - issuer_status.resources[0].status is defined
     - issuer_status.resources[0].status.conditions is defined
   retries: 10
   delay: 5
-  when: item.enabled | bool

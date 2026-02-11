@@ -1,0 +1,16 @@
+---
+# HTTP to HTTPS redirect policy
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: http-to-https-redirect
+  namespace: {{ envoy_gateway_namespace }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ gateway_name }}
+      sectionName: http
+  redirect:
+    scheme: https
+    statusCode: 301

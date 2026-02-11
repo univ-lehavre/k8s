@@ -13,7 +13,7 @@ longhorn_data_path: /var/lib/longhorn
 longhorn_default_replica_count: "{{ longhorn_replica_count | default(1) }}"
 
 # Data locality
-longhorn_data_locality: "{{ longhorn_data_locality | default('disabled') }}"
+longhorn_data_locality: disabled
 
 # Create default disk on labeled nodes
 longhorn_create_default_disk_labeled_nodes: true
@@ -25,6 +25,9 @@ longhorn_crypto_key: "{{ lookup('env', 'LONGHORN_CRYPTO_KEY') | default(omit) }}
 # StorageClass settings
 longhorn_storage_class_name: longhorn-encrypted
 longhorn_storage_class_is_default: true
+longhorn_default_storage_class: "true"
+longhorn_reclaim_policy: Delete
+longhorn_volume_binding_mode: Immediate
 
 # UI settings
 longhorn_ui_enabled: true
