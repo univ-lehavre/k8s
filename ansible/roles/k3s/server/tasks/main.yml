@@ -90,6 +90,15 @@
     flat: true
   when: k3s_server_init
 
+- name: Rewrite kubeconfig server URL for controller access
+  ansible.builtin.replace:
+    path: "{{ playbook_dir }}/../kubeconfig-{{ env }}.yaml"
+    regexp: 'server:\s*https://127\.0\.0\.1:6443'
+    replace: "server: https://{{ ansible_host }}:6443"
+  delegate_to: localhost
+  become: false
+  when: k3s_server_init
+
 - name: Display K3s server info
   ansible.builtin.debug:
     msg: |
