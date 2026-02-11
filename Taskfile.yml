@@ -228,13 +228,73 @@ tasks:
 
   # Déploiement avec résolution de dépendances
   deploy:
-    desc: "Deployer un composant avec ses dependances (usage: task deploy -- mattermost)"
+    desc: "Deployer un composant (DEPRECATED: utilisez deploy:ENV)"
     dir: "{{.ANSIBLE_DIR}}"
     cmds:
+      - echo "⚠️  DEPRECATED - Utilisez 'task deploy:staging -- mattermost' pour specifier l'environnement"
       - ansible-playbook playbooks/deploy.yml -e target={{.CLI_ARGS}}
     preconditions:
       - sh: "[ -n '{{.CLI_ARGS}}' ]"
-        msg: "Specifier un composant. Usage: task deploy -- mattermost"
+        msg: "Specifier un composant. Usage: task deploy:staging -- mattermost"
+
+  deploy:local:
+    desc: "Deployer en LOCAL (usage: task deploy:local -- mattermost)"
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - task: _ensure-env
+        vars: {ENV: local}
+      - |
+        set -a
+        source .env.local
+        set +a
+        ansible-playbook -i inventories/local/ playbooks/deploy.yml -e target={{.CLI_ARGS}}
+    preconditions:
+      - sh: "[ -n '{{.CLI_ARGS}}' ]"
+        msg: "Specifier un composant. Usage: task deploy:local -- mattermost"
+
+  deploy:staging:
+    desc: "Deployer en STAGING (usage: task deploy:staging -- mattermost)"
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - task: _ensure-env
+        vars: {ENV: staging}
+      - |
+        set -a
+        source .env.staging
+        set +a
+        ansible-playbook -i inventories/staging/ playbooks/deploy.yml -e target={{.CLI_ARGS}}
+    preconditions:
+      - sh: "[ -n '{{.CLI_ARGS}}' ]"
+        msg: "Specifier un composant. Usage: task deploy:staging -- mattermost"
+
+  deploy:production:
+    desc: "Deployer en PRODUCTION (usage: task deploy:production -- mattermost)"
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - task: _ensure-env
+        vars: {ENV: production}
+      - |
+        set -a
+        source .env.production
+        set +a
+        ansible-playbook -i inventories/production/ playbooks/deploy.yml -e target={{.CLI_ARGS}}
+    preconditions:
+      - sh: "[ -n '{{.CLI_ARGS}}' ]"
+        msg: "Specifier un composant. Usage: task deploy:production -- mattermost"
+
+  _ensure-env:
+    internal: true
+    desc: "Generer le fichier .env s'il n'existe pas"
+    dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - |
+        if [ ! -f ".env.{{.ENV}}" ]; then
+          echo "📝 Generating .env.{{.ENV}}..."
+          ./generate-env.sh {{.ENV}}
+        else
+          echo "✓ .env.{{.ENV}} already exists"
+        fi
+    silent: true
 
   deploy-list:
     desc: "Lister les composants deployables"
