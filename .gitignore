@@ -12,3 +12,6 @@ docs/.vitepress/cache/
 ansible/.env.*
 !ansible/.env.*.example
 *.log
+.ansible/
+.cache/
+ansible/kubeconfig-*.yaml

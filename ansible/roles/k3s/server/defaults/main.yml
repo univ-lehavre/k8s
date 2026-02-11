@@ -29,6 +29,10 @@ k3s_disable_network_policy: true
 # Write kubeconfig mode (0600 for security - contains cluster credentials)
 k3s_kubeconfig_mode: "0600"
 
+# TLS SANs — additional hostnames/IPs for the API server certificate
+# ansible_host is added automatically so the controller can reach the API
+k3s_tls_san: []
+
 # API server arguments
 k3s_kube_apiserver_args:
   - "audit-log-path=/var/log/kubernetes/audit.log"

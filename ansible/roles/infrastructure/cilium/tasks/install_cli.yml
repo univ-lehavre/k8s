@@ -4,28 +4,41 @@
     return_content: true
   register: cilium_cli_version
 
-- name: Download Cilium CLI
+- name: Set Cilium CLI arch variable
+  ansible.builtin.set_fact:
+    _cilium_arch: "{{ 'arm64' if hostvars[_cilium_delegate_host]['ansible_architecture'] | default('x86_64') in ['aarch64', 'arm64'] else 'amd64' }}"
+  vars:
+    _cilium_delegate_host: "{{ groups['k3s_masters'][0] }}"
+
+- name: Download Cilium CLI on remote host
   ansible.builtin.get_url:
     url: >-
       https://github.com/cilium/cilium-cli/releases/download/{{
-      cilium_cli_version.content | trim }}/cilium-linux-{{
-      'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}.tar.gz
-    dest: /tmp/cilium-linux-{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}.tar.gz
+      cilium_cli_version.content | trim }}/cilium-linux-{{ _cilium_arch }}.tar.gz
+    dest: "/tmp/cilium-linux-{{ _cilium_arch }}.tar.gz"
     mode: "0644"
+  delegate_to: "{{ groups['k3s_masters'][0] }}"
+  become: true
 
-- name: Extract Cilium CLI
+- name: Extract Cilium CLI on remote host
   ansible.builtin.unarchive:
-    src: /tmp/cilium-linux-{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}.tar.gz
+    src: "/tmp/cilium-linux-{{ _cilium_arch }}.tar.gz"
     dest: /usr/local/bin
     remote_src: true
     mode: "0755"
+  delegate_to: "{{ groups['k3s_masters'][0] }}"
+  become: true
 
 - name: Clean up downloaded archive
   ansible.builtin.file:
-    path: /tmp/cilium-linux-{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}.tar.gz
+    path: "/tmp/cilium-linux-{{ _cilium_arch }}.tar.gz"
     state: absent
+  delegate_to: "{{ groups['k3s_masters'][0] }}"
+  become: true
 
 - name: Verify Cilium CLI installation
   ansible.builtin.command: cilium version --client
   register: cilium_cli_check
   changed_when: false
+  delegate_to: "{{ groups['k3s_masters'][0] }}"
+  become: true

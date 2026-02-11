@@ -69,6 +69,8 @@
   register: cilium_status
   changed_when: false
   failed_when: false
+  delegate_to: "{{ groups['k3s_masters'][0] }}"
+  become: true
   when: env != 'local'
 
 - name: Display Cilium status
