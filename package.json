@@ -1,7 +1,7 @@
 {
   "name": "@univ-lehavre/k8s",
   "description": "Kubernetes cluster deployment and documentation",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "license": "MIT",
   "author": "Pierre-Olivier Chasset",
