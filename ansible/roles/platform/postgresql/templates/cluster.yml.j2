@@ -1,0 +1,52 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ postgresql_cluster_name }}
+  namespace: {{ postgresql_namespace }}
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/component: database
+spec:
+  instances: {{ postgresql_replicas }}
+  imageName: ghcr.io/cloudnative-pg/postgresql:{{ postgresql_version }}
+
+  postgresql:
+    parameters:
+      shared_buffers: "128MB"
+      max_connections: "200"
+{% if postgresql_ssl_enabled | default(false) %}
+      ssl: "on"
+{% endif %}
+
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: postgresql-credentials
+
+  bootstrap:
+    initdb:
+      database: {{ postgresql_database }}
+      owner: {{ postgresql_username }}
+
+  storage:
+    storageClass: {{ postgresql_storage_class }}
+    size: {{ postgresql_storage_size }}
+
+  resources:
+    requests:
+      cpu: {{ postgresql_resources.requests.cpu }}
+      memory: {{ postgresql_resources.requests.memory }}
+    limits:
+      cpu: {{ postgresql_resources.limits.cpu }}
+      memory: {{ postgresql_resources.limits.memory }}
+
+{% if postgresql_metrics_enabled | default(false) | bool %}
+  monitoring:
+    enablePodMonitor: true
+{% endif %}
+
+{% if postgresql_replicas | int > 1 %}
+  # Automatic failover and PDB
+  minSyncReplicas: 0
+  maxSyncReplicas: 0
+{% endif %}

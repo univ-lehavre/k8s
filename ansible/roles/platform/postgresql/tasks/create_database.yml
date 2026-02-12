@@ -28,7 +28,7 @@
 - name: Create database in PostgreSQL - {{ db_name }}
   kubernetes.core.k8s_exec:
     namespace: "{{ postgresql_namespace | default('postgresql') }}"
-    pod: postgresql-0
+    pod: "{{ postgresql_cluster_name | default('postgresql') }}-1"
     command: >
       psql -U postgres -c "CREATE DATABASE {{ db_name }};"
     env:
@@ -44,7 +44,7 @@
 - name: Create user with minimal privileges - {{ db_user }}
   kubernetes.core.k8s_exec:
     namespace: "{{ postgresql_namespace | default('postgresql') }}"
-    pod: postgresql-0
+    pod: "{{ postgresql_cluster_name | default('postgresql') }}-1"
     command: |
       psql -U postgres << 'EOSQL'
       -- Create user if not exists, or update password

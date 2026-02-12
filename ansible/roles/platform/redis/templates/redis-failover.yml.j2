@@ -1,0 +1,51 @@
+---
+apiVersion: databases.spotahome.com/v1
+kind: RedisFailover
+metadata:
+  name: redis
+  namespace: {{ redis_namespace }}
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+spec:
+  sentinel:
+    replicas: {{ redis_sentinel_replicas }}
+    resources:
+      requests:
+        cpu: {{ redis_sentinel_resources.requests.cpu }}
+        memory: {{ redis_sentinel_resources.requests.memory }}
+      limits:
+        cpu: {{ redis_sentinel_resources.limits.cpu }}
+        memory: {{ redis_sentinel_resources.limits.memory }}
+  redis:
+    replicas: {{ redis_replicas }}
+    resources:
+      requests:
+        cpu: {{ redis_resources.requests.cpu }}
+        memory: {{ redis_resources.requests.memory }}
+      limits:
+        cpu: {{ redis_resources.limits.cpu }}
+        memory: {{ redis_resources.limits.memory }}
+    storage:
+      persistentVolumeClaim:
+        metadata:
+          name: redis-data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: {{ redis_storage_size }}
+          storageClassName: {{ redis_storage_class }}
+    customConfig:
+      - "maxmemory-policy allkeys-lru"
+      - "save 900 1"
+      - "save 300 10"
+{% if redis_password is defined and redis_password != '' %}
+  auth:
+    secretPath: redis-credentials/password
+{% endif %}
+{% if redis_metrics_enabled | default(false) | bool %}
+  exporter:
+    enabled: true
+{% endif %}

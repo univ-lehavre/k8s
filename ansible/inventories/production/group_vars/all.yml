@@ -8,7 +8,7 @@ admin_email: "{{ lookup('env', 'LETSENCRYPT_EMAIL') | default('admin@example.com
 
 # K3s configuration
 k3s_type: k3s
-k3s_version: "v1.29.2+k3s1"
+k3s_version: "{{ helm_versions.k3s }}"
 k3s_token: "{{ lookup('env', 'K3S_TOKEN') }}"
 
 # Storage configuration
@@ -54,13 +54,13 @@ namespaces:
   monitoring: monitoring
 
 # PostgreSQL configuration
-postgresql_host: postgresql-postgresql-ha-pgpool.postgresql.svc.cluster.local
+postgresql_host: postgresql-rw.postgresql.svc.cluster.local
 postgresql_port: 5432
 postgresql_ha_enabled: true
 
 # Redis configuration
-redis_host: redis-master.redis.svc.cluster.local
-redis_sentinel_host: redis.redis.svc.cluster.local
+redis_host: rfs-redis.redis.svc.cluster.local
+redis_sentinel_host: rfs-redis.redis.svc.cluster.local
 redis_port: 6379
 redis_sentinel_port: 26379
 redis_sentinel_enabled: true

@@ -1,4 +1,45 @@
-# Redis tasks
+# Redis tasks (Spotahome Redis Operator)
+# Deploys Redis with Sentinel HA via the Spotahome Redis Operator
+
+- name: Create Redis operator namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ redis_operator_namespace }}"
+        labels:
+          app.kubernetes.io/name: redis-operator
+
+- name: Add Redis Operator Helm repository
+  kubernetes.core.helm_repository:
+    name: redis-operator
+    repo_url: "{{ helm_repositories.redis_operator.url }}"
+
+- name: Install Redis Operator
+  kubernetes.core.helm:
+    name: redis-operator
+    chart_ref: redis-operator/redis-operator
+    chart_version: "{{ helm_versions.redis_operator }}"
+    release_namespace: "{{ redis_operator_namespace }}"
+    create_namespace: false
+    wait: true
+    wait_timeout: 300s
+
+- name: Wait for Redis Operator to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ redis_operator_namespace }}"
+    label_selectors:
+      - app.kubernetes.io/name=redis-operator
+  register: redis_op_deployment
+  until:
+    - redis_op_deployment.resources | length > 0
+    - redis_op_deployment.resources[0].status.readyReplicas | default(0) >= 1
+  retries: 30
+  delay: 10
 
 - name: Create Redis namespace
   kubernetes.core.k8s:
@@ -11,12 +52,7 @@
         labels:
           app.kubernetes.io/name: redis
 
-- name: Add Bitnami Helm repository
-  kubernetes.core.helm_repository:
-    name: "{{ redis_chart_repo_name }}"
-    repo_url: "{{ redis_chart_repo }}"
-
-- name: Create Redis secret
+- name: Create Redis password secret
   kubernetes.core.k8s:
     state: present
     definition:
@@ -27,35 +63,30 @@
         namespace: "{{ redis_namespace }}"
       type: Opaque
       stringData:
-        redis-password: "{{ redis_password }}"
+        password: "{{ redis_password }}"
   when:
     - redis_password is defined
     - redis_password != ''
   no_log: true
 
-- name: Deploy Redis via Helm
-  kubernetes.core.helm:
-    name: redis
-    chart_ref: "{{ redis_chart_repo_name }}/redis"
-    chart_version: "{{ helm_versions.redis }}"
-    release_namespace: "{{ redis_namespace }}"
-    create_namespace: true
-    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
-    wait: true
-    wait_timeout: 600s
+- name: Create RedisFailover instance
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'redis-failover.yml.j2') | from_yaml }}"
 
 - name: Wait for Redis to be ready
   kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Pod
+    api_version: databases.spotahome.com/v1
+    kind: RedisFailover
+    name: redis
     namespace: "{{ redis_namespace }}"
-    label_selectors:
-      - app.kubernetes.io/name=redis
-  register: redis_pods
+  register: redis_status
   until:
-    - redis_pods.resources | length > 0
-    - redis_pods.resources | selectattr('status.phase', 'equalto', 'Running') | list | length >= 1
-  retries: 30
+    - redis_status.resources | length > 0
+    - redis_status.resources[0].status is defined
+    - redis_status.resources[0].status.conditions is defined
+    - redis_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Healthy') | selectattr('status', 'equalto', 'True') | list | length > 0
+  retries: 60
   delay: 10
 
 - name: Store Redis connection info in Vault
@@ -64,8 +95,9 @@
     pod: vault-0
     command: |
       vault kv put secret/redis
-        host=redis-master.{{ redis_namespace }}.svc.cluster.local
+        host={{ redis_host }}
         port=6379
+        sentinel_port={{ redis_sentinel_port }}
         password={{ redis_password }}
     env:
       - name: VAULT_TOKEN

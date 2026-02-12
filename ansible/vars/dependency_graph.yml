@@ -79,8 +79,8 @@ atlas_components:
     role: platform/postgresql
     deps: [vault, longhorn]
     health:
-      api: apps/v1
-      kind: StatefulSet
+      api: postgresql.cnpg.io/v1
+      kind: Cluster
       name: postgresql
       namespace: postgresql
 
@@ -88,17 +88,17 @@ atlas_components:
     role: platform/redis
     deps: [vault, longhorn]
     health:
-      api: apps/v1
-      kind: StatefulSet
-      name: redis-master
+      api: databases.spotahome.com/v1
+      kind: RedisFailover
+      name: redis
       namespace: redis
 
   mariadb:
     role: platform/mariadb
     deps: [vault, longhorn]
     health:
-      api: apps/v1
-      kind: StatefulSet
+      api: k8s.mariadb.com/v1alpha1
+      kind: MariaDB
       name: mariadb
       namespace: mariadb
 
@@ -106,8 +106,8 @@ atlas_components:
     role: platform/keycloak
     deps: [postgresql, external_secrets, envoy_gateway]
     health:
-      api: apps/v1
-      kind: StatefulSet
+      api: k8s.keycloak.org/v2alpha1
+      kind: Keycloak
       name: keycloak
       namespace: keycloak
 

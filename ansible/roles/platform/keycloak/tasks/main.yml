@@ -1,8 +1,19 @@
-# Keycloak deployment tasks
-# Deploys Keycloak IAM with realm configuration for ATLAS platform
+# Keycloak deployment tasks (Keycloak Operator)
+# Deploys Keycloak IAM via the official Keycloak Operator with CRD-based realm import
 
 - name: Deploy Keycloak
   block:
+
+    - name: Create Keycloak operator namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ keycloak_operator_namespace }}"
+            labels:
+              app.kubernetes.io/name: keycloak-operator
 
     - name: Create Keycloak namespace
       kubernetes.core.k8s:
@@ -16,11 +27,37 @@
               app.kubernetes.io/name: keycloak
               app.kubernetes.io/component: identity
 
-    - name: Add Codecentric Helm repository
-      kubernetes.core.helm_repository:
-        name: "{{ keycloak_chart_repo_name }}"
-        repo_url: "{{ keycloak_chart_repo }}"
+    # --- Install Keycloak Operator CRDs and Deployment ---
+
+    - name: Install Keycloak Operator CRDs
+      kubernetes.core.k8s:
         state: present
+        src: "https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{ keycloak_operator_version }}/kubernetes/keycloaks.k8s.keycloak.org-v1.yml"
+
+    - name: Install KeycloakRealmImport CRD
+      kubernetes.core.k8s:
+        state: present
+        src: "https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{ keycloak_operator_version }}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml"
+
+    - name: Install Keycloak Operator deployment
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ keycloak_operator_namespace }}"
+        src: "https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{ keycloak_operator_version }}/kubernetes/kubernetes.yml"
+
+    - name: Wait for Keycloak Operator to be ready
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        namespace: "{{ keycloak_operator_namespace }}"
+        label_selectors:
+          - app.kubernetes.io/name=keycloak-operator
+      register: kc_op_deployment
+      until:
+        - kc_op_deployment.resources | length > 0
+        - kc_op_deployment.resources[0].status.readyReplicas | default(0) >= 1
+      retries: 30
+      delay: 10
 
     # --- Database setup ---
 
@@ -138,173 +175,54 @@
             namespace: "{{ keycloak_namespace }}"
           type: Opaque
           stringData:
+            username: "{{ keycloak_postgresql_user }}"
             password: "{{ database_passwords.keycloak | default(lookup('password', '/dev/null length=32 chars=ascii_letters,digits')) }}"
       when: not (keycloak_vault_enabled | bool)
       no_log: true
 
-    # --- Deploy Keycloak ---
+    # --- Deploy Keycloak via Operator CRD ---
 
-    - name: Deploy Keycloak via Helm
-      kubernetes.core.helm:
-        name: keycloak
-        chart_ref: "{{ keycloak_chart_repo_name }}/keycloak"
-        chart_version: "{{ helm_versions.keycloak_chart }}"
-        release_namespace: "{{ keycloak_namespace }}"
-        create_namespace: false
-        wait: true
-        wait_timeout: 600s
-        values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+    - name: Create Keycloak instance
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'keycloak.yml.j2') | from_yaml }}"
 
-    - name: Wait for Keycloak deployment
+    - name: Wait for Keycloak to be ready
       kubernetes.core.k8s_info:
-        api_version: apps/v1
-        kind: StatefulSet
+        api_version: k8s.keycloak.org/v2alpha1
+        kind: Keycloak
         name: keycloak
         namespace: "{{ keycloak_namespace }}"
-      register: keycloak_deployment
-      until: >-
-        keycloak_deployment.resources | length > 0 and
-        keycloak_deployment.resources[0].status.readyReplicas | default(0) >= 1
+      register: keycloak_status
+      until:
+        - keycloak_status.resources | length > 0
+        - keycloak_status.resources[0].status is defined
+        - keycloak_status.resources[0].status.conditions is defined
+        - keycloak_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+      retries: 60
+      delay: 10
+
+    # --- Realm configuration via KeycloakRealmImport CRD ---
+
+    - name: Import ATLAS realm
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'keycloak-realm-import.yml.j2') | from_yaml }}"
+
+    - name: Wait for realm import to complete
+      kubernetes.core.k8s_info:
+        api_version: k8s.keycloak.org/v2alpha1
+        kind: KeycloakRealmImport
+        name: atlas-realm
+        namespace: "{{ keycloak_namespace }}"
+      register: realm_import_status
+      until:
+        - realm_import_status.resources | length > 0
+        - realm_import_status.resources[0].status is defined
+        - realm_import_status.resources[0].status.conditions is defined
+        - realm_import_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Done') | selectattr('status', 'equalto', 'True') | list | length > 0
       retries: 30
       delay: 10
-
-    # --- Realm configuration via kcadm.sh ---
-
-    - name: Get Keycloak admin token
-      kubernetes.core.k8s_exec:
-        namespace: "{{ keycloak_namespace }}"
-        pod: keycloak-0
-        command: >-
-          /opt/keycloak/bin/kcadm.sh config credentials
-          --server http://localhost:8080
-          --realm master
-          --user {{ keycloak_admin_user }}
-          --password "$(cat /opt/keycloak/secrets/admin-password)"
-      register: _kc_auth
-      retries: 5
-      delay: 10
-      until: _kc_auth.rc == 0
-      no_log: true
-
-    - name: Create ATLAS realm
-      kubernetes.core.k8s_exec:
-        namespace: "{{ keycloak_namespace }}"
-        pod: keycloak-0
-        command: >-
-          /opt/keycloak/bin/kcadm.sh create realms
-          -s realm={{ keycloak_realm }}
-          -s enabled=true
-          -s displayName="ATLAS Platform"
-          -s registrationAllowed={{ keycloak_registration_enabled | lower }}
-          -s verifyEmail={{ keycloak_email_verification_required | lower }}
-          -s loginWithEmailAllowed=true
-          -s duplicateEmailsAllowed=false
-          -s resetPasswordAllowed=true
-      register: _kc_realm
-      failed_when:
-        - _kc_realm.rc != 0
-        - "'Conflict' not in (_kc_realm.stderr | default(''))"
-      changed_when: _kc_realm.rc == 0
-
-    - name: Create user groups
-      kubernetes.core.k8s_exec:
-        namespace: "{{ keycloak_namespace }}"
-        pod: keycloak-0
-        command: >-
-          /opt/keycloak/bin/kcadm.sh create groups
-          -r {{ keycloak_realm }}
-          -s name={{ item }}
-      loop: "{{ keycloak_groups }}"
-      register: _kc_groups
-      failed_when:
-        - _kc_groups.rc != 0
-        - "'Conflict' not in (_kc_groups.stderr | default(''))"
-      changed_when: _kc_groups.rc == 0
-
-    - name: Get default group ID
-      kubernetes.core.k8s_exec:
-        namespace: "{{ keycloak_namespace }}"
-        pod: keycloak-0
-        command: >-
-          /opt/keycloak/bin/kcadm.sh get groups
-          -r {{ keycloak_realm }}
-          --fields id,name
-          -q name={{ keycloak_default_group }}
-      register: _kc_default_group
-      changed_when: false
-
-    - name: Set default group for new users
-      kubernetes.core.k8s_exec:
-        namespace: "{{ keycloak_namespace }}"
-        pod: keycloak-0
-        command: >-
-          /opt/keycloak/bin/kcadm.sh update realms/{{ keycloak_realm }}
-          -s 'defaultGroups=["{{ (_kc_default_group.stdout | from_json)[0].id }}"]'
-      when: _kc_default_group.stdout | from_json | length > 0
-
-    - name: Configure password policy
-      kubernetes.core.k8s_exec:
-        namespace: "{{ keycloak_namespace }}"
-        pod: keycloak-0
-        command: >-
-          /opt/keycloak/bin/kcadm.sh update realms/{{ keycloak_realm }}
-          -s 'passwordPolicy=length({{ keycloak_password_min_length }}) and upperCase(1) and digits(1) and specialChars(1)'
-
-    - name: Create OIDC clients
-      kubernetes.core.k8s_exec:
-        namespace: "{{ keycloak_namespace }}"
-        pod: keycloak-0
-        command: >-
-          /opt/keycloak/bin/kcadm.sh create clients
-          -r {{ keycloak_realm }}
-          -s clientId={{ item.client_id }}
-          -s name="{{ item.name }}"
-          -s enabled=true
-          -s publicClient=false
-          -s standardFlowEnabled=true
-          -s directAccessGrantsEnabled=false
-          -s 'redirectUris={{ item.redirect_uris | to_json }}'
-          -s 'webOrigins={{ item.web_origins | default([]) | to_json }}'
-          -s 'protocol=openid-connect'
-          -s 'defaultClientScopes=["openid","profile","email","groups"]'
-      loop: "{{ keycloak_oidc_clients }}"
-      register: _kc_clients
-      failed_when:
-        - _kc_clients.rc != 0
-        - "'Conflict' not in (_kc_clients.stderr | default(''))"
-      changed_when: _kc_clients.rc == 0
-
-    - name: Build SMTP configuration JSON
-      ansible.builtin.set_fact:
-        _keycloak_smtp_config: >-
-          {{
-            {
-              'host': keycloak_smtp_host,
-              'port': keycloak_smtp_port | string,
-              'from': keycloak_smtp_from,
-              'starttls': keycloak_smtp_starttls | lower,
-              'auth': (keycloak_smtp_user != '') | lower
-            }
-            | combine(
-              {'user': keycloak_smtp_user,
-               'password': keycloak_smtp_password}
-              if keycloak_smtp_user != '' else {}
-            )
-            | to_json
-          }}
-      when: keycloak_smtp_host != ''
-      no_log: true
-
-    - name: Configure SMTP for email verification
-      kubernetes.core.k8s_exec:
-        namespace: "{{ keycloak_namespace }}"
-        pod: keycloak-0
-        command: >-
-          /opt/keycloak/bin/kcadm.sh update
-          realms/{{ keycloak_realm }}
-          -s 'smtpServer={{ _keycloak_smtp_config }}'
-      when: keycloak_smtp_host != ''
-      no_log: true
 
     # --- Ingress ---
 

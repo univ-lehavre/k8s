@@ -19,7 +19,7 @@
     - name: Phase 4 complete
       ansible.builtin.debug:
         msg: |
-          Databases deployed:
-          - PostgreSQL: postgresql.postgresql.svc.cluster.local:5432
-          - MariaDB: mariadb.mariadb.svc.cluster.local:3306
-          - Redis: redis-master.redis.svc.cluster.local:6379
+          Databases deployed (via operators):
+          - PostgreSQL (CNPG): postgresql-rw.postgresql.svc.cluster.local:5432
+          - MariaDB (Operator): mariadb.mariadb.svc.cluster.local:3306
+          - Redis (Spotahome): rfs-redis.redis.svc.cluster.local:6379

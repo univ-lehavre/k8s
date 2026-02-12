@@ -1,7 +1,7 @@
 # K3s Agent role defaults
 
 # K3s version (should match server)
-k3s_version: "v1.29.2+k3s1"
+k3s_version: "{{ helm_versions.k3s }}"
 
 # K3s token (required to join cluster)
 k3s_token: "{{ lookup('env', 'K3S_TOKEN') }}"

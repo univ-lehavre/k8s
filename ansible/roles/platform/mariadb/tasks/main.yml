@@ -1,5 +1,45 @@
-# MariaDB tasks
+# MariaDB tasks (MariaDB Operator)
 # Deploys MariaDB for services requiring MySQL compatibility (e.g., REDCap)
+
+- name: Create MariaDB operator namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ mariadb_operator_namespace }}"
+        labels:
+          app.kubernetes.io/name: mariadb-operator
+
+- name: Add MariaDB Operator Helm repository
+  kubernetes.core.helm_repository:
+    name: mariadb-operator
+    repo_url: "{{ helm_repositories.mariadb_operator.url }}"
+
+- name: Install MariaDB Operator
+  kubernetes.core.helm:
+    name: mariadb-operator
+    chart_ref: mariadb-operator/mariadb-operator
+    chart_version: "{{ helm_versions.mariadb_operator }}"
+    release_namespace: "{{ mariadb_operator_namespace }}"
+    create_namespace: false
+    wait: true
+    wait_timeout: 300s
+
+- name: Wait for MariaDB Operator to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ mariadb_operator_namespace }}"
+    label_selectors:
+      - app.kubernetes.io/name=mariadb-operator
+  register: mariadb_op_deployment
+  until:
+    - mariadb_op_deployment.resources | length > 0
+    - mariadb_op_deployment.resources[0].status.readyReplicas | default(0) >= 1
+  retries: 30
+  delay: 10
 
 - name: Create MariaDB namespace
   kubernetes.core.k8s:
@@ -12,12 +52,7 @@
         labels:
           app.kubernetes.io/name: mariadb
 
-- name: Add Bitnami Helm repository
-  kubernetes.core.helm_repository:
-    name: "{{ mariadb_chart_repo_name }}"
-    repo_url: "{{ mariadb_chart_repo }}"
-
-- name: Create MariaDB secret
+- name: Create MariaDB root password secret
   kubernetes.core.k8s:
     state: present
     definition:
@@ -28,8 +63,7 @@
         namespace: "{{ mariadb_namespace }}"
       type: Opaque
       stringData:
-        mariadb-root-password: "{{ mariadb_root_password }}"
-        mariadb-replication-password: "{{ mariadb_replication_password }}"
+        password: "{{ mariadb_root_password }}"
   when:
     - mariadb_root_password is defined
     - mariadb_root_password != ''
@@ -46,10 +80,13 @@
         namespace: "{{ mariadb_namespace }}"
       spec:
         secretName: "{{ mariadb_ssl_cert_secret }}"
-        duration: 8760h # 1 year
-        renewBefore: 720h # 30 days
-        commonName: "{{ mariadb_ssl_common_name }}"
-        dnsNames: "{{ mariadb_ssl_alt_names }}"
+        duration: 8760h
+        renewBefore: 720h
+        dnsNames:
+          - "mariadb.{{ mariadb_namespace }}.svc.cluster.local"
+          - "mariadb.{{ mariadb_namespace }}.svc"
+          - "mariadb.{{ mariadb_namespace }}"
+          - "mariadb"
         privateKey:
           algorithm: RSA
           size: 2048
@@ -73,29 +110,24 @@
   delay: 10
   when: mariadb_ssl_enabled | default(false)
 
-- name: Deploy MariaDB via Helm
-  kubernetes.core.helm:
-    name: mariadb
-    chart_ref: "{{ mariadb_chart_repo_name }}/mariadb"
-    chart_version: "{{ helm_versions.mariadb }}"
-    release_namespace: "{{ mariadb_namespace }}"
-    create_namespace: true
-    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
-    wait: true
-    wait_timeout: 600s
+- name: Create MariaDB instance
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'mariadb.yml.j2') | from_yaml }}"
 
 - name: Wait for MariaDB to be ready
   kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Pod
+    api_version: k8s.mariadb.com/v1alpha1
+    kind: MariaDB
+    name: mariadb
     namespace: "{{ mariadb_namespace }}"
-    label_selectors:
-      - app.kubernetes.io/name=mariadb
-  register: mariadb_pods
+  register: mariadb_status
   until:
-    - mariadb_pods.resources | length > 0
-    - mariadb_pods.resources | selectattr('status.phase', 'equalto', 'Running') | list | length == mariadb_pods.resources | length
-  retries: 30
+    - mariadb_status.resources | length > 0
+    - mariadb_status.resources[0].status is defined
+    - mariadb_status.resources[0].status.conditions is defined
+    - mariadb_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+  retries: 60
   delay: 10
 
 - name: Store MariaDB connection info in Vault
@@ -104,8 +136,8 @@
     pod: vault-0
     command: |
       vault kv put secret/mariadb
-        host=mariadb.{{ mariadb_namespace }}.svc.cluster.local
-        port=3306
+        host={{ mariadb_host }}
+        port={{ mariadb_port }}
         username=root
         password={{ mariadb_root_password }}
     env:

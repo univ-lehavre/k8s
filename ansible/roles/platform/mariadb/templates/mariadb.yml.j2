@@ -1,0 +1,63 @@
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb
+  namespace: {{ mariadb_namespace }}
+  labels:
+    app.kubernetes.io/name: mariadb
+    app.kubernetes.io/component: database
+spec:
+  rootPasswordSecretKeyRef:
+    name: mariadb-credentials
+    key: password
+
+  image: "mariadb:{{ mariadb_version }}"
+  port: 3306
+
+  storage:
+    size: {{ mariadb_storage_size }}
+    storageClassName: {{ mariadb_storage_class }}
+
+  resources:
+    requests:
+      cpu: {{ mariadb_resources.requests.cpu }}
+      memory: {{ mariadb_resources.requests.memory }}
+    limits:
+      cpu: {{ mariadb_resources.limits.cpu }}
+      memory: {{ mariadb_resources.limits.memory }}
+
+{% if mariadb_ha_enabled | bool %}
+  replicas: 3
+  galera:
+    enabled: true
+{% else %}
+  replicas: 1
+{% endif %}
+
+{% if mariadb_ssl_enabled | default(false) | bool %}
+  tls:
+    enabled: true
+    caSecretKeyRef:
+      name: {{ mariadb_ssl_cert_secret }}
+      key: ca.crt
+    certSecretKeyRef:
+      name: {{ mariadb_ssl_cert_secret }}
+      key: tls.crt
+    keySecretKeyRef:
+      name: {{ mariadb_ssl_cert_secret }}
+      key: tls.key
+{% endif %}
+
+{% if mariadb_metrics_enabled | default(false) | bool %}
+  metrics:
+    enabled: true
+{% endif %}
+
+  myCnf: |
+    [mysqld]
+    skip-name-resolve
+    max_connections=200
+    max_allowed_packet=16M
+    character-set-server=UTF8
+    collation-server=utf8_general_ci

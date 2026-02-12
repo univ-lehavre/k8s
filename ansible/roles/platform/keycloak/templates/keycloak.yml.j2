@@ -1,0 +1,48 @@
+---
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+  namespace: {{ keycloak_namespace }}
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/component: identity
+spec:
+  instances: {{ keycloak_replicas }}
+  image: quay.io/keycloak/keycloak:{{ keycloak_operator_version }}
+  hostname:
+    hostname: {{ keycloak_host }}
+  http:
+    httpEnabled: true
+  proxy:
+    headers: xforwarded
+  db:
+    vendor: postgres
+    host: {{ keycloak_postgresql_host }}
+    port: {{ keycloak_postgresql_port }}
+    database: {{ keycloak_postgresql_database }}
+    usernameSecret:
+      name: keycloak-db-credentials
+      key: username
+    passwordSecret:
+      name: keycloak-db-credentials
+      key: password
+  resources:
+    requests:
+      cpu: {{ keycloak_resources.requests.cpu }}
+      memory: {{ keycloak_resources.requests.memory }}
+    limits:
+      cpu: {{ keycloak_resources.limits.cpu }}
+      memory: {{ keycloak_resources.limits.memory }}
+{% if keycloak_metrics_enabled | default(false) | bool %}
+  features:
+    enabled:
+      - metrics
+{% endif %}
+  additionalOptions:
+    - name: KC_HEALTH_ENABLED
+      value: "true"
+{% if keycloak_smtp_host | default('') != '' %}
+    - name: KC_SPI_EMAIL_SENDER
+      value: "default"
+{% endif %}

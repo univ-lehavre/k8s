@@ -2,59 +2,64 @@
 # Update this file to upgrade components across all environments
 
 helm_versions:
+  # K3s
+  k3s: "v1.35.0+k3s3"
+
   # Infrastructure
-  cilium: "1.16.5"
-  longhorn: "1.6.0"
-  cert_manager: "1.14.3"
+  cilium: "1.19.0"
+  longhorn: "1.11.0"
+  cert_manager: "1.19.3"
 
   # Platform
-  vault: "0.27.0"
-  external_secrets: "0.9.12"
-  postgresql_ha: "14.0.4"
-  postgresql: "15.2.5" # Standalone version for local/staging
-  mariadb: "18.2.2" # For MySQL-compatible services (REDCap)
-  redis: "18.12.1"
+  vault: "0.32.0"
+  external_secrets: "2.0.0"
+  # Operators
+  cnpg: "1.28.1" # CloudNativePG operator (replaces bitnami/postgresql)
+  mariadb_operator: "25.10.4" # MariaDB operator (replaces bitnami/mariadb)
+  redis_operator: "3.3.1" # Spotahome Redis operator (replaces bitnami/redis)
 
   # Identity
-  keycloak: "26.0"
-  keycloak_chart: "3.0.0"
+  keycloak: "26.5.3" # Keycloak app version (deployed via Keycloak Operator)
 
   # Gateway API
-  envoy_gateway: "1.2.0"
+  # kubernetes-sigs/gateway-api
+  gateway_api: "v1.4.1"
+  envoy_gateway: "1.7.0"
 
-  # Policy Engine
-  kyverno: "3.3.0"
+  # Policy Engine sur Artifact Hub
+  kyverno: "3.7.0"
 
   # Services
   mattermost: "7.0.0"
-  nextcloud: "4.6.4"
-  seaweedfs: "3.67.0"
+  nextcloud: "8.6.0"
+  seaweedfs: "4.0.410"
   flipt: "1.35.0"
 
   # Docker image versions (non-Helm deployments)
-  onlyoffice: "8.0.1"
+  onlyoffice: "9.2.1"
   ecrin: "1.0.0"
   redcap: "14.0.0"
   # Utility image versions
-  curl: "8.11.1"
+  curl: "8.18.0"
   # Application image tags (for non-Helm deployments)
-  mattermost_image_tag: "9.11"
-  nextcloud_image_tag: "29"
+  mattermost_image_tag: "11.2"
+  nextcloud_image_tag: "32"
 
   # DevOps
-  gitea: "10.1.1"
-  argocd: "6.4.0"
-  argo_rollouts: "2.37.0"
+  gitea: "12.5.0"
+  argocd: "9.4.1"
+  argo_rollouts: "2.40.5"
 
   # Monitoring
-  kube_prometheus_stack: "56.21.1"
+  kube_prometheus_stack: "81.6.1"
   # Logging
-  loki: "6.24.0"
-  alloy: "0.12.0"
+  loki: "6.52.0"
+  alloy: "1.6.0"
 
   # Security
-  velero: "1.13.0"
-  trivy_operator: "0.19.0"
+  velero: "11.3.2"
+  velero_plugin_aws: "1.13.0"
+  trivy_operator: "0.32.0"
 
 # Helm repository URLs
 helm_repositories:
@@ -78,9 +83,17 @@ helm_repositories:
     name: external-secrets
     url: https://charts.external-secrets.io
 
-  bitnami:
-    name: bitnami
-    url: https://charts.bitnami.com/bitnami
+  cnpg:
+    name: cnpg
+    url: https://cloudnative-pg.github.io/charts
+
+  mariadb_operator:
+    name: mariadb-operator
+    url: https://helm.mariadb.com/mariadb-operator
+
+  redis_operator:
+    name: redis-operator
+    url: https://spotahome.github.io/redis-operator
 
   mattermost:
     name: mattermost
@@ -110,9 +123,9 @@ helm_repositories:
     name: grafana
     url: https://grafana.github.io/helm-charts
 
-  codecentric:
-    name: codecentric
-    url: https://codecentric.github.io/helm-charts
+  keycloak_operator:
+    name: keycloak-operator
+    url: https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/refs/heads/main/kubernetes
 
   kyverno:
     name: kyverno

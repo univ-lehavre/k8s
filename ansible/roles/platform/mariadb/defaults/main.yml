@@ -1,12 +1,11 @@
-# MariaDB defaults
-# Used by services requiring MySQL/MariaDB (e.g., REDCap)
+# MariaDB defaults (MariaDB Operator)
+# Used by services requiring MySQL compatibility (e.g., REDCap)
 
 # Namespace
 mariadb_namespace: mariadb
 
-# Helm chart settings
-mariadb_chart_repo: https://charts.bitnami.com/bitnami
-mariadb_chart_repo_name: bitnami
+# Operator settings
+mariadb_operator_namespace: mariadb-system
 
 # Cluster settings
 mariadb_ha_enabled: "{{ ha_enabled | default(false) }}"
@@ -31,7 +30,6 @@ mariadb_username: root
 
 # Secrets from CI/CD
 mariadb_root_password: "{{ secrets.mariadb.root_password | default(omit) }}"
-mariadb_replication_password: "{{ secrets.mariadb.replication_password | default(omit) }}"
 
 # Metrics
 mariadb_metrics_enabled: "{{ monitoring_enabled | default(true) }}"
@@ -41,16 +39,11 @@ mariadb_backup_enabled: "{{ env != 'local' }}"
 mariadb_backup_schedule: "0 3 * * *"
 mariadb_backup_retention_days: 7
 
-# SSL/TLS Configuration
+# TLS
 mariadb_ssl_enabled: "{{ env != 'local' }}"
 mariadb_ssl_cert_secret: mariadb-tls
 mariadb_ssl_cert_issuer: "{{ tls_issuer }}"
 
-# Certificate settings
-mariadb_ssl_common_name: "mariadb.{{ mariadb_namespace }}.svc.cluster.local"
-mariadb_ssl_alt_names:
-  - "mariadb.{{ mariadb_namespace }}.svc"
-  - "mariadb.{{ mariadb_namespace }}"
-  - "mariadb"
-  - "mariadb-primary.{{ mariadb_namespace }}.svc.cluster.local"
-  - "mariadb-secondary.{{ mariadb_namespace }}.svc.cluster.local"
+# Service endpoint
+mariadb_host: "mariadb.{{ mariadb_namespace }}.svc.cluster.local"
+mariadb_port: 3306

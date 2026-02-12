@@ -19,7 +19,7 @@ k3d_k3s_server_args:
   - "--disable-network-policy"
 
 # K3D image (K3s version)
-k3d_image: "rancher/k3s:v1.29.2-k3s1"
+k3d_image: "rancher/k3s:{{ k3s_version | replace('+', '-') }}"
 
 # Registry configuration (optional local registry)
 k3d_registry_enabled: false

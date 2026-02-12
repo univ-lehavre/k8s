@@ -1,15 +1,17 @@
-# Keycloak — Identity and Access Management
+# Keycloak — Identity and Access Management (Keycloak Operator)
 # SSO provider for all environments:
 # SSO (OIDC), user management console, self-registration, MFA
 
 keycloak_enabled: true
 
-# Namespace
+# Operator namespace
+keycloak_operator_namespace: keycloak-operator
+
+# Instance namespace
 keycloak_namespace: keycloak
 
-# Helm chart (Codecentric — community standard, uses official Keycloak image)
-keycloak_chart_repo: "{{ helm_repositories.codecentric.url }}"
-keycloak_chart_repo_name: "{{ helm_repositories.codecentric.name }}"
+# Operator version (CRDs + deployment)
+keycloak_operator_version: "{{ helm_versions.keycloak }}"
 
 # Domain / URLs
 keycloak_host: "login.{{ domain }}"
@@ -28,7 +30,7 @@ keycloak_resources:
     memory: 1Gi
 
 # PostgreSQL (dedicated database)
-keycloak_postgresql_host: "{{ postgresql_host | default('postgresql-postgresql-ha-pgpool.postgresql.svc.cluster.local') }}"
+keycloak_postgresql_host: "{{ postgresql_host | default('postgresql-rw.postgresql.svc.cluster.local') }}"
 keycloak_postgresql_port: 5432
 keycloak_postgresql_database: "{{ database_config.keycloak.database }}"
 keycloak_postgresql_user: "{{ database_config.keycloak.user }}"
