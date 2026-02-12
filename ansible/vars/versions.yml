@@ -3,58 +3,59 @@
 
 versions:
   # K3s distribution
+  # https://github.com/k3s-io/k3s/releases
   k3s: "v1.35.0+k3s3"
 
   # Helm charts
   helm_charts:
     # Infrastructure
-    cilium: "1.19.0"
-    longhorn: "1.11.0"
-    cert_manager: "1.19.3"
+    cilium: "1.19.0" # https://artifacthub.io/packages/helm/cilium/cilium
+    longhorn: "1.11.0" # https://artifacthub.io/packages/helm/longhorn/longhorn
+    cert_manager: "1.19.3" # https://artifacthub.io/packages/helm/cert-manager/cert-manager
     # Platform
-    vault: "0.32.0"
-    external_secrets: "2.0.0"
+    vault: "0.32.0" # https://artifacthub.io/packages/helm/hashicorp/vault
+    external_secrets: "2.0.0" # https://artifacthub.io/packages/helm/external-secrets-operator/external-secrets
     # Gateway
-    envoy_gateway: "1.7.0"
+    envoy_gateway: "1.7.0" # https://artifacthub.io/packages/helm/envoy-gateway/gateway-helm
     # Policy
-    kyverno: "3.7.0"
+    kyverno: "3.7.0" # https://artifacthub.io/packages/helm/kyverno/kyverno
     # Services
-    mattermost: "7.0.0"
-    nextcloud: "8.6.0"
-    seaweedfs: "4.0.410"
-    flipt: "1.35.0"
+    mattermost: "6.6.90" # https://artifacthub.io/packages/helm/mattermost/mattermost-team-edition
+    nextcloud: "8.9.0" # https://artifacthub.io/packages/helm/nextcloud/nextcloud
+    seaweedfs: "4.0.412" # https://artifacthub.io/packages/helm/seaweedfs/seaweedfs
     # DevOps
-    gitea: "12.5.0"
-    argocd: "9.4.1"
-    argo_rollouts: "2.40.5"
+    gitea: "12.5.0" # https://artifacthub.io/packages/helm/gitea/gitea
+    argocd: "9.4.1" # https://artifacthub.io/packages/helm/argo/argo-cd
+    argo_rollouts: "2.40.5" # https://artifacthub.io/packages/helm/argo/argo-rollouts
     # Monitoring
-    kube_prometheus_stack: "81.6.1"
-    loki: "6.52.0"
-    alloy: "1.6.0"
+    kube_prometheus_stack: "81.6.3" # https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
+    loki: "6.53.0" # https://artifacthub.io/packages/helm/grafana/loki
+    alloy: "1.6.0" # https://artifacthub.io/packages/helm/grafana/alloy
     # Security
-    velero: "11.3.2"
+    velero: "11.3.2" # https://artifacthub.io/packages/helm/vmware-tanzu/velero
 
   # Kubernetes operators
   operators:
-    cnpg: "1.28.1"              # CloudNativePG
-    mariadb_operator: "25.10.4" # MariaDB Operator
-    redis_operator: "3.3.1"     # Spotahome Redis Operator
-    keycloak: "26.5.3"          # Keycloak Operator
-    trivy_operator: "0.32.0"    # Trivy Operator
+    cnpg: "0.27.1" # https://artifacthub.io/packages/helm/cloudnative-pg/cloudnative-pg
+    mariadb_operator: "25.10.4" # https://artifacthub.io/packages/helm/mariadb-operator/mariadb-operator
+    redis_operator: "3.3.0" # https://artifacthub.io/packages/helm/redis-operator/redis-operator
+    keycloak: "26.5.3" # https://github.com/keycloak/keycloak/releases
+    trivy_operator: "0.32.0" # https://artifacthub.io/packages/helm/trivy-operator/trivy-operator
 
   # CRDs (applied directly, not via Helm)
   crds:
-    gateway_api: "v1.4.1"
+    gateway_api: "v1.4.1" # https://github.com/kubernetes-sigs/gateway-api/releases
 
   # Container image versions (non-Helm deployments)
   images:
-    onlyoffice: "9.2.1"
-    ecrin: "1.0.0"
-    redcap: "14.0.0"
-    curl: "8.18.0"
-    mattermost: "11.2"
-    nextcloud: "32"
-    velero_plugin_aws: "1.13.0"
+    onlyoffice: "9.2.1" # https://hub.docker.com/r/onlyoffice/documentserver/tags
+    ecrin: "1.0.0" # https://github.com/univ-lehavre/atlas-ecrin/pkgs/container/atlas-ecrin
+    redcap: "14.0.0" # https://hub.docker.com/r/redcap/redcap/tags
+    curl: "8.18.0" # https://hub.docker.com/r/curlimages/curl/tags
+    mattermost: "11.4" # https://hub.docker.com/r/mattermost/mattermost-team-edition/tags
+    nextcloud: "32" # https://hub.docker.com/_/nextcloud/tags
+    flipt: "v2.6.0" # https://hub.docker.com/r/flipt/flipt/tags
+    velero_plugin_aws: "1.13.2" # https://github.com/vmware-tanzu/velero-plugin-for-aws/releases
 
 # Helm repository URLs
 helm_repositories:

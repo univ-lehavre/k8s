@@ -5,7 +5,7 @@ flipt_namespace: flipt
 
 # Image settings
 flipt_image: flipt/flipt
-flipt_image_tag: "{{ versions.helm_charts.flipt }}"
+flipt_image_tag: "{{ versions.images.flipt }}"
 
 # Resources
 flipt_resources:
