@@ -34,7 +34,8 @@ vault_ui_enabled: true
 vault_audit_enabled: true
 
 # TLS settings
-vault_tls_disable: false
+# Internal TLS disabled: TLS termination is handled by Envoy Gateway
+vault_tls_disable: true
 
 # Auto-unseal configuration
 # Supported types: awskms, gcpkms, azurekeyvault, transit

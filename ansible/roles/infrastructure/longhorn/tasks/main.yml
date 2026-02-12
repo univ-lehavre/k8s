@@ -24,16 +24,7 @@
 - name: Create Longhorn encryption secret
   kubernetes.core.k8s:
     state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: longhorn-crypto
-        namespace: "{{ longhorn_namespace }}"
-      type: Opaque
-      stringData:
-        CRYPTO_KEY_VALUE: "{{ longhorn_crypto_key }}"
-        CRYPTO_KEY_PROVIDER: "secret"
+    definition: "{{ lookup('template', 'crypto-secret.yml.j2') | from_yaml }}"
   when: longhorn_encryption_enabled
   no_log: true
 
