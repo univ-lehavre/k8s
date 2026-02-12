@@ -93,6 +93,14 @@ ansible-playbook playbooks/site.yml -i inventories/production
 | Network Policies | Non          | Oui                   | Oui                   |
 | Hardening        | Non          | Oui                   | Oui                   |
 
+## Acces au cluster
+
+```bash
+# Configurer kubectl pour le staging
+export KUBECONFIG=~/Hub/k8s/ansible/kubeconfig-staging.yaml
+kubectl get pods --all-namespaces
+```
+
 ## Documentation
 
 | Document | Description |
