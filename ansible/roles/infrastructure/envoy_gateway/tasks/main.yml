@@ -54,6 +54,24 @@
     definition: "{{ lookup('template', 'certificate.yml.j2') | from_yaml }}"
   when: gateway_wildcard_enabled | default(true)
 
+- name: Wait for wildcard certificate to be ready
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: Certificate
+    name: "{{ gateway_wildcard_secret_name }}"
+    namespace: "{{ envoy_gateway_namespace }}"
+  register: cert_status
+  until: >-
+    cert_status.resources | length > 0 and
+    cert_status.resources[0].status is defined and
+    cert_status.resources[0].status.conditions | default([])
+    | selectattr('type', 'equalto', 'Ready')
+    | selectattr('status', 'equalto', 'True')
+    | list | length > 0
+  retries: 60
+  delay: 10
+  when: gateway_wildcard_enabled | default(true)
+
 - name: Create main Gateway resource
   kubernetes.core.k8s:
     state: present
