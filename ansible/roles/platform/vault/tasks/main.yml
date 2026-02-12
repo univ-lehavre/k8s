@@ -20,7 +20,7 @@
   kubernetes.core.helm:
     name: vault
     chart_ref: "{{ vault_chart_repo_name }}/vault"
-    chart_version: "{{ helm_versions.vault }}"
+    chart_version: "{{ versions.helm_charts.vault }}"
     release_namespace: "{{ vault_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

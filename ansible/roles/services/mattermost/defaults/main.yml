@@ -78,6 +78,9 @@ mattermost_hpa_min_replicas: 1
 mattermost_hpa_max_replicas: 3
 mattermost_hpa_target_cpu: 70
 
+# Image tag
+mattermost_image_tag: "{{ versions.images.mattermost }}"
+
 # Site settings
 mattermost_site_name: "{{ organization_name | default('ATLAS') }} Chat"
 mattermost_enable_signup: false

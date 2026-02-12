@@ -40,7 +40,7 @@
   kubernetes.core.helm:
     name: mattermost
     chart_ref: "{{ mattermost_chart_repo_name }}/mattermost-team-edition"
-    chart_version: "{{ helm_versions.mattermost }}"
+    chart_version: "{{ versions.helm_charts.mattermost }}"
     release_namespace: "{{ mattermost_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

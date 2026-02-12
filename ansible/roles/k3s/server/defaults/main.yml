@@ -1,7 +1,7 @@
 # K3s Server role defaults
 
 # K3s version
-k3s_version: "{{ helm_versions.k3s }}"
+k3s_version: "{{ versions.k3s }}"
 
 # K3s token (required for cluster)
 k3s_token: "{{ lookup('env', 'K3S_TOKEN') }}"

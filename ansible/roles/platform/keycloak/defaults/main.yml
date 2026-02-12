@@ -11,7 +11,7 @@ keycloak_operator_namespace: keycloak-operator
 keycloak_namespace: keycloak
 
 # Operator version (CRDs + deployment)
-keycloak_operator_version: "{{ helm_versions.keycloak }}"
+keycloak_operator_version: "{{ versions.operators.keycloak }}"
 
 # Domain / URLs
 keycloak_host: "login.{{ domain }}"

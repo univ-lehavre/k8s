@@ -5,7 +5,7 @@ redcap_namespace: redcap
 
 # Image settings
 redcap_image: redcap/redcap
-redcap_image_tag: "{{ helm_versions.redcap }}"
+redcap_image_tag: "{{ versions.images.redcap }}"
 
 # Resources
 redcap_resources:

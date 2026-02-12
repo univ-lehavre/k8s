@@ -15,7 +15,7 @@
   kubernetes.core.helm:
     name: argo-rollouts
     chart_ref: "{{ argo_rollouts_chart_repo_name }}/argo-rollouts"
-    chart_version: "{{ helm_versions.argo_rollouts }}"
+    chart_version: "{{ versions.helm_charts.argo_rollouts }}"
     release_namespace: "{{ argo_rollouts_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

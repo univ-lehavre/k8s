@@ -20,7 +20,7 @@
   kubernetes.core.helm:
     name: cert-manager
     chart_ref: "{{ cert_manager_chart_repo_name }}/cert-manager"
-    chart_version: "{{ helm_versions.cert_manager }}"
+    chart_version: "{{ versions.helm_charts.cert_manager }}"
     release_namespace: "{{ cert_manager_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

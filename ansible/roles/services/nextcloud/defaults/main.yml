@@ -95,6 +95,9 @@ nextcloud_hpa_min_replicas: 1
 nextcloud_hpa_max_replicas: 2
 nextcloud_hpa_target_cpu: 70
 
+# Image tag
+nextcloud_image_tag: "{{ versions.images.nextcloud }}"
+
 # OnlyOffice integration
 nextcloud_onlyoffice_enabled: true
 nextcloud_onlyoffice_url: "https://office.{{ domain }}"

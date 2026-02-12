@@ -21,7 +21,7 @@
   kubernetes.core.helm:
     name: redis-operator
     chart_ref: redis-operator/redis-operator
-    chart_version: "{{ helm_versions.redis_operator }}"
+    chart_version: "{{ versions.operators.redis_operator }}"
     release_namespace: "{{ redis_operator_namespace }}"
     create_namespace: false
     wait: true

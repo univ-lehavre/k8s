@@ -1,65 +1,60 @@
-# Centralized Helm chart versions
+# Centralized version registry
 # Update this file to upgrade components across all environments
 
-helm_versions:
-  # K3s
+versions:
+  # K3s distribution
   k3s: "v1.35.0+k3s3"
 
-  # Infrastructure
-  cilium: "1.19.0"
-  longhorn: "1.11.0"
-  cert_manager: "1.19.3"
+  # Helm charts
+  helm_charts:
+    # Infrastructure
+    cilium: "1.19.0"
+    longhorn: "1.11.0"
+    cert_manager: "1.19.3"
+    # Platform
+    vault: "0.32.0"
+    external_secrets: "2.0.0"
+    # Gateway
+    envoy_gateway: "1.7.0"
+    # Policy
+    kyverno: "3.7.0"
+    # Services
+    mattermost: "7.0.0"
+    nextcloud: "8.6.0"
+    seaweedfs: "4.0.410"
+    flipt: "1.35.0"
+    # DevOps
+    gitea: "12.5.0"
+    argocd: "9.4.1"
+    argo_rollouts: "2.40.5"
+    # Monitoring
+    kube_prometheus_stack: "81.6.1"
+    loki: "6.52.0"
+    alloy: "1.6.0"
+    # Security
+    velero: "11.3.2"
 
-  # Platform
-  vault: "0.32.0"
-  external_secrets: "2.0.0"
-  # Operators
-  cnpg: "1.28.1" # CloudNativePG operator (replaces bitnami/postgresql)
-  mariadb_operator: "25.10.4" # MariaDB operator (replaces bitnami/mariadb)
-  redis_operator: "3.3.1" # Spotahome Redis operator (replaces bitnami/redis)
+  # Kubernetes operators
+  operators:
+    cnpg: "1.28.1"              # CloudNativePG
+    mariadb_operator: "25.10.4" # MariaDB Operator
+    redis_operator: "3.3.1"     # Spotahome Redis Operator
+    keycloak: "26.5.3"          # Keycloak Operator
+    trivy_operator: "0.32.0"    # Trivy Operator
 
-  # Identity
-  keycloak: "26.5.3" # Keycloak app version (deployed via Keycloak Operator)
+  # CRDs (applied directly, not via Helm)
+  crds:
+    gateway_api: "v1.4.1"
 
-  # Gateway API
-  # kubernetes-sigs/gateway-api
-  gateway_api: "v1.4.1"
-  envoy_gateway: "1.7.0"
-
-  # Policy Engine sur Artifact Hub
-  kyverno: "3.7.0"
-
-  # Services
-  mattermost: "7.0.0"
-  nextcloud: "8.6.0"
-  seaweedfs: "4.0.410"
-  flipt: "1.35.0"
-
-  # Docker image versions (non-Helm deployments)
-  onlyoffice: "9.2.1"
-  ecrin: "1.0.0"
-  redcap: "14.0.0"
-  # Utility image versions
-  curl: "8.18.0"
-  # Application image tags (for non-Helm deployments)
-  mattermost_image_tag: "11.2"
-  nextcloud_image_tag: "32"
-
-  # DevOps
-  gitea: "12.5.0"
-  argocd: "9.4.1"
-  argo_rollouts: "2.40.5"
-
-  # Monitoring
-  kube_prometheus_stack: "81.6.1"
-  # Logging
-  loki: "6.52.0"
-  alloy: "1.6.0"
-
-  # Security
-  velero: "11.3.2"
-  velero_plugin_aws: "1.13.0"
-  trivy_operator: "0.32.0"
+  # Container image versions (non-Helm deployments)
+  images:
+    onlyoffice: "9.2.1"
+    ecrin: "1.0.0"
+    redcap: "14.0.0"
+    curl: "8.18.0"
+    mattermost: "11.2"
+    nextcloud: "32"
+    velero_plugin_aws: "1.13.0"
 
 # Helm repository URLs
 helm_repositories:

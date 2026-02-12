@@ -38,7 +38,7 @@
   kubernetes.core.helm:
     name: kube-prometheus-stack
     chart_ref: "{{ prometheus_chart_repo_name }}/kube-prometheus-stack"
-    chart_version: "{{ helm_versions.kube_prometheus_stack }}"
+    chart_version: "{{ versions.helm_charts.kube_prometheus_stack }}"
     release_namespace: "{{ prometheus_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

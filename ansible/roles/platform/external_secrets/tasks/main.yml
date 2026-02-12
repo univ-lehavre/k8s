@@ -20,7 +20,7 @@
   kubernetes.core.helm:
     name: external-secrets
     chart_ref: "{{ external_secrets_chart_repo_name }}/external-secrets"
-    chart_version: "{{ helm_versions.external_secrets }}"
+    chart_version: "{{ versions.helm_charts.external_secrets }}"
     release_namespace: "{{ external_secrets_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

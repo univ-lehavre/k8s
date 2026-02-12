@@ -5,7 +5,7 @@ onlyoffice_namespace: onlyoffice
 
 # Image settings
 onlyoffice_image: onlyoffice/documentserver
-onlyoffice_image_tag: "{{ helm_versions.onlyoffice }}"
+onlyoffice_image_tag: "{{ versions.images.onlyoffice }}"
 
 # Resources
 onlyoffice_resources:

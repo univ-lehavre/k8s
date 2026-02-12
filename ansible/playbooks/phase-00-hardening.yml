@@ -6,7 +6,7 @@
   become: true
   gather_facts: true
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
 
   pre_tasks:

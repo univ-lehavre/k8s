@@ -1,7 +1,7 @@
 # Cilium role defaults
 
-# Cilium version (from helm_versions)
-cilium_version: "{{ helm_versions.cilium }}"
+# Cilium version (from versions.yml)
+cilium_version: "{{ versions.helm_charts.cilium }}"
 
 # Namespace
 cilium_namespace: kube-system

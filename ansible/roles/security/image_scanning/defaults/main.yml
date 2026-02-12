@@ -4,7 +4,7 @@ image_scanning_enabled: "{{ env != 'local' }}"
 
 # Trivy Operator settings
 trivy_operator_namespace: trivy-system
-trivy_operator_version: "{{ helm_versions.trivy_operator }}"
+trivy_operator_version: "{{ versions.operators.trivy_operator }}"
 
 # Scan configuration
 trivy_scan_job_timeout: 5m

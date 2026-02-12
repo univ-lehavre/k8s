@@ -9,7 +9,7 @@
   kubernetes.core.helm:
     name: loki
     chart_ref: "{{ loki_chart_repo_name }}/loki"
-    chart_version: "{{ helm_versions.loki }}"
+    chart_version: "{{ versions.helm_charts.loki }}"
     release_namespace: "{{ loki_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'loki-values.yml.j2') | from_yaml }}"
@@ -34,7 +34,7 @@
   kubernetes.core.helm:
     name: alloy
     chart_ref: "{{ loki_chart_repo_name }}/alloy"
-    chart_version: "{{ helm_versions.alloy }}"
+    chart_version: "{{ versions.helm_charts.alloy }}"
     release_namespace: "{{ loki_namespace }}"
     values: "{{ lookup('template', 'alloy-values.yml.j2') | from_yaml }}"
     wait: true

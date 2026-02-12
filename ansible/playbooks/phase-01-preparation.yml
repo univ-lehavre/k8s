@@ -5,7 +5,7 @@
   become: true
   gather_facts: true
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
 
   roles:
@@ -16,7 +16,7 @@
   hosts: localhost
   gather_facts: true
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
 
   roles:

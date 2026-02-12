@@ -14,7 +14,7 @@
   gather_facts: false
   become: false
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
     - ../vars/dependency_graph.yml
   environment:
@@ -82,7 +82,7 @@
   become: true
   gather_facts: true
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
     - ../vars/dependency_graph.yml
 
@@ -98,7 +98,7 @@
   gather_facts: true
   become: false
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
 
   roles:
@@ -113,7 +113,7 @@
   gather_facts: false
   become: false
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
     - ../vars/dependency_graph.yml
   environment:

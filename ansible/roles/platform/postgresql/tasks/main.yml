@@ -20,7 +20,7 @@
   kubernetes.core.helm:
     name: cnpg
     chart_ref: cnpg/cloudnative-pg
-    chart_version: "{{ helm_versions.cnpg }}"
+    chart_version: "{{ versions.operators.cnpg }}"
     release_namespace: "{{ cnpg_operator_namespace }}"
     create_namespace: false
     wait: true

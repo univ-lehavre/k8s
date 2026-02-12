@@ -53,7 +53,7 @@ configuration:
 # Install AWS plugin
 initContainers:
   - name: velero-plugin-for-aws
-    image: velero/velero-plugin-for-aws:v{{ helm_versions.velero_plugin_aws }}
+    image: velero/velero-plugin-for-aws:v{{ versions.images.velero_plugin_aws }}
     volumeMounts:
       - mountPath: /target
         name: plugins

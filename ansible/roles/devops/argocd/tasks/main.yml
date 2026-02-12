@@ -33,7 +33,7 @@
   kubernetes.core.helm:
     name: argocd
     chart_ref: "{{ argocd_chart_repo_name }}/argo-cd"
-    chart_version: "{{ helm_versions.argocd }}"
+    chart_version: "{{ versions.helm_charts.argocd }}"
     release_namespace: "{{ argocd_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

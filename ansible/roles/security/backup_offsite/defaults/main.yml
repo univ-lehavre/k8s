@@ -74,7 +74,7 @@ backup_targets:
     retention: 30d
 
 # Velero settings
-velero_version: "{{ helm_versions.velero }}"
+velero_version: "{{ versions.helm_charts.velero }}"
 velero_namespace: velero
 
 # Resource limits

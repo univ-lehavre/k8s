@@ -38,7 +38,7 @@
   kubernetes.core.helm:
     name: seaweedfs
     chart_ref: "{{ seaweedfs_chart_repo_name }}/seaweedfs"
-    chart_version: "{{ helm_versions.seaweedfs }}"
+    chart_version: "{{ versions.helm_charts.seaweedfs }}"
     release_namespace: "{{ seaweedfs_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

@@ -177,19 +177,25 @@ ansible/
 │   ├── monitoring/         # Prometheus, Grafana, Hubble
 │   └── security/           # Network Policies
 └── vars/
-    ├── helm_versions.yml   # Centralized Helm chart versions
+    ├── versions.yml        # Centralized version registry
     └── secrets_mapping.yml # Environment variable mappings
 ```
 
 ## Upgrading Components
 
-Update Helm chart versions in `vars/helm_versions.yml`:
+Update component versions in `vars/versions.yml`:
 
 ```yaml
-helm_versions:
-  cilium: "1.16.5"
-  postgresql_ha: "14.0.4"
-  # ... etc
+versions:
+  helm_charts:
+    cilium: "1.19.0"
+    # ...
+  operators:
+    cnpg: "1.28.1"
+    # ...
+  images:
+    onlyoffice: "9.2.1"
+    # ...
 ```
 
 Then re-run the appropriate playbook.

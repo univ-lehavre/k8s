@@ -21,7 +21,7 @@
   kubernetes.core.helm:
     name: mariadb-operator
     chart_ref: mariadb-operator/mariadb-operator
-    chart_version: "{{ helm_versions.mariadb_operator }}"
+    chart_version: "{{ versions.operators.mariadb_operator }}"
     release_namespace: "{{ mariadb_operator_namespace }}"
     create_namespace: false
     wait: true

@@ -5,7 +5,7 @@ ecrin_namespace: ecrin
 
 # Image settings (GitHub Container Registry)
 ecrin_image: ghcr.io/univ-lehavre/atlas-ecrin
-ecrin_image_tag: "{{ helm_versions.ecrin }}"
+ecrin_image_tag: "{{ versions.images.ecrin }}"
 
 # Container port (SvelteKit Node adapter)
 ecrin_container_port: 3000

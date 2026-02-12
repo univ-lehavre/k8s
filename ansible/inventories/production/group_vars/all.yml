@@ -8,7 +8,7 @@ admin_email: "{{ lookup('env', 'LETSENCRYPT_EMAIL') | default('admin@example.com
 
 # K3s configuration
 k3s_type: k3s
-k3s_version: "{{ helm_versions.k3s }}"
+k3s_version: "{{ versions.k3s }}"
 k3s_token: "{{ lookup('env', 'K3S_TOKEN') }}"
 
 # Storage configuration

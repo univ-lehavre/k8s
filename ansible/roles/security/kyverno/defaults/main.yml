@@ -4,8 +4,8 @@
 # Namespace
 kyverno_namespace: kyverno
 
-# Version (from centralized helm_versions.yml)
-kyverno_version: "{{ helm_versions.kyverno }}"
+# Version (from centralized versions.yml)
+kyverno_version: "{{ versions.helm_charts.kyverno }}"
 
 # Replicas (HA mode uses 3 replicas)
 kyverno_replicas: "{{ 3 if ha_enabled | default(false) else 1 }}"

@@ -40,7 +40,7 @@
   kubernetes.core.helm:
     name: gitea
     chart_ref: "{{ gitea_chart_repo_name }}/gitea"
-    chart_version: "{{ helm_versions.gitea }}"
+    chart_version: "{{ versions.helm_charts.gitea }}"
     release_namespace: "{{ gitea_namespace }}"
     create_namespace: true
     values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

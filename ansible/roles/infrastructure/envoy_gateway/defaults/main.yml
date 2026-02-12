@@ -4,11 +4,11 @@
 # Namespace
 envoy_gateway_namespace: envoy-gateway-system
 
-# Version (from centralized helm_versions.yml)
-envoy_gateway_version: "{{ helm_versions.envoy_gateway }}"
+# Version (from centralized versions.yml)
+envoy_gateway_version: "{{ versions.helm_charts.envoy_gateway }}"
 
 # Gateway API CRD version
-gateway_api_version: "{{ helm_versions.gateway_api }}"
+gateway_api_version: "{{ versions.crds.gateway_api }}"
 
 # GatewayClass name
 envoy_gateway_class_name: envoy

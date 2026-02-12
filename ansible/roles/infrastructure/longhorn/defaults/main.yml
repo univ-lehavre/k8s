@@ -1,7 +1,7 @@
 # Longhorn role defaults
 
-# Longhorn version (from helm_versions)
-longhorn_version: "{{ helm_versions.longhorn }}"
+# Longhorn version (from versions.yml)
+longhorn_version: "{{ versions.helm_charts.longhorn }}"
 
 # Namespace
 longhorn_namespace: longhorn-system

@@ -4,7 +4,7 @@
   hosts: localhost
   gather_facts: true
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
 
   roles:
@@ -17,7 +17,7 @@
   become: true
   gather_facts: true
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
 
   roles:
@@ -30,7 +30,7 @@
   become: true
   gather_facts: true
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
 
   roles:
@@ -43,7 +43,7 @@
   become: true
   gather_facts: false
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
 
   tasks:
@@ -71,7 +71,7 @@
   hosts: localhost
   gather_facts: false
   vars_files:
-    - ../vars/helm_versions.yml
+    - ../vars/versions.yml
     - ../vars/secrets_mapping.yml
 
   roles:
