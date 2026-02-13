@@ -15,8 +15,8 @@ longhorn_default_replica_count: "{{ longhorn_replica_count | default(1) }}"
 # Data locality
 longhorn_data_locality: disabled
 
-# Create default disk on labeled nodes
-longhorn_create_default_disk_labeled_nodes: true
+# Create default disk on all schedulable nodes (no label required)
+longhorn_create_default_disk_labeled_nodes: false
 
 # Encryption
 longhorn_encryption_enabled: true
