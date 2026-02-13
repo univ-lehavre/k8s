@@ -66,6 +66,10 @@ redis_sentinel_port: 26379
 redis_sentinel_enabled: true
 redis_sentinel_master_set: mymaster
 
+# Keycloak (shared across all roles that need OIDC)
+keycloak_host: "login.{{ domain }}"
+keycloak_realm: atlas
+
 # Service URLs
 service_urls:
   vault: "https://vault.{{ domain }}"
