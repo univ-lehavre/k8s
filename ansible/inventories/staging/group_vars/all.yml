@@ -16,7 +16,8 @@ storage_class: longhorn-encrypted
 storage_class_default: true
 
 # TLS configuration
-tls_issuer: letsencrypt-staging
+# Use self-signed for staging (Let's Encrypt HTTP-01 cannot issue wildcards)
+tls_issuer: selfsigned-issuer
 tls_issuer_email: "{{ admin_email }}"
 
 # Feature flags

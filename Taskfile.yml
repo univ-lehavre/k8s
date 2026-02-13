@@ -405,14 +405,26 @@ tasks:
         set +a
         STAGING_HOST="${STAGING_HOST:-10.0.1.10}"
         STAGING_SSH_KEY="${STAGING_SSH_KEY:-~/.ssh/staging_key}"
+        echo "→ Connexion a ${STAGING_HOST}..."
         ssh -i "${STAGING_SSH_KEY}" ubuntu@"${STAGING_HOST}" "\
-          sudo /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true; \
+          echo '  [1/5] Desinstallation de K3s...'; \
+          if sudo /usr/local/bin/k3s-uninstall.sh; then \
+            echo '        K3s desinstalle'; \
+          else \
+            echo '        K3s non installe (skip)'; \
+          fi; \
+          echo '  [2/5] Suppression de /etc/rancher /var/lib/rancher /var/lib/longhorn...'; \
           sudo rm -rf /etc/rancher /var/lib/rancher /var/lib/longhorn; \
+          echo '  [3/5] Suppression de /opt/cni /etc/cni...'; \
           sudo rm -rf /opt/cni /etc/cni; \
+          echo '  [4/5] Suppression de helm...'; \
           sudo rm -f /usr/local/bin/helm; \
-          rm -f ~/.kube/config"
+          echo '  [5/5] Suppression du kubeconfig local...'; \
+          rm -f ~/.kube/config; \
+          echo '  Nettoyage distant termine.'"
+        echo "→ Suppression de kubeconfig-staging.yaml local..."
         rm -f kubeconfig-staging.yaml
-        echo "Cluster staging reinitialise. Relancez: task infra:staging"
+        echo "✓ Cluster staging reinitialise. Relancez: task infra:staging"
 
   reset:production:
     desc: "Reset complet du cluster production (desinstalle K3s)"
