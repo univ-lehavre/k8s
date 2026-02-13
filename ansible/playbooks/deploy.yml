@@ -2,14 +2,16 @@
 #
 # Résout l'arbre de dépendances du composant cible, vérifie lesquels
 # sont déjà opérationnels dans le cluster, et déploie uniquement
-# les composants manquants dans l'ordre topologique.
+# les dépendances manquantes + la cible (toujours rejouée).
+#
+# La cible est toujours redéployée car les rôles Ansible sont idempotents
+# (state: present = no-op si la ressource existe) — cela garantit que
+# toutes les sous-ressources (HTTPRoutes, Secrets, Policies) sont créées
+# même si un déploiement précédent a échoué à mi-parcours.
 #
 # Usage :
 #   ansible-playbook -i inventories/staging/ playbooks/deploy.yml -e target=mattermost
 #   task deploy:staging -- mattermost
-#
-# Force redeploy (skip health check for target):
-#   ansible-playbook ... -e target=vault -e force=true
 
 # --- Play 1 : Résolution des dépendances et health checks ---
 - name: "ATLAS — Résolution des dépendances pour {{ target | default('?') }}"
@@ -46,7 +48,7 @@
           Chaîne de déploiement pour {{ target }} :
             {{ _deploy_order | join(' → ') }}
 
-          Vérification de l'état de chaque composant...
+          Vérification de l'état des dépendances...
 
     - name: "Vérifier les composants"
       ansible.builtin.include_tasks: ../tasks/check_component.yml
@@ -55,34 +57,23 @@
         _component_def: "{{ atlas_components[item] }}"
       loop: "{{ _deploy_order }}"
 
-    - name: Construire la liste des composants manquants
+    - name: Construire la liste des composants à déployer
       ansible.builtin.set_fact:
         _to_deploy: >-
-          {{ _deploy_order | reject('in', _healthy_filtered) | list }}
+          {{ (_deploy_order | reject('equalto', target)
+              | reject('in', _healthy) | list)
+             + [target] }}
       vars:
         _healthy: >-
           {{ _health_map | default({}) | dict2items
              | selectattr('value')
              | map(attribute='key') | list }}
-        _healthy_filtered: >-
-          {{ (force | default(false) | bool)
-             | ternary(_healthy | reject('equalto', target) | list, _healthy) }}
 
     - name: Afficher le plan d'exécution
       ansible.builtin.debug:
         msg: |
-          {% if _to_deploy | length == 0 %}
-          Tous les composants sont déjà en place. Rien à déployer.
-          {% else %}
-          {% if force | default(false) | bool %}⚡ Mode force activé — {{ target }} sera redéployé.
-          {% endif %}
           Composants à déployer : {{ _to_deploy | join(' → ') }}
-          Composants déjà OK   : {{ _deploy_order | difference(_to_deploy) | join(', ') | default('aucun') }}
-          {% endif %}
-
-    - name: Fin si rien à déployer
-      ansible.builtin.meta: end_play
-      when: _to_deploy | length == 0
+          Dépendances OK (skip) : {{ _deploy_order | difference(_to_deploy) | join(', ') | default('aucune') }}
 
 # --- Play 2 : Déploiement K3s sur les masters distants (staging/production) ---
 - name: "ATLAS — Déploiement K3s Server"
@@ -136,4 +127,3 @@
       ansible.builtin.include_role:
         name: "{{ atlas_components[item].role }}"
       loop: "{{ _to_deploy | reject('equalto', 'k3s') | list }}"
-      when: _to_deploy | length > 0
