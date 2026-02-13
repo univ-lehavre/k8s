@@ -30,7 +30,7 @@ atlas_components:
 
   envoy_gateway:
     role: infrastructure/envoy_gateway
-    deps: [cilium]
+    deps: [cilium, cert_manager]
     health:
       api: apps/v1
       kind: Deployment

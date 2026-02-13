@@ -79,6 +79,10 @@
     - role: infrastructure/cilium
       tags: [infrastructure, cilium, cni, network]
 
+    # TLS (must run before envoy_gateway — it needs cert-manager to issue the wildcard cert)
+    - role: infrastructure/cert_manager
+      tags: [infrastructure, cert-manager, tls]
+
     # Gateway API (Envoy Gateway)
     - role: infrastructure/envoy_gateway
       tags: [infrastructure, envoy-gateway, gateway-api, ingress]
@@ -91,10 +95,6 @@
     - role: infrastructure/local_path
       tags: [infrastructure, local-path, storage]
       when: storage_class == 'local-path'
-
-    # TLS
-    - role: infrastructure/cert_manager
-      tags: [infrastructure, cert-manager, tls]
 
   post_tasks:
     - name: Phase 2 complete
