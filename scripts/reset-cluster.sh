@@ -21,25 +21,25 @@ reset_host() {
   local ssh_key="$2"
   local ssh_user="$3"
 
-  echo "→ Connexion a ${host}..."
+  echo "🔌 Connexion a ${host}..."
   ssh -i "${ssh_key}" "${ssh_user}@${host}" "\
-    echo '  [1/5] Desinstallation de K3s...'; \
+    echo '  [1/5] 🗑  Desinstallation de K3s...'; \
     if sudo /usr/local/bin/k3s-uninstall.sh 2>/dev/null; then \
-      echo '        K3s desinstalle'; \
+      echo '        ✓ K3s desinstalle'; \
     elif sudo /usr/local/bin/k3s-agent-uninstall.sh 2>/dev/null; then \
-      echo '        K3s agent desinstalle'; \
+      echo '        ✓ K3s agent desinstalle'; \
     else \
-      echo '        K3s non installe (skip)'; \
+      echo '        ⏭  K3s non installe (skip)'; \
     fi; \
-    echo '  [2/5] Suppression de /etc/rancher /var/lib/rancher /var/lib/longhorn...'; \
+    echo '  [2/5] 🗑  Suppression de /etc/rancher /var/lib/rancher /var/lib/longhorn...'; \
     sudo rm -rf /etc/rancher /var/lib/rancher /var/lib/longhorn; \
-    echo '  [3/5] Suppression de /opt/cni /etc/cni...'; \
+    echo '  [3/5] 🗑  Suppression de /opt/cni /etc/cni...'; \
     sudo rm -rf /opt/cni /etc/cni; \
-    echo '  [4/5] Suppression de helm...'; \
+    echo '  [4/5] 🗑  Suppression de helm...'; \
     sudo rm -f /usr/local/bin/helm; \
-    echo '  [5/5] Suppression du kubeconfig local...'; \
+    echo '  [5/5] 🗑  Suppression du kubeconfig distant...'; \
     rm -f ~/.kube/config; \
-    echo '  Nettoyage distant termine.'"
+    echo '  ✓ Nettoyage distant termine.'"
 }
 
 case "$ENV" in
@@ -47,9 +47,10 @@ case "$ENV" in
     STAGING_HOST="${STAGING_HOST:-10.0.1.10}"
     STAGING_SSH_KEY="${STAGING_SSH_KEY:-~/.ssh/staging_key}"
     reset_host "$STAGING_HOST" "$STAGING_SSH_KEY" "ubuntu"
-    echo "→ Suppression de kubeconfig-staging.yaml local..."
+    echo "🗑  Suppression de kubeconfig-staging.yaml local..."
     rm -f kubeconfig-staging.yaml
-    echo "✓ Cluster staging reinitialise. Relancez: task infra:staging"
+    echo ""
+    echo "✅ Cluster staging reinitialise. Relancez: task infra:staging"
     ;;
   production)
     PROD_MASTER_HOST="${PROD_MASTER_HOST:-10.0.2.10}"
@@ -58,8 +59,9 @@ case "$ENV" in
       [ -z "${HOST}" ] && continue
       reset_host "$HOST" "$PROD_SSH_KEY" "debian"
     done
-    echo "→ Suppression de kubeconfig-production.yaml local..."
+    echo "🗑  Suppression de kubeconfig-production.yaml local..."
     rm -f kubeconfig-production.yaml
-    echo "✓ Cluster production reinitialise. Relancez: task infra:production"
+    echo ""
+    echo "✅ Cluster production reinitialise. Relancez: task infra:production"
     ;;
 esac

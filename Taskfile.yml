@@ -14,7 +14,44 @@ tasks:
   default:
     desc: Afficher l'aide
     cmds:
-      - task --list-all
+      - |
+        echo ""
+        echo "  Atlas K8s Platform"
+        echo "  =================="
+        echo ""
+        echo "  🚀 Deploiement"
+        echo "    infra:local              Demarrer l'infra locale (k3d)"
+        echo "    infra:staging            Deployer l'infra staging (phases 1+2)"
+        echo "    infra:production         Deployer l'infra production (phases 1+2)"
+        echo "    deploy:<env> -- <comp>   Deployer un composant  (ex: task deploy:staging -- mattermost)"
+        echo "    deploy:list              Lister les composants deployables"
+        echo "    deploy:deps -- <comp>    Afficher les dependances d'un composant"
+        echo ""
+        echo "  🔄 Reset"
+        echo "    reset:local              Supprimer le cluster k3d local"
+        echo "    reset:staging            Reset complet du cluster staging"
+        echo "    reset:production         Reset complet du cluster production"
+        echo ""
+        echo "  🔍 Qualite"
+        echo "    lint                     Linter le projet Ansible (profil production)"
+        echo "    lint:fix                 Linter et corriger automatiquement"
+        echo "    check                    Tous les checks (lint + yaml + markdown)"
+        echo "    check:quick              Check rapide (lint seulement)"
+        echo ""
+        echo "  📦 Installation"
+        echo "    install:deps             Installer toutes les dependances"
+        echo "    install:galaxy           Installer les collections Ansible"
+        echo "    install:galaxy-update    Mettre a jour les collections Ansible"
+        echo "    install:hooks            Installer les git hooks"
+        echo ""
+        echo "  ℹ️  Divers"
+        echo "    info                     Informations sur l'environnement"
+        echo "    clean                    Nettoyer les fichiers temporaires"
+        echo "    k3d:status               Statut du cluster k3d local"
+        echo "    hooks:test               Tester les hooks pre-commit"
+        echo ""
+        echo "  task --list-all            Liste complete de toutes les taches"
+        echo ""
     silent: true
 
   # Installation et configuration
