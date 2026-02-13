@@ -131,7 +131,7 @@
 
     - name: Wait for ExternalSecret to sync
       kubernetes.core.k8s_info:
-        api_version: external-secrets.io/v1beta1
+        api_version: external-secrets.io/v1
         kind: ExternalSecret
         name: keycloak-secrets
         namespace: "{{ keycloak_namespace }}"

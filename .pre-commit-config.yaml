@@ -3,7 +3,7 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -14,7 +14,7 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/ansible/ansible-lint
-    rev: v24.2.0
+    rev: v26.1.1
     hooks:
       - id: ansible-lint
         name: Ansible Lint
@@ -28,7 +28,7 @@ repos:
           - --force-color
 
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
+    rev: v1.38.0
     hooks:
       - id: yamllint
         name: YAML Lint

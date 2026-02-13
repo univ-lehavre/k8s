@@ -3,7 +3,7 @@
 
 image:
   repository: mattermost/mattermost-team-edition
-  tag: "{{ mattermost_image_tag | default('9.11') }}"
+  tag: "{{ mattermost_image_tag }}"
 
 resources:
   requests:
@@ -64,9 +64,9 @@ config:
     Secret: ""  # Configure via External Secrets
     Id: "{{ mattermost_oidc_client_id }}"
     Scope: openid profile email groups
-    AuthEndpoint: "https://login.{{ domain }}/api/oidc/authorization"
-    TokenEndpoint: "https://login.{{ domain }}/api/oidc/token"
-    UserApiEndpoint: "https://login.{{ domain }}/api/oidc/userinfo"
+    AuthEndpoint: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/protocol/openid-connect/auth"
+    TokenEndpoint: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/protocol/openid-connect/token"
+    UserApiEndpoint: "https://{{ keycloak_host }}/realms/{{ keycloak_realm }}/protocol/openid-connect/userinfo"
     DiscoveryEndpoint: "{{ mattermost_oidc_discovery_endpoint }}"
     ButtonText: "{{ mattermost_oidc_button_text }}"
     ButtonColor: "#6DB33F"

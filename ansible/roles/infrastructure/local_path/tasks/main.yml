@@ -46,6 +46,7 @@
       kubernetes.core.helm:
         name: local-path-provisioner
         chart_ref: "{{ local_path_chart_repo_name }}/local-path-provisioner"
+        chart_version: "{{ local_path_version }}"
         release_namespace: "{{ local_path_namespace }}"
         create_namespace: true
         values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"

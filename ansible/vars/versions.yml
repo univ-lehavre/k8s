@@ -11,6 +11,7 @@ versions:
     # Infrastructure
     cilium: "1.19.0" # https://artifacthub.io/packages/helm/cilium/cilium
     longhorn: "1.11.0" # https://artifacthub.io/packages/helm/longhorn/longhorn
+    local_path_provisioner: "0.0.35" # https://artifacthub.io/packages/helm/containeroo/local-path-provisioner
     cert_manager: "1.19.3" # https://artifacthub.io/packages/helm/cert-manager/cert-manager
     # Platform
     vault: "0.32.0" # https://artifacthub.io/packages/helm/hashicorp/vault

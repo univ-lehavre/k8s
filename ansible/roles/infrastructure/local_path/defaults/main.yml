@@ -6,6 +6,7 @@ local_path_namespace: local-path-storage
 # Helm chart settings
 local_path_chart_repo: https://charts.containeroo.ch
 local_path_chart_repo_name: containeroo
+local_path_version: "{{ versions.helm_charts.local_path_provisioner }}"
 
 # Storage path on nodes
 local_path_storage_path: /var/lib/rancher/k3s/storage

@@ -274,7 +274,7 @@ atlas_components:
     role: security/secret_rotation
     deps: [vault, external_secrets]
     health:
-      api: external-secrets.io/v1beta1
+      api: external-secrets.io/v1
       kind: ExternalSecret
       namespace: keycloak
 
