@@ -54,6 +54,22 @@ envoy_gateway_rate_limit_enabled: true
 # Enable external auth support (for SSO - Keycloak)
 envoy_gateway_ext_auth_enabled: true
 
+# Namespaces allowed to reference the Gateway via ReferenceGrant
+# (every namespace that creates HTTPRoutes targeting atlas-gateway)
+gateway_route_namespaces:
+  - keycloak
+  - vault
+  - mattermost
+  - nextcloud
+  - onlyoffice
+  - redcap
+  - ecrin
+  - flipt
+  - gitea
+  - argocd
+  - monitoring
+  - kube-system
+
 # Logging level
 envoy_gateway_log_level: info
 

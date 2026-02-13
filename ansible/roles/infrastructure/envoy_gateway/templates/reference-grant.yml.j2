@@ -1,5 +1,5 @@
 ---
-# ReferenceGrant allows HTTPRoutes from any namespace
+# ReferenceGrant allows HTTPRoutes from service namespaces
 # to reference the main Gateway
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
@@ -8,9 +8,11 @@ metadata:
   namespace: {{ envoy_gateway_namespace }}
 spec:
   from:
+{% for ns in gateway_route_namespaces %}
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
-      namespace: "*"
+      namespace: {{ ns }}
+{% endfor %}
   to:
     - group: gateway.networking.k8s.io
       kind: Gateway
