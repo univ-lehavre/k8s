@@ -21,27 +21,27 @@ lefthook install
 
 ```bash
 task lint                    # Linter tout le projet
-task lint-fix                # Auto-fix les problèmes
-task lint-file -- path.yml   # Linter un fichier
-task lint-role -- gitea      # Linter un rôle
+task lint:fix                # Auto-fix les problèmes
+task lint:file -- path.yml   # Linter un fichier
+task lint:role -- gitea      # Linter un rôle
 ```
 
 ### Validation
 
 ```bash
 task check                   # Tous les checks
-task check-quick             # Lint seulement (rapide)
-task syntax-check            # Syntaxe Ansible
-task yaml-lint               # Validation YAML
+task check:quick             # Lint seulement (rapide)
+task syntax:check            # Syntaxe Ansible
+task yaml:lint               # Validation YAML
 ```
 
 ### Profils de lint
 
 ```bash
-task lint-min                # Minimal
-task lint-basic              # Basique
-task lint-safety             # Recommandé
-task lint-production         # Le plus strict (défaut)
+task lint:min                # Minimal
+task lint:basic              # Basique
+task lint:safety             # Recommandé
+task lint:production         # Le plus strict (défaut)
 ```
 
 ### Commandes directes

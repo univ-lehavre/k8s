@@ -18,7 +18,7 @@ tasks:
     silent: true
 
   # Installation et configuration
-  install-deps:
+  install:deps:
     desc: Installer toutes les dépendances
     cmds:
       - echo "Installation des dependances..."
@@ -27,20 +27,20 @@ tasks:
       - lefthook install
       - echo "Dependances installees"
 
-  install-hooks:
+  install:hooks:
     desc: Installer les git hooks avec lefthook
     cmds:
       - echo "Installation des git hooks..."
       - lefthook install
       - echo "Git hooks installes"
 
-  install-galaxy:
+  install:galaxy:
     desc: Installer les collections et rôles Ansible
     cmds:
       - echo "Installation des collections Ansible..."
       - ansible-galaxy install -r {{.ANSIBLE_DIR}}/requirements.yml
 
-  install-galaxy-update:
+  install:galaxy-update:
     desc: Mettre à jour les collections et rôles Ansible
     cmds:
       - echo "Mise a jour des collections..."
@@ -54,56 +54,83 @@ tasks:
       - echo "Linting du projet..."
       - ansible-lint --profile={{.PROFILE}}
 
-  lint-fix:
+  lint:fix:
     desc: Linter et corriger automatiquement
+    aliases: [format, fix]
     cmds:
       - echo "Linting avec auto-fix..."
       - ansible-lint --fix --profile={{.PROFILE}}
 
-  lint-report:
+  lint:report:
     desc: Générer un rapport de linting (format CodeClimate)
     cmds:
       - echo "Generation du rapport..."
       - ansible-lint --format=codeclimate > {{.REPORT_FILE}}
       - echo "Rapport genere → {{.REPORT_FILE}}"
 
-  lint-file:
-    desc: Linter un fichier spécifique (usage - task lint-file -- path/to/file.yml)
+  lint:file:
+    desc: "Linter un fichier spécifique (usage: task lint:file -- path/to/file.yml)"
     cmds:
       - ansible-lint --profile={{.PROFILE}} {{.CLI_ARGS}}
 
-  lint-role:
-    desc: Linter un rôle spécifique (usage - task lint-role -- gitea)
+  lint:role:
+    desc: "Linter un rôle spécifique (usage: task lint:role -- gitea)"
     cmds:
       - ansible-lint --profile={{.PROFILE}} {{.ANSIBLE_DIR}}/roles/{{.CLI_ARGS}}
 
+  # Profils de linting
+  lint:min:
+    desc: Linter avec profil minimal
+    cmds:
+      - ansible-lint --profile=min
+
+  lint:basic:
+    desc: Linter avec profil basic
+    cmds:
+      - ansible-lint --profile=basic
+
+  lint:moderate:
+    desc: Linter avec profil moderate
+    cmds:
+      - ansible-lint --profile=moderate
+
+  lint:safety:
+    desc: Linter avec profil safety (recommandé)
+    cmds:
+      - ansible-lint --profile=safety
+
+  lint:production:
+    desc: Linter avec profil production (le plus strict)
+    cmds:
+      - ansible-lint --profile=production
+
   # Validation YAML
-  yaml-lint:
+  yaml:lint:
     desc: Valider la syntaxe YAML
     cmds:
       - echo "Validation YAML..."
       - yamllint -c .yamllint --strict .
 
+  yaml:fix:
+    desc: Formater les fichiers YAML avec yamlfmt
+    cmds:
+      - yamlfmt -formatter retain_line_breaks=true .
+
   # Validation Markdown
-  md-lint:
+  md:lint:
     desc: Valider la syntaxe Markdown
     cmds:
       - echo "Validation Markdown..."
       - markdownlint-cli2 "**/*.md" "#node_modules" "#venv" "#.cache"
 
-  md-lint-fix:
+  md:lint-fix:
     desc: Corriger automatiquement les fichiers Markdown
     cmds:
       - echo "Correction Markdown..."
       - markdownlint-cli2 --fix "**/*.md" "#node_modules" "#venv" "#.cache"
 
-  yaml-fix:
-    desc: Formater les fichiers YAML avec yamlfmt
-    cmds:
-      - yamlfmt -formatter retain_line_breaks=true .
-
   # Vérification syntaxe Ansible
-  syntax-check:
+  syntax:check:
     desc: Vérifier la syntaxe des playbooks
     cmds:
       - for: {var: PLAYBOOKS, split: "\n"}
@@ -112,7 +139,7 @@ tasks:
       PLAYBOOKS:
         sh: find {{.ANSIBLE_DIR}}/playbooks -name "*.yml" -type f 2>/dev/null || echo ""
 
-  syntax-check-file:
+  syntax:check-file:
     desc: Vérifier la syntaxe d'un playbook spécifique
     cmds:
       - ansible-playbook --syntax-check {{.CLI_ARGS}}
@@ -122,22 +149,23 @@ tasks:
     desc: Lancer tous les checks (lint + yamllint + mdlint)
     deps:
       - lint
-      - yaml-lint
-      - md-lint
+      - yaml:lint
+      - md:lint
 
-  check-quick:
+  check:quick:
     desc: Check rapide (lint seulement)
     deps:
       - lint
 
   # Git hooks
-  hooks-test:
+  hooks:test:
     desc: Tester les hooks pre-commit sur tous les fichiers
+    aliases: [test-hooks]
     cmds:
       - echo "Test des hooks pre-commit..."
       - lefthook run pre-commit --all-files
 
-  hooks-skip:
+  hooks:skip:
     desc: Exemple pour skip les hooks (info seulement)
     cmds:
       - 'echo "Pour bypasser les hooks:"'
@@ -156,7 +184,7 @@ tasks:
       - rm -f {{.REPORT_FILE}}
       - echo "Nettoyage termine"
 
-  clean-cache:
+  clean:cache:
     desc: Nettoyer le cache ansible-lint
     cmds:
       - rm -rf .cache/
@@ -166,13 +194,13 @@ tasks:
   ci:
     desc: Commande CI complète
     deps:
-      - install-deps
+      - install:deps
     cmds:
       - task: check
     requires:
       vars: []
 
-  ci-fast:
+  ci:fast:
     desc: CI rapide (sans install)
     cmds:
       - task: check
@@ -190,53 +218,17 @@ tasks:
       - echo "  task → $(task --version)"
     silent: true
 
-  info-rules:
+  info:rules:
     desc: Lister toutes les règles ansible-lint disponibles
     cmds:
       - ansible-lint -L
 
-  info-rule:
-    desc: Afficher les détails d'une règle (usage - task info-rule -- var-naming)
+  info:rule:
+    desc: "Afficher les détails d'une règle (usage: task info:rule -- var-naming)"
     cmds:
       - ansible-lint -T {{.CLI_ARGS}}
 
-  # Profils de linting
-  lint-min:
-    desc: Linter avec profil minimal
-    cmds:
-      - ansible-lint --profile=min
-
-  lint-basic:
-    desc: Linter avec profil basic
-    cmds:
-      - ansible-lint --profile=basic
-
-  lint-moderate:
-    desc: Linter avec profil moderate
-    cmds:
-      - ansible-lint --profile=moderate
-
-  lint-safety:
-    desc: Linter avec profil safety (recommandé)
-    cmds:
-      - ansible-lint --profile=safety
-
-  lint-production:
-    desc: Linter avec profil production (le plus strict)
-    cmds:
-      - ansible-lint --profile=production
-
-  # Déploiement avec résolution de dépendances
-  deploy:
-    desc: "Deployer un composant (DEPRECATED: utilisez deploy:ENV)"
-    dir: "{{.ANSIBLE_DIR}}"
-    cmds:
-      - echo "⚠️  DEPRECATED - Utilisez 'task deploy:staging -- mattermost' pour specifier l'environnement"
-      - ansible-playbook playbooks/deploy.yml -e target={{.CLI_ARGS}}
-    preconditions:
-      - sh: "[ -n '{{.CLI_ARGS}}' ]"
-        msg: "Specifier un composant. Usage: task deploy:staging -- mattermost"
-
+  # Cluster k3d (local)
   k3d:stop:
     desc: "Arreter le cluster k3d local"
     cmds:
@@ -255,100 +247,88 @@ tasks:
     cmds:
       - k3d cluster list
 
+  # Déploiement avec résolution de dépendances
   deploy:local:
     desc: "Deployer en LOCAL (usage: task deploy:local -- mattermost)"
-    dir: "{{.ANSIBLE_DIR}}"
     cmds:
       - task: _ensure-k3d
-      - task: _ensure-env
+      - task: _deploy
         vars: {ENV: local}
-      - |
-        set -a
-        source .env.local
-        set +a
-        ansible-playbook -i inventories/local/ playbooks/deploy.yml -e target={{.CLI_ARGS}}
-    preconditions:
-      - sh: "[ -n '{{.CLI_ARGS}}' ]"
-        msg: "Specifier un composant. Usage: task deploy:local -- mattermost"
 
   deploy:staging:
     desc: "Deployer en STAGING (usage: task deploy:staging -- mattermost)"
-    dir: "{{.ANSIBLE_DIR}}"
     cmds:
-      - task: _ensure-env
+      - task: _deploy
         vars: {ENV: staging}
-      - |
-        set -a
-        source .env.staging
-        set +a
-        ansible-playbook -i inventories/staging/ playbooks/deploy.yml -e target={{.CLI_ARGS}}
-    preconditions:
-      - sh: "[ -n '{{.CLI_ARGS}}' ]"
-        msg: "Specifier un composant. Usage: task deploy:staging -- mattermost"
 
   deploy:production:
     desc: "Deployer en PRODUCTION (usage: task deploy:production -- mattermost)"
+    cmds:
+      - task: _deploy
+        vars: {ENV: production}
+
+  deploy:list:
+    desc: "Lister les composants deployables"
+    cmds:
+      - 'echo "Composants disponibles:" && grep -E "^\s{2}\w+:$" {{.ANSIBLE_DIR}}/vars/dependency_graph.yml | sed "s/://;s/^  /  - /"'
+    silent: true
+
+  deploy:deps:
+    desc: "Afficher les dependances d'un composant (usage: task deploy:deps -- mattermost)"
     dir: "{{.ANSIBLE_DIR}}"
+    cmds:
+      - ansible-playbook playbooks/deploy.yml -e target={{.CLI_ARGS}} --check
+    preconditions:
+      - sh: "[ -n '{{.CLI_ARGS}}' ]"
+        msg: "Specifier un composant. Usage: task deploy:deps -- mattermost"
+
+  # Infrastructure (phases 1+2)
+  infra:local:
+    desc: "Demarrer l'infrastructure locale (k3d)"
+    cmds:
+      - task: _ensure-k3d
+
+  infra:staging:
+    desc: "Deployer l'infra staging (phases 1+2: preparation + K3s + composants)"
+    cmds:
+      - task: _infra
+        vars: {ENV: staging}
+
+  infra:production:
+    desc: "Deployer l'infra production (phases 1+2: preparation + K3s + composants)"
+    cmds:
+      - task: _infra
+        vars: {ENV: production}
+
+  # Reset cluster
+  reset:local:
+    desc: "Supprimer le cluster k3d local"
+    prompt: "Supprimer le cluster atlas-local ? Toutes les donnees seront perdues."
+    cmds:
+      - task: k3d:delete
+
+  reset:staging:
+    desc: "Reset complet du cluster staging (desinstalle K3s)"
+    prompt: "Reset complet du cluster staging ? Toutes les donnees seront perdues."
+    cmds:
+      - task: _ensure-env
+        vars: {ENV: staging}
+      - ./scripts/reset-cluster.sh staging
+
+  reset:production:
+    desc: "Reset complet du cluster production (desinstalle K3s)"
+    prompt: "Reset complet du cluster PRODUCTION ? TOUTES les donnees seront DEFINITIVEMENT perdues."
     cmds:
       - task: _ensure-env
         vars: {ENV: production}
-      - |
-        set -a
-        source .env.production
-        set +a
-        ansible-playbook -i inventories/production/ playbooks/deploy.yml -e target={{.CLI_ARGS}}
-    preconditions:
-      - sh: "[ -n '{{.CLI_ARGS}}' ]"
-        msg: "Specifier un composant. Usage: task deploy:production -- mattermost"
+      - ./scripts/reset-cluster.sh production
 
+  # Taches internes
   _ensure-k3d:
     internal: true
     desc: "Verifier et demarrer k3d si necessaire"
     cmds:
-      - |
-        CLUSTER_NAME="atlas-local"
-
-        # Vérifier si k3d est installé
-        if ! command -v k3d &> /dev/null; then
-          echo "❌ k3d n'est pas installé. Installez-le avec: brew install k3d"
-          exit 1
-        fi
-
-        # Vérifier si le cluster existe
-        if k3d cluster list | grep -q "^${CLUSTER_NAME}"; then
-          # Le cluster existe, vérifier s'il est running
-          if k3d cluster list | grep "^${CLUSTER_NAME}" | grep -q "running"; then
-            echo "✓ Cluster k3d '${CLUSTER_NAME}' est deja en cours d'execution"
-          else
-            echo "🚀 Demarrage du cluster k3d '${CLUSTER_NAME}'..."
-            k3d cluster start ${CLUSTER_NAME}
-            echo "✓ Cluster k3d '${CLUSTER_NAME}' demarre"
-          fi
-        else
-          echo "📦 Creation du cluster k3d '${CLUSTER_NAME}'..."
-          k3d cluster create ${CLUSTER_NAME} \
-            --api-port 6550 \
-            --port "80:80@loadbalancer" \
-            --port "443:443@loadbalancer" \
-            --agents 0 \
-            --k3s-arg "--disable=traefik@server:*" \
-            --k3s-arg "--disable=servicelb@server:*" \
-            --k3s-arg "--disable=local-storage@server:*" \
-            --k3s-arg "--flannel-backend=none@server:*" \
-            --k3s-arg "--disable-network-policy@server:*"
-          echo "✓ Cluster k3d '${CLUSTER_NAME}' cree et demarre"
-        fi
-
-        # Merger le kubeconfig pour que kubectl fonctionne
-        k3d kubeconfig merge ${CLUSTER_NAME} --kubeconfig-merge-default
-
-        # Attendre que l'API soit accessible (le node sera NotReady tant que le CNI n'est pas installé)
-        echo "⏳ Attente que l'API Kubernetes soit accessible..."
-        until kubectl get nodes &> /dev/null; do
-          sleep 2
-        done
-        echo "✓ Cluster k3d pret (API accessible)"
-    silent: false
+      - ./scripts/ensure-k3d.sh
 
   _ensure-env:
     internal: true
@@ -364,121 +344,22 @@ tasks:
         fi
     silent: true
 
-  # Infrastructure (phases 1+2)
-  infra:staging:
-    desc: "Deployer l'infra staging (phases 1+2: preparation + K3s + composants)"
-    dir: "{{.ANSIBLE_DIR}}"
+  _deploy:
+    internal: true
+    desc: "Deployer un composant (usage interne)"
     cmds:
       - task: _ensure-env
-        vars: {ENV: staging}
-      - |
-        set -a
-        source .env.staging
-        set +a
-        ansible-playbook -i inventories/staging/ playbooks/phase-01-preparation.yml
-        ansible-playbook -i inventories/staging/ playbooks/phase-02-k3s-core.yml
-
-  infra:production:
-    desc: "Deployer l'infra production (phases 1+2: preparation + K3s + composants)"
-    dir: "{{.ANSIBLE_DIR}}"
-    cmds:
-      - task: _ensure-env
-        vars: {ENV: production}
-      - |
-        set -a
-        source .env.production
-        set +a
-        ansible-playbook -i inventories/production/ playbooks/phase-01-preparation.yml
-        ansible-playbook -i inventories/production/ playbooks/phase-02-k3s-core.yml
-
-  # Reset cluster
-  reset:staging:
-    desc: "Reset complet du cluster staging (desinstalle K3s)"
-    dir: "{{.ANSIBLE_DIR}}"
-    prompt: "Reset complet du cluster staging ? Toutes les donnees seront perdues."
-    cmds:
-      - task: _ensure-env
-        vars: {ENV: staging}
-      - |
-        set -a
-        source .env.staging
-        set +a
-        STAGING_HOST="${STAGING_HOST:-10.0.1.10}"
-        STAGING_SSH_KEY="${STAGING_SSH_KEY:-~/.ssh/staging_key}"
-        echo "→ Connexion a ${STAGING_HOST}..."
-        ssh -i "${STAGING_SSH_KEY}" ubuntu@"${STAGING_HOST}" "\
-          echo '  [1/5] Desinstallation de K3s...'; \
-          if sudo /usr/local/bin/k3s-uninstall.sh; then \
-            echo '        K3s desinstalle'; \
-          else \
-            echo '        K3s non installe (skip)'; \
-          fi; \
-          echo '  [2/5] Suppression de /etc/rancher /var/lib/rancher /var/lib/longhorn...'; \
-          sudo rm -rf /etc/rancher /var/lib/rancher /var/lib/longhorn; \
-          echo '  [3/5] Suppression de /opt/cni /etc/cni...'; \
-          sudo rm -rf /opt/cni /etc/cni; \
-          echo '  [4/5] Suppression de helm...'; \
-          sudo rm -f /usr/local/bin/helm; \
-          echo '  [5/5] Suppression du kubeconfig local...'; \
-          rm -f ~/.kube/config; \
-          echo '  Nettoyage distant termine.'"
-        echo "→ Suppression de kubeconfig-staging.yaml local..."
-        rm -f kubeconfig-staging.yaml
-        echo "✓ Cluster staging reinitialise. Relancez: task infra:staging"
-
-  reset:production:
-    desc: "Reset complet du cluster production (desinstalle K3s)"
-    dir: "{{.ANSIBLE_DIR}}"
-    prompt: "Reset complet du cluster PRODUCTION ? TOUTES les donnees seront DEFINITIVEMENT perdues."
-    cmds:
-      - task: _ensure-env
-        vars: {ENV: production}
-      - |
-        set -a
-        source .env.production
-        set +a
-        PROD_MASTER_HOST="${PROD_MASTER_HOST:-10.0.2.10}"
-        PROD_SSH_KEY="${PROD_SSH_KEY:-~/.ssh/production_key}"
-        for HOST in "${PROD_MASTER_HOST}" "${PROD_WORKER1_HOST:-}" "${PROD_WORKER2_HOST:-}" "${PROD_WORKER3_HOST:-}"; do
-          [ -z "${HOST}" ] && continue
-          echo "Reset ${HOST}..."
-          ssh -i "${PROD_SSH_KEY}" debian@"${HOST}" "\
-            sudo /usr/local/bin/k3s-uninstall.sh 2>/dev/null || sudo /usr/local/bin/k3s-agent-uninstall.sh 2>/dev/null || true; \
-            sudo rm -rf /etc/rancher /var/lib/rancher /var/lib/longhorn; \
-            sudo rm -rf /opt/cni /etc/cni; \
-            sudo rm -f /usr/local/bin/helm; \
-            rm -f ~/.kube/config"
-        done
-        rm -f kubeconfig-production.yaml
-        echo "Cluster production reinitialise. Relancez: task infra:production"
-
-  deploy-list:
-    desc: "Lister les composants deployables"
-    cmds:
-      - 'echo "Composants disponibles:" && grep -E "^\s{2}\w+:$" {{.ANSIBLE_DIR}}/vars/dependency_graph.yml | sed "s/://;s/^  /  - /"'
-    silent: true
-
-  deploy-deps:
-    desc: "Afficher les dependances d'un composant (usage: task deploy-deps -- mattermost)"
-    dir: "{{.ANSIBLE_DIR}}"
-    cmds:
-      - ansible-playbook playbooks/deploy.yml -e target={{.CLI_ARGS}} --check
+        vars: {ENV: "{{.ENV}}"}
+      - ./scripts/ansible-run.sh {{.ENV}} -i inventories/{{.ENV}}/ playbooks/deploy.yml -e target={{.CLI_ARGS}}
     preconditions:
       - sh: "[ -n '{{.CLI_ARGS}}' ]"
-        msg: "Specifier un composant. Usage: task deploy-deps -- mattermost"
+        msg: "Specifier un composant. Usage: task deploy:{{.ENV}} -- mattermost"
 
-  # Raccourcis
-  format:
-    desc: Formater automatiquement (alias lint-fix)
+  _infra:
+    internal: true
+    desc: "Deployer l'infrastructure (phases 1+2)"
     cmds:
-      - task: lint-fix
-
-  fix:
-    desc: Corriger automatiquement (alias lint-fix)
-    cmds:
-      - task: lint-fix
-
-  test-hooks:
-    desc: Tester les hooks (alias hooks-test)
-    cmds:
-      - task: hooks-test
+      - task: _ensure-env
+        vars: {ENV: "{{.ENV}}"}
+      - ./scripts/ansible-run.sh {{.ENV}} -i inventories/{{.ENV}}/ playbooks/phase-01-preparation.yml
+      - ./scripts/ansible-run.sh {{.ENV}} -i inventories/{{.ENV}}/ playbooks/phase-02-k3s-core.yml

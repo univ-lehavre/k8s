@@ -24,16 +24,16 @@ operationnels dans le cluster, et ne deploie que les manquants dans l'ordre topo
 
 ```bash
 # Deployer un composant (+ toutes ses dependances manquantes)
-task deploy -- mattermost
+task deploy:staging -- mattermost
 
 # Lister les composants disponibles
-task deploy-list
+task deploy:list
 
 # Voir la chaine de dependances sans rien deployer
-task deploy-deps -- mattermost
+task deploy:deps -- mattermost
 ```
 
-### Exemple : `task deploy -- mattermost`
+### Exemple : `task deploy:staging -- mattermost`
 
 Le systeme resout la chaine complete :
 
@@ -127,7 +127,7 @@ ansible-playbook playbooks/phase-05-services.yml --tags keycloak
 ### Commandes
 
 ```bash
-task deploy -- mattermost
+task deploy:staging -- mattermost
 # ou manuellement :
 ansible-playbook playbooks/phase-05-services.yml --tags mattermost
 ```
@@ -159,8 +159,8 @@ Les utilisateurs peuvent se connecter via SSO et communiquer par messagerie inst
 ### Commandes
 
 ```bash
-task deploy -- nextcloud    # deploie aussi seaweedfs si absent
-task deploy -- onlyoffice
+task deploy:staging -- nextcloud    # deploie aussi seaweedfs si absent
+task deploy:staging -- onlyoffice
 # ou manuellement :
 ansible-playbook playbooks/phase-05-services.yml --tags seaweedfs,nextcloud,onlyoffice
 ```
@@ -197,8 +197,8 @@ Les utilisateurs disposent d'un espace de fichiers partage avec edition collabor
 ### Commandes
 
 ```bash
-task deploy -- redcap     # deploie aussi mariadb si absent
-task deploy -- ecrin
+task deploy:staging -- redcap     # deploie aussi mariadb si absent
+task deploy:staging -- ecrin
 # ou manuellement :
 ansible-playbook playbooks/phase-04-databases.yml --tags mariadb
 ansible-playbook playbooks/phase-05-services.yml --tags redcap,ecrin
@@ -236,9 +236,9 @@ Les chercheurs peuvent creer des formulaires de collecte de donnees (REDCap) et 
 ### Commandes
 
 ```bash
-task deploy -- flipt
-task deploy -- gitea
-task deploy -- argocd
+task deploy:staging -- flipt
+task deploy:staging -- gitea
+task deploy:staging -- argocd
 # ou manuellement :
 ansible-playbook playbooks/phase-05-services.yml --tags flipt
 ansible-playbook playbooks/phase-06-devops.yml
@@ -282,8 +282,8 @@ L'equipe peut heberger du code source, faire des revues de code, deployer automa
 ### Commandes
 
 ```bash
-task deploy -- kube_prometheus
-task deploy -- hubble_ui
+task deploy:staging -- kube_prometheus
+task deploy:staging -- hubble_ui
 # ou manuellement :
 ansible-playbook playbooks/phase-07-monitoring.yml
 ```
@@ -323,13 +323,13 @@ L'equipe operations peut surveiller l'infrastructure, identifier les problemes d
 ### Commandes
 
 ```bash
-task deploy -- kyverno
-task deploy -- network_policies
-task deploy -- pod_security
-task deploy -- rate_limiting
-task deploy -- secret_rotation
-task deploy -- image_scanning
-task deploy -- backup_offsite
+task deploy:staging -- kyverno
+task deploy:staging -- network_policies
+task deploy:staging -- pod_security
+task deploy:staging -- rate_limiting
+task deploy:staging -- secret_rotation
+task deploy:staging -- image_scanning
+task deploy:staging -- backup_offsite
 # ou manuellement :
 ansible-playbook playbooks/phase-08-security.yml
 ```
